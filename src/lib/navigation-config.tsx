@@ -16,7 +16,7 @@ export const navigation = [
 
 export const socialLinks = [
   {
-    name: 'X', href: 'https://x.com/HbankApp', icon: <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+    name: 'X', href: 'https://x.com/ValoraProtocol', icon: <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
       <g>
         <path
           fill="currentColor"
@@ -25,7 +25,7 @@ export const socialLinks = [
       </g>
     </svg>
   },
-  { name: 'Plaza', href: 'https://www.plazas.social/en/plaza/0.0.8736838', icon: <img src="/plaza.png" alt="Plaza" className="h-6 w-6" /> },
+  
 ]
 
 export const resourceLinks = [

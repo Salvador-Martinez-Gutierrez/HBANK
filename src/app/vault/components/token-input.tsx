@@ -10,6 +10,8 @@ interface TokenInputProps {
   tokenSymbol: string
   tokenIcon: string
   usdValue?: string
+  balance?: string
+  showBalance?: boolean
 }
 
 export function TokenInput({
@@ -20,7 +22,9 @@ export function TokenInput({
   placeholder = "0.00",
   tokenSymbol,
   tokenIcon,
-  usdValue
+  usdValue,
+  balance,
+  showBalance = false
 }: TokenInputProps) {
   return (
     <div className="space-y-2">
@@ -39,8 +43,15 @@ export function TokenInput({
           <span className="font-medium">{tokenSymbol}</span>
         </div>
       </div>
-      <div className="text-xs text-muted-foreground">
-        {usdValue || "$0.0000"}
+      <div className="flex justify-between items-center">
+        <div className="text-xs text-muted-foreground">
+          {usdValue || "$0.0000"}
+        </div>
+        {showBalance && balance && (
+          <div className="text-xs text-muted-foreground">
+            Balance: {balance} {tokenSymbol}
+          </div>
+        )}
       </div>
     </div>
   )

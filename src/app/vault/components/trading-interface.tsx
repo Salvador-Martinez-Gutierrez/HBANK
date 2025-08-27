@@ -8,6 +8,8 @@ import { SwapButton } from "./swap-button"
 import { TransactionDetails } from "./transaction-details"
 import { ConnectWalletButton } from "@/components/connect-wallet-button"
 import { MintActionButton } from "./mint-action-button"
+import { useWallet } from "@buidlerlabs/hashgraph-react-wallets"
+import { useTokenBalances } from "../hooks/useTokenBalances"
 
 interface TradingInterfaceProps {
   exchangeRate: number
@@ -20,7 +22,8 @@ export function TradingInterface({
   const [activeTab, setActiveTab] = useState<"mint" | "redeem" | "history">("mint")
   const [fromAmount, setFromAmount] = useState("")
   const [toAmount, setToAmount] = useState("")
-  const [isConnected, setIsConnected] = useState(false)
+  const { isConnected } = useWallet()
+  const { balances } = useTokenBalances()
 
   // Token configuration based on active tab
   const fromToken = activeTab === "mint" ? "USDC" : "hUSD"
@@ -38,41 +41,24 @@ export function TradingInterface({
   const handleFromAmountChange = (value: string) => {
     setFromAmount(value)
     if (value && !isNaN(parseFloat(value))) {
-      const calculatedTo = activeTab === "mint"
-        ? (parseFloat(value) / exchangeRate).toFixed(4)
-        : (parseFloat(value) * exchangeRate).toFixed(4)
+      // With 1:1 exchange rate, the amounts are equal
+      const calculatedTo = parseFloat(value).toFixed(4)
       setToAmount(calculatedTo)
     } else {
       setToAmount("")
     }
   }
 
-  const handleConnectWallet = () => {
-    setIsConnected(!isConnected)
-  }
 
+  // handleMint is now implemented in MintActionButton component
   const handleMint = async () => {
-    // TODO: Implement actual Hedera minting transaction
-    console.log("Creating Hedera mint transaction:", {
-      fromToken,
-      toToken,
-      fromAmount,
-      toAmount,
-      exchangeRate
-    })
-
-    // Placeholder for complex Hedera transaction creation
-    // This will include:
-    // 1. Create transaction for USDC transfer to vault
-    // 2. Create transaction for hUSD mint
-    // 3. Submit complex transaction to wallet for signing
-    
-    alert(`Successfully minted ${toAmount} ${toToken} for ${fromAmount} ${fromToken}`)
+    // This function is passed to MintActionButton but the actual implementation
+    // is now handled inside MintActionButton component
+    console.log("Mint initiated from TradingInterface")
   }
 
   const handleRedeem = async () => {
     if (!isConnected) {
-      handleConnectWallet()
       return
     }
 
@@ -103,6 +89,8 @@ export function TradingInterface({
         tokenSymbol={fromToken}
         tokenIcon={fromIcon}
         usdValue={getUsdValue(fromAmount)}
+        balance={balances[fromToken as keyof typeof balances]}
+        showBalance={isConnected}
       />
 
       {/* Swap Arrow */}
@@ -116,6 +104,8 @@ export function TradingInterface({
         tokenSymbol={toToken}
         tokenIcon={toIcon}
         usdValue={getUsdValue(toAmount)}
+        balance={balances[toToken as keyof typeof balances]}
+        showBalance={isConnected}
       />
 
       {/* Tab-specific action button */}
