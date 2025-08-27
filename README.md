@@ -9,7 +9,7 @@
 [![Hedera](https://img.shields.io/badge/Hedera-Hashgraph-7a3ff2?logo=hedera)](https://hedera.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
 
-<img src="public/valora_logo.jpg" alt="Valora Protocol" width="100" style="border-radius: 50%;" />
+<img src="public/valora_logo_no_bg.png" alt="Valora Protocol" width="100" style="border-radius: 50%;" />
 
 **Transform your USDC into yield-bearing hUSD tokens with complete transparency and security**
 
