@@ -49,31 +49,7 @@ export function TradingInterface({
     }
   }
 
-
-  // handleMint is now implemented in MintActionButton component
-  const handleMint = async () => {
-    // This function is passed to MintActionButton but the actual implementation
-    // is now handled inside MintActionButton component
-    console.log("Mint initiated from TradingInterface")
-  }
-
-  const handleRedeem = async () => {
-    if (!isConnected) {
-      return
-    }
-
-    // TODO: Implement actual redeeming logic
-    console.log("Redeeming:", {
-      fromToken,
-      toToken,
-      fromAmount,
-      toAmount,
-      exchangeRate
-    })
-
-    // Placeholder success handling
-    alert(`Successfully redeemed ${toAmount} ${toToken} for ${fromAmount} ${fromToken}`)
-  }
+  
   // TODO: This should be fetched from an API endpoint
   const getUsdValue = (amount: string) => {
     return amount ? `$${(parseFloat(amount) * 1.00).toFixed(4)}` : "$0.0000"
@@ -116,7 +92,6 @@ export function TradingInterface({
           fromToken={fromToken}
           toToken={toToken}
           exchangeRate={exchangeRate}
-          onMint={handleMint}
         />
       ) : (
         /* For redeem and history tabs, show connect wallet for now */

@@ -51,8 +51,7 @@ export default function Home() {
                             with Total Transparency
                         </h1>
                         <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                            Valora Protocol is the most advanced DeFi platform
-                            on Hedera. Get superior yields with the security and
+                            Valora Protocol . Get superior yields with the security and
                             transparency that only blockchain technology can
                             offer.
                         </p>
@@ -62,18 +61,8 @@ export default function Home() {
                                     size='lg'
                                     className='group min-w-[200px] text-base cursor-pointer hover:cursor-pointer'
                                 >
-                                    Start Investing
+                                    Start Earning
                                     <ArrowRight className='ml-2 h-5 w-5 transition-transform group-hover:translate-x-1' />
-                                </Button>
-                            </Link>
-                            <Link href='/defi'>
-                                <Button
-                                    size='lg'
-                                    variant='outline'
-                                    className='min-w-[200px] text-base cursor-pointer hover:cursor-pointer'
-                                >
-                                    Explore DeFi
-                                    <ChevronRight className='ml-2 h-5 w-5' />
                                 </Button>
                             </Link>
                         </div>
@@ -627,13 +616,13 @@ export default function Home() {
                                 <ArrowRight className='ml-2 h-5 w-5 transition-transform group-hover:translate-x-1' />
                             </Button>
                         </Link>
-                        <Link href='/portfolio'>
+                        <Link href='/transparency'>
                             <Button
                                 size='lg'
                                 variant='outline'
                                 className='min-w-[200px] text-base'
                             >
-                                View Portfolio
+                                View Strategy
                                 <ChevronRight className='ml-2 h-5 w-5' />
                             </Button>
                         </Link>

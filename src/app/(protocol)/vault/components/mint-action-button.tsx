@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ConnectWalletButton } from "@/components/connect-wallet-button";
-import { useWallet, useAccountId, useAssociateTokens } from "@buidlerlabs/hashgraph-react-wallets";
+import { useWallet, useAccountId, useAssociateTokens, useWatchTransactionReceipt } from "@buidlerlabs/hashgraph-react-wallets";
 import { checkTokenAssociation } from "@/services/token-association";
 import { TOKEN_IDS } from "@/app/constants";
 import { Wallet } from "lucide-react";
@@ -15,7 +15,6 @@ interface MintActionButtonProps {
   fromToken: string;
   toToken: string;
   exchangeRate: number;
-  onMint: () => Promise<void>;
 }
 
 export function MintActionButton({
@@ -24,11 +23,11 @@ export function MintActionButton({
   fromToken,
   toToken,
   exchangeRate,
-  onMint
 }: MintActionButtonProps) {
   const { isConnected, isLoading: walletLoading, signer } = useWallet();
   const { data: accountId } = useAccountId();
   const { associateTokens } = useAssociateTokens();
+  const { watch } = useWatchTransactionReceipt();
   
   const [isCheckingAssociation, setIsCheckingAssociation] = useState(false);
   const [hasTokenAssociation, setHasTokenAssociation] = useState<boolean | null>(null);
@@ -50,6 +49,7 @@ export function MintActionButton({
     setIsCheckingAssociation(true);
     try {
       const hasAssociation = await checkTokenAssociation(accountId);
+      console.log("hasAssociation", hasAssociation);
       setHasTokenAssociation(hasAssociation);
     } catch (error) {
       console.error("Failed to check token association:", error);
@@ -62,18 +62,46 @@ export function MintActionButton({
   const handleAssociateToken = async () => {
     setIsProcessing(true);
     try {      
-      // Execute the TokenAssociateTransaction using the hashgraph-react-wallets hook
-      await associateTokens([TOKEN_IDS.hUSD]);
-            
-      // Wait a moment for the transaction to be processed
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      console.log("🔗 Starting token association for hUSD:", TOKEN_IDS.hUSD);
       
-      // Recheck association after successful association
-      await checkAssociation();
+      // Execute the TokenAssociateTransaction using the hashgraph-react-wallets hook
+      const transactionResult = await associateTokens([TOKEN_IDS.hUSD]);
+      
+      if (!transactionResult) {
+        throw new Error("Failed to get transaction ID from token association");
+      }
+      
+      // Handle both string and string[] return types
+      const transactionId = Array.isArray(transactionResult) ? transactionResult[0] : transactionResult;
+      
+      console.log("📤 Token association transaction sent:", transactionId);
+      console.log("⏳ Watching transaction receipt...");
+      
+      // Watch the transaction receipt for completion
+      await watch(transactionId, {
+        onSuccess: (transaction) => {
+          console.log("✅ Token association successful:", transaction);
+          console.log("🔄 Updating association state to true");
+          
+          // Update state to show mint button
+          setHasTokenAssociation(true);
+          setIsProcessing(false);
+          
+          return transaction;
+        },
+        onError: (transaction, error) => {
+          console.error("❌ Token association failed:", error);
+          console.log("📊 Transaction details:", transaction);
+          
+          // Keep the associate button visible
+          setIsProcessing(false);
+          
+          return transaction;
+        },
+      });
       
     } catch (error) {
-      console.error("Token association failed:", error);
-    } finally {
+      console.error("❌ Token association failed:", error);
       setIsProcessing(false);
     }
   };
@@ -108,7 +136,7 @@ export function MintActionButton({
           AccountId.fromString('0.0.6510977'), // TREASURY_ID
           amountInTinybar
         )
-        .setTransactionMemo(`Mint ${toAmount} hUSD`);
+        .setTransactionMemo(`Mint`);
 
       console.log('Transaction created, freezing with signer...');
 
@@ -218,7 +246,7 @@ export function MintActionButton({
       disabled={isDisabled}
     >
       <span className="flex items-center gap-x-2 px-4">
-        {isProcessing ? "Minting..." : `Mint ${toAmount} ${toToken}`}
+        {isProcessing ? "Minting..." : `Mint`}
       </span>
     </Button>
   );

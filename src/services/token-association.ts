@@ -1,9 +1,6 @@
 "use client";
 
-import { TESTNET_MIRROR_NODE_ENDPOINT, TOKEN_IDS } from "@/app/constants";
-
-// Validation Cloud API configuration
-const VALIDATION_CLOUD_API_KEY = process.env.NEXT_PUBLIC_VALIDATION_CLOUD_API_KEY;
+import { TOKEN_IDS } from "@/app/constants";
 
 interface TokenRelationship {
   automatic_association: boolean;
@@ -27,13 +24,10 @@ interface TokenRelationshipsResponse {
  * @returns Promise<boolean> - True if token is associated, false otherwise
  */
 export async function checkTokenAssociation(accountId: string): Promise<boolean> {
-  if (!VALIDATION_CLOUD_API_KEY) {
-    console.error("Validation Cloud API key not configured");
-    return false;
-  }
-
   try {
-    const url = `${TESTNET_MIRROR_NODE_ENDPOINT}/${VALIDATION_CLOUD_API_KEY}/api/v1/accounts/${accountId}/tokens?token.id=${TOKEN_IDS.hUSD}`;
+    // Use the standard Hedera mirror node endpoint (same as useTokenBalances)
+    const url = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/tokens?token.id=${TOKEN_IDS.hUSD}`;
+    console.log("📡 Making API request to:", url);
     
     const response = await fetch(url, {
       method: 'GET',
@@ -55,7 +49,7 @@ export async function checkTokenAssociation(accountId: string): Promise<boolean>
     const hasTokenAssociation = data.tokens.some(
       (token) => token.token_id === TOKEN_IDS.hUSD
     );
-
+    
     return hasTokenAssociation;
   } catch (error) {
     console.error("Error checking token association:", error);
@@ -69,13 +63,9 @@ export async function checkTokenAssociation(accountId: string): Promise<boolean>
  * @returns Promise<number> - The token balance, or 0 if not associated
  */
 export async function getTokenBalance(accountId: string): Promise<number> {
-  if (!VALIDATION_CLOUD_API_KEY) {
-    console.error("Validation Cloud API key not configured");
-    return 0;
-  }
-
   try {
-    const url = `${TESTNET_MIRROR_NODE_ENDPOINT}/${VALIDATION_CLOUD_API_KEY}/api/v1/accounts/${accountId}/tokens?token.id=${TOKEN_IDS.hUSD}`;
+    // Use the standard Hedera mirror node endpoint
+    const url = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/tokens?token.id=${TOKEN_IDS.hUSD}`;
     
     const response = await fetch(url, {
       method: 'GET',
