@@ -28,8 +28,8 @@ export function TradingInterface({
   // Token configuration based on active tab
   const fromToken = activeTab === "mint" ? "USDC" : "hUSD"
   const toToken = activeTab === "mint" ? "hUSD" : "USDC"
-  const fromIcon = activeTab === "mint" ? "🔵" : "🟠"
-  const toIcon = activeTab === "mint" ? "🟠" : "🔵"
+  const fromIcon = activeTab === "mint" ? "/usdc.svg" : "/usdc.svg|grey"
+  const toIcon = activeTab === "mint" ? "/usdc.svg|grey" : "/usdc.svg"
 
   // Event handlers
   const handleSwap = () => {
@@ -56,33 +56,42 @@ export function TradingInterface({
   }
 
   const renderTabContent = () => (
-    <div className="space-y-2">
-      {/* From Token */}
-      <TokenInput
-        label="You Pay"
-        value={fromAmount}
-        onChange={handleFromAmountChange}
-        tokenSymbol={fromToken}
-        tokenIcon={fromIcon}
-        usdValue={getUsdValue(fromAmount)}
-        balance={balances[fromToken as keyof typeof balances]}
-        showBalance={isConnected}
-      />
+    <div className="space-y-4">
+      {/* Token Inputs - Responsive Layout */}
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+        {/* From Token */}
+        <div className="flex-1">
+          <TokenInput
+            label="You Pay"
+            value={fromAmount}
+            onChange={handleFromAmountChange}
+            tokenSymbol={fromToken}
+            tokenIcon={fromIcon}
+            usdValue={getUsdValue(fromAmount)}
+            balance={balances[fromToken as keyof typeof balances]}
+            showBalance={isConnected}
+          />
+        </div>
 
-      {/* Swap Arrow */}
-      <SwapButton onClick={handleSwap} />
+        {/* Swap Arrow */}
+        <div className="flex justify-center lg:flex-shrink-0">
+          <SwapButton onClick={handleSwap} />
+        </div>
 
-      {/* To Token */}
-      <TokenInput
-        label="You Get"
-        value={toAmount}
-        readOnly
-        tokenSymbol={toToken}
-        tokenIcon={toIcon}
-        usdValue={getUsdValue(toAmount)}
-        balance={balances[toToken as keyof typeof balances]}
-        showBalance={isConnected}
-      />
+        {/* To Token */}
+        <div className="flex-1">
+          <TokenInput
+            label="You Get"
+            value={toAmount}
+            readOnly
+            tokenSymbol={toToken}
+            tokenIcon={toIcon}
+            usdValue={getUsdValue(toAmount)}
+            balance={balances[toToken as keyof typeof balances]}
+            showBalance={isConnected}
+          />
+        </div>
+      </div>
 
       {/* Tab-specific action button */}
       {activeTab === "mint" ? (

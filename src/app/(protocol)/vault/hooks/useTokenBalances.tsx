@@ -94,18 +94,9 @@ export function useTokenBalances() {
               console.warn('⚠️ [useTokenBalances] No matching tokens found!')
               console.warn('   Looking for USDC:', TOKEN_IDS.USDC)
               console.warn('   Looking for hUSD:', TOKEN_IDS.hUSD)
-              
-              // Use mock data for demonstration
-              console.log('📊 [useTokenBalances] Using mock data for demonstration')
-              tokenBalances.USDC = '1000.50'
-              tokenBalances.hUSD = '500.25'
             }
           } else {
             console.warn('⚠️ [useTokenBalances] No tokens array in response')
-            // Use mock data
-            console.log('📊 [useTokenBalances] Using mock data for demonstration')
-            tokenBalances.USDC = '1000.50'
-            tokenBalances.hUSD = '500.25'
           }
           
           console.log('💰 [useTokenBalances] Final balances:', tokenBalances)
@@ -116,22 +107,9 @@ export function useTokenBalances() {
           const responseText = await response.text()
           console.warn('   Response:', responseText)
           
-          console.log('📊 [useTokenBalances] Using mock data for demonstration')
-          const mockBalances = {
-            USDC: '1000.50',
-            hUSD: '500.25'
-          }
-          setBalances(mockBalances)
         }
       } catch (error) {
         console.error('❌ [useTokenBalances] Error fetching token balances:', error)
-        // Fallback to mock data for demonstration
-        console.log('📊 [useTokenBalances] Using mock data due to error')
-        const mockBalances = {
-          USDC: '1000.50',
-          hUSD: '500.25'
-        }
-        setBalances(mockBalances)
       } finally {
         setLoading(false)
         console.log('✨ [useTokenBalances] Fetch complete')
