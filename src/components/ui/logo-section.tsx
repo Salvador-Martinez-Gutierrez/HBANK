@@ -7,7 +7,7 @@ interface LogoSectionProps {
 }
 
 export function LogoSection({
-  className = "flex flex-col items-center px-6 gap-2 mt-4"
+  className = "flex flex-col items-start px-6 gap-2 mt-4"
 }: LogoSectionProps) {
   const { theme } = useTheme();
   // Si el tema es claro, usar el logo negativo; si no, el normal
@@ -18,14 +18,11 @@ export function LogoSection({
         <Image
           src={logoSrc}
           alt="Valora Protocol"
-          width={120}
+          width={60}
           height={60}
           className="object-contain cursor-pointer"
         />
       </Link>
-      <span className="text-lg font-semibold text-foreground">
-        Valora Protocol
-      </span>
     </div>
   )
 }

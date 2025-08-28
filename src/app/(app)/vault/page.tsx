@@ -23,22 +23,6 @@ export default function VaultPage() {
                     <StatsCards />
                 </div>
 
-                {isConnected && accountId ? (
-                    <div className='mb-4'>
-                        <p className='text-sm text-muted-foreground'>
-                            Cuenta conectada: {accountId}
-                        </p>
-                    </div>
-                ) : isConnected ? (
-                    <p className='text-sm text-muted-foreground mb-4'>
-                        Obteniendo información de la cuenta...
-                    </p>
-                ) : (
-                    <p className='text-sm text-muted-foreground mb-4'>
-                        Por favor, conecta tu wallet para depositar
-                    </p>
-                )}
-
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
                     {/* Main Trading Interface */}
                     <div className='md:col-span-2'>

@@ -12,8 +12,6 @@ export function SessionActionButtons() {
 
     const handleDisconnect = async () => {
         disconnect();
-        // Clear the session
-        router.push("/");
     };
 
     if (isConnected && accountId)
