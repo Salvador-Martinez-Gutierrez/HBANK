@@ -11,7 +11,7 @@ export default function AppLayout({
     return (
         <WalletProvider>
             <ThemeProvider
-                defaultTheme='system'
+                defaultTheme='dark'
                 storageKey='hbank-ui-theme'
             >
                 <div className='relative min-h-screen bg-background'>
