@@ -1,12 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import {
     Client,
-    TransferTransaction,
-    AccountId,
     PrivateKey,
-    TransactionReceipt,
+    AccountId,
+    TransferTransaction,
 } from '@hashgraph/sdk'
-import { log } from 'node:console'
 
 /**
  * POST /api/deposit
@@ -44,12 +42,7 @@ export default async function handler(
     }
 
     try {
-        const {
-            userAccountId,
-            amount,
-            depositTxId, // ID de la transacción ya ejecutada
-            tokenType = 'USDC',
-        } = req.body
+        const { userAccountId, amount, depositTxId } = req.body
 
         // Validación de campos
         if (!userAccountId || !amount || !depositTxId) {
@@ -109,7 +102,7 @@ export default async function handler(
                     break
                 }
             } catch (mirrorError) {
-                // Ignorar error, reintentar
+                console.error('Mirror node verification failed:', mirrorError)
             }
             // Esperar 2 segundos antes de reintentar
             await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -174,18 +167,20 @@ export default async function handler(
 
         console.log('=== DEPOSIT SUCCESSFUL ===', result)
         return res.status(200).json(result)
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error'
+        const errorStack = error instanceof Error ? error.stack : undefined
+
         console.error('=== DEPOSIT ERROR ===')
-        console.error('Error message:', error.message)
-        console.error('Error stack:', error.stack)
+        console.error('Error message:', errorMessage)
+        console.error('Error stack:', errorStack)
 
         return res.status(500).json({
             error: 'Deposit failed',
-            message: error.message,
+            message: errorMessage,
             details:
-                process.env.NODE_ENV === 'development'
-                    ? error.stack
-                    : undefined,
+                process.env.NODE_ENV === 'development' ? errorStack : undefined,
         })
     }
 }

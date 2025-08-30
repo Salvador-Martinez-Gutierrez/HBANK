@@ -1,11 +1,38 @@
 import { Client } from '@hashgraph/sdk'
 import axios from 'axios'
 
-export interface RateMessage {
-    rate: number
-    timestamp: string
-    sequenceNumber: string
-    raw: any
+// Definir interfaces para los tipos
+interface MirrorNodeMessage {
+    sequence_number: number;
+    consensus_timestamp: string;
+    message: string;
+}
+
+interface MirrorNodeResponse {
+    messages?: MirrorNodeMessage[];
+}
+
+interface RateData {
+    rate: number;
+    totalUsd: number;
+    husdSupply: number;
+    timestamp: string;
+    operator?: string;
+}
+
+interface LatestRateResult {
+    rate: number;
+    timestamp: string;
+    sequenceNumber: number;
+    raw: RateData;
+}
+
+// Agregar interfaz para RateMessage al inicio del archivo
+interface RateMessage {
+    rate: number;
+    timestamp: string;
+    sequenceNumber: string;
+    raw: unknown;
 }
 
 export class HederaRateService {
@@ -33,62 +60,43 @@ export class HederaRateService {
         this.mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
     }
 
-    async getLatestRate(): Promise<RateMessage | null> {
+    async getLatestRate(): Promise<LatestRateResult | null> {
         try {
-            // Usar Mirror Node API para obtener mensajes del topic
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=10`
 
-            const headers: any = {}
+            const headers: Record<string, string> = {}
             if (process.env.MIRROR_NODE_API_KEY) {
                 headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
             }
 
-            const response = await axios.get(url, { headers })
+            const response = await axios.get<MirrorNodeResponse>(url, { headers })
 
             if (!response.data.messages || response.data.messages.length === 0) {
-                console.log('No messages found in topic:', this.topicId)
                 return null
             }
 
-            // Procesar mensajes para encontrar el último rate válido
-            for (const message of response.data.messages) {
+            for (const msg of response.data.messages) {
                 try {
-                    // Decodificar el mensaje de base64
-                    const decodedMessage = Buffer.from(
-                        message.message,
-                        'base64'
-                    ).toString('utf-8')
-                    const parsedMessage = JSON.parse(decodedMessage)
+                    const decoded = Buffer.from(msg.message, 'base64').toString('utf-8')
+                    const data = JSON.parse(decoded) as RateData
 
-                    // Buscar el campo rate en el mensaje
-                    const rate =
-                        parsedMessage.rate ||
-                        parsedMessage.valor ||
-                        parsedMessage.value
-
-                    if (rate !== undefined && rate !== null) {
+                    if (data.rate && typeof data.rate === 'number') {
                         return {
-                            rate: typeof rate === 'number' ? rate : parseFloat(rate),
-                            timestamp: message.consensus_timestamp,
-                            sequenceNumber: message.sequence_number.toString(),
-                            raw: parsedMessage,
+                            rate: data.rate,
+                            timestamp: msg.consensus_timestamp,
+                            sequenceNumber: msg.sequence_number,
+                            raw: data
                         }
                     }
-                } catch (e) {
-                    console.error('Error parsing message:', e)
-                    // Intentar con el siguiente mensaje
+                } catch {
+                    continue
                 }
             }
 
-            console.log('No valid rate messages found in the retrieved messages')
             return null
         } catch (error) {
-            console.error('Error in getLatestRate:', error)
-            if (axios.isAxiosError(error)) {
-                console.error('API Response:', error.response?.data)
-                console.error('API Status:', error.response?.status)
-            }
-            throw error
+            console.error('Error fetching latest rate:', error)
+            return null
         }
     }
 
@@ -97,7 +105,7 @@ export class HederaRateService {
         try {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=${limit}`
 
-            const headers: any = {}
+            const headers: Record<string, string> = {}
             if (process.env.MIRROR_NODE_API_KEY) {
                 headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
             }
@@ -144,28 +152,33 @@ export class HederaRateService {
     }
 
     // Método de depuración para ver los mensajes raw
-    async debugTopicMessages(): Promise<any[]> {
+    async debugTopicMessages(): Promise<Array<{
+        sequence_number: number;
+        consensus_timestamp: string;
+        raw_base64: string;
+        decoded: RateData | string;
+    }>> {
         try {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=5`
 
-            const headers: any = {}
+            const headers: Record<string, string> = {}
             if (process.env.MIRROR_NODE_API_KEY) {
                 headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
             }
 
-            const response = await axios.get(url, { headers })
+            const response = await axios.get<MirrorNodeResponse>(url, { headers })
 
             if (!response.data.messages) {
                 return []
             }
 
-            return response.data.messages.map((msg: any) => {
-                let decoded = null
+            return response.data.messages.map((msg) => {
+                let decoded: RateData | string = 'Error decoding'
                 try {
-                    decoded = Buffer.from(msg.message, 'base64').toString('utf-8')
-                    decoded = JSON.parse(decoded)
+                    const decodedString = Buffer.from(msg.message, 'base64').toString('utf-8')
+                    decoded = JSON.parse(decodedString) as RateData
                 } catch (e) {
-                    decoded = 'Error decoding: ' + e
+                    decoded = 'Error decoding: ' + (e instanceof Error ? e.message : String(e))
                 }
 
                 return {

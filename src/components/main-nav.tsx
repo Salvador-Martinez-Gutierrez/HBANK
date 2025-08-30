@@ -2,7 +2,7 @@
 
 import { ThemeToggle } from '@/components/theme-toggle'
 import { MobileSidebar } from './mobile-sidebar'
-import { ConnectWalletButton } from '@/components/connect-wallet-button'
+// import { ConnectWalletButton } from '@/components/connect-wallet-button' // Eliminar si no se usa
 import { SessionActionButtons } from './session-action-buttons'
 
 // TODO: These values should be fetched from an API endpoint
