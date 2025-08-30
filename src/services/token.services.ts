@@ -1,7 +1,6 @@
 "use client";
 
 import { TOKEN_IDS } from "@/app/constants";
-import { TESTNET_MIRROR_NODE_ENDPOINT } from "@/app/constants";
 
 interface TokenRelationship {
   automatic_association: boolean;

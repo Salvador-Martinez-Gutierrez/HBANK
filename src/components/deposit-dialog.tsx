@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TransferTransaction, AccountId, Hbar } from '@hashgraph/sdk'
+import { TransferTransaction, AccountId } from '@hashgraph/sdk'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -9,7 +9,14 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog'
 
-export function DepositDialog({ open, onOpenChange, userAccountId, signer }) {
+interface DepositDialogProps {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    userAccountId: string;
+    signer: unknown;
+}
+
+export function DepositDialog({ open, onOpenChange, userAccountId, signer }: DepositDialogProps) {
     const [amount, setAmount] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -114,9 +121,10 @@ export function DepositDialog({ open, onOpenChange, userAccountId, signer }) {
             )
             setAmount('')
             onOpenChange(false)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Deposit error:', error)
-            setError(error.message || 'Error desconocido')
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+            setError(errorMessage)
             setStep('')
         } finally {
             setLoading(false)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ConnectWalletButton } from "@/components/connect-wallet-button";
 import { useWallet, useAccountId, useAssociateTokens, useWatchTransactionReceipt } from "@buidlerlabs/hashgraph-react-wallets";
@@ -12,17 +12,11 @@ import { TransferTransaction, AccountId } from '@hashgraph/sdk';
 interface MintActionButtonProps {
   fromAmount: string;
   toAmount: string;
-  fromToken: string;
-  toToken: string;
-  exchangeRate: number;
 }
 
 export function MintActionButton({
   fromAmount,
   toAmount,
-  fromToken,
-  toToken,
-  exchangeRate,
 }: MintActionButtonProps) {
   const { isConnected, isLoading: walletLoading, signer } = useWallet();
   const { data: accountId } = useAccountId();
@@ -33,17 +27,7 @@ export function MintActionButton({
   const [hasTokenAssociation, setHasTokenAssociation] = useState<boolean | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Check token association when wallet connects
-  useEffect(() => {
-    if (isConnected && accountId && hasTokenAssociation === null) {
-      checkAssociation();
-    } else if (!isConnected) {
-      // Reset state when wallet disconnects
-      setHasTokenAssociation(null);
-    }
-  }, [isConnected, accountId]);
-
-  const checkAssociation = async () => {
+  const checkAssociation = useCallback(async () => {
     if (!accountId) return;
     
     setIsCheckingAssociation(true);
@@ -57,7 +41,17 @@ export function MintActionButton({
     } finally {
       setIsCheckingAssociation(false);
     }
-  };
+  }, [accountId]);
+
+  // Check token association when wallet connects
+  useEffect(() => {
+    if (isConnected && accountId && hasTokenAssociation === null) {
+      checkAssociation();
+    } else if (!isConnected) {
+      // Reset state when wallet disconnects
+      setHasTokenAssociation(null);
+    }
+  }, [isConnected, accountId, hasTokenAssociation, checkAssociation]);
 
   const handleAssociateToken = async () => {
     setIsProcessing(true);
@@ -141,20 +135,24 @@ export function MintActionButton({
       console.log('Transaction created, freezing with signer...');
 
       // 2. Freeze with signer
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const frozenTx = await transaction.freezeWithSigner(signer as any);
 
       console.log('Requesting signature from wallet...');
 
       // 3. User signs
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const signedTx = await frozenTx.signWithSigner(signer as any);
 
       console.log('Executing deposit transaction...');
 
       // 4. Execute
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const txResponse = await signedTx.executeWithSigner(signer as any);
       console.log('Transaction executed:', txResponse.transactionId?.toString());
 
       // 5. Get receipt
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const receipt = await txResponse.getReceiptWithSigner(signer as any);
       console.log('Receipt:', receipt.status.toString());
 
@@ -193,9 +191,10 @@ export function MintActionButton({
         `Mint successful!\nYou received ${result.hUSDReceived / 1_000_000} hUSD\nTx ID: ${result.hUSDTxId}`
       );
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Mint failed:", error);
-      alert(`Mint failed: ${error?.message || 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Mint failed: ${errorMessage}`);
     } finally {
       setIsProcessing(false);
     }

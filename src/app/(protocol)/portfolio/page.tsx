@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
 import { useAccountId } from '@/app/(protocol)/vault/hooks/useAccountID'
@@ -12,7 +13,7 @@ export default function PortfolioPage() {
   const accountId = useAccountId()
   const [balances, setBalances] = useState({ hbar: '0', usdc: '0', husd: '0' })
   const [loading, setLoading] = useState(false)
-  const [hbarPrice, setHbarPrice] = useState<number>(0)
+  const [hbarPrice] = useState<number>(0)
 
   useEffect(() => {
     const run = async () => {
@@ -84,7 +85,7 @@ export default function PortfolioPage() {
             <CardHeader>
               <CardTitle>
                 <div className="flex items-center gap-2">
-                  <img src={t.icon} alt={t.name} className={`h-8 w-8 rounded-full ${t.grayscale ? 'grayscale' : ''}`} />
+                  <Image src={t.icon} alt={t.name} width={32} height={32} className={`rounded-full ${t.grayscale ? 'grayscale' : ''}`} />
                   <span>{t.name}</span>
                 </div>
               </CardTitle>

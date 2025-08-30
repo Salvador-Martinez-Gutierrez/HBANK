@@ -4,9 +4,7 @@ import {
     TransferTransaction,
     AccountId,
     PrivateKey,
-    TransactionReceipt,
 } from '@hashgraph/sdk'
-import { log } from 'node:console'
 
 /**
  * POST /api/deposit
@@ -48,7 +46,6 @@ export default async function handler(
             userAccountId,
             amount,
             depositTxId, // ID de la transacción ya ejecutada
-            tokenType = 'USDC',
         } = req.body
 
         // Validación de campos
@@ -108,8 +105,9 @@ export default async function handler(
                     mirrorVerified = true
                     break
                 }
-            } catch (mirrorError) {
+            } catch (error) {
                 // Ignorar error, reintentar
+                console.warn('Mirror node retry failed:', error)
             }
             // Esperar 2 segundos antes de reintentar
             await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -174,17 +172,19 @@ export default async function handler(
 
         console.log('=== DEPOSIT SUCCESSFUL ===', result)
         return res.status(200).json(result)
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('=== DEPOSIT ERROR ===')
-        console.error('Error message:', error.message)
-        console.error('Error stack:', error.stack)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        const errorStack = error instanceof Error ? error.stack : undefined
+        console.error('Error message:', errorMessage)
+        console.error('Error stack:', errorStack)
 
         return res.status(500).json({
             error: 'Deposit failed',
-            message: error.message,
+            message: errorMessage,
             details:
                 process.env.NODE_ENV === 'development'
-                    ? error.stack
+                    ? errorStack
                     : undefined,
         })
     }

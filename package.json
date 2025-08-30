@@ -5,8 +5,10 @@
     "scripts": {
         "dev": "next dev",
         "build": "next build",
+        "build:check": "pnpm lint && pnpm build",
         "start": "next start",
         "lint": "next lint",
+        "lint:fix": "next lint --fix",
         "test": "jest",
         "test:watch": "jest --watch",
         "test:hedera": "node testHedera.js"
@@ -21,6 +23,7 @@
         "@radix-ui/react-slot": "^1.2.3",
         "@radix-ui/react-tabs": "^1.1.13",
         "@walletconnect/modal": "^2.7.0",
+        "axios": "^1.11.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "dotenv": "^17.2.1",

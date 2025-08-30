@@ -4,13 +4,8 @@ import { TradingInterface } from './components/trading-interface'
 import { ApyCard } from './components/apy-card'
 import { InfoCard } from './components/info-card'
 import { StatsCards } from './components/stats-cards'
-import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
-import { useAccountId } from './hooks/useAccountID'
 
 export default function VaultPage() {
-    const { isConnected } = useWallet()
-    const accountId = useAccountId() // Usar el hook personalizado
-
     // Mock exchange rate and data
     const exchangeRate = 1.0 // Changed to 1:1 exchange rate
     const apy = '13.33'

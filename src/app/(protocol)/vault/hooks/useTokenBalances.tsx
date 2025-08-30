@@ -62,7 +62,7 @@ export function useTokenBalances() {
             console.log(`📋 [useTokenBalances] Found ${data.tokens.length} tokens`)
             
             // Log all tokens for debugging
-            data.tokens.forEach((token: any, index: number) => {
+            data.tokens.forEach((token: { token_id: string; balance: number; decimals: number }, index: number) => {
               console.log(`  Token ${index + 1}:`, {
                 token_id: token.token_id,
                 balance: token.balance,

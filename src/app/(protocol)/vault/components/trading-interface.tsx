@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Card, CardHeader } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
 import { TokenInput } from "./token-input"
@@ -101,9 +101,6 @@ export function TradingInterface({
         <MintActionButton
           fromAmount={fromAmount}
           toAmount={toAmount}
-          fromToken={fromToken}
-          toToken={toToken}
-          exchangeRate={exchangeRate}
         />
       ) : (
         /* For redeem and history tabs, show connect wallet for now */

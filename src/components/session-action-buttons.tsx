@@ -2,7 +2,6 @@
 
 import { useAccountId, useWallet } from "@buidlerlabs/hashgraph-react-wallets";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 import { ConnectWalletButton } from "./connect-wallet-button";
 import { AccountDialog } from "./account-dialog";
 import { useState } from "react";

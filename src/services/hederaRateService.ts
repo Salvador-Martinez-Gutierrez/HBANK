@@ -5,7 +5,7 @@ export interface RateMessage {
     rate: number
     timestamp: string
     sequenceNumber: string
-    raw: any
+    raw: unknown
 }
 
 export class HederaRateService {
@@ -38,7 +38,7 @@ export class HederaRateService {
             // Usar Mirror Node API para obtener mensajes del topic
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=10`
 
-            const headers: any = {}
+            const headers: Record<string, string> = {}
             if (process.env.MIRROR_NODE_API_KEY) {
                 headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
             }
@@ -97,7 +97,7 @@ export class HederaRateService {
         try {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=${limit}`
 
-            const headers: any = {}
+            const headers: Record<string, string> = {}
             if (process.env.MIRROR_NODE_API_KEY) {
                 headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
             }
@@ -144,11 +144,11 @@ export class HederaRateService {
     }
 
     // Método de depuración para ver los mensajes raw
-    async debugTopicMessages(): Promise<any[]> {
+    async debugTopicMessages(): Promise<unknown[]> {
         try {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=5`
 
-            const headers: any = {}
+            const headers: Record<string, string> = {}
             if (process.env.MIRROR_NODE_API_KEY) {
                 headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
             }
@@ -159,11 +159,11 @@ export class HederaRateService {
                 return []
             }
 
-            return response.data.messages.map((msg: any) => {
-                let decoded = null
+            return response.data.messages.map((msg: { sequence_number: string; consensus_timestamp: string; message: string }) => {
+                let decoded: unknown = null
                 try {
-                    decoded = Buffer.from(msg.message, 'base64').toString('utf-8')
-                    decoded = JSON.parse(decoded)
+                    const decodedString = Buffer.from(msg.message, 'base64').toString('utf-8')
+                    decoded = JSON.parse(decodedString)
                 } catch (e) {
                     decoded = 'Error decoding: ' + e
                 }
