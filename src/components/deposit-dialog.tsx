@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TransferTransaction, AccountId } from '@hashgraph/sdk'
+import { TransferTransaction, AccountId, Signer } from '@hashgraph/sdk'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -10,13 +10,27 @@ import {
 } from '@/components/ui/dialog'
 
 interface DepositDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-    userAccountId: string;
-    signer: unknown;
+    open: boolean
+    onOpenChange: (open: boolean) => void
+    userAccountId: string
+    signer: unknown
 }
 
-export function DepositDialog({ open, onOpenChange, userAccountId, signer }: DepositDialogProps) {
+function isValidSigner(signer: unknown): signer is Signer {
+    return (
+        signer !== null &&
+        signer !== undefined &&
+        typeof signer === 'object' &&
+        'sign' in signer
+    )
+}
+
+export function DepositDialog({
+    open,
+    onOpenChange,
+    userAccountId,
+    signer,
+}: DepositDialogProps) {
     const [amount, setAmount] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -53,6 +67,11 @@ export function DepositDialog({ open, onOpenChange, userAccountId, signer }: Dep
                 .setTransactionMemo(`Deposit ${amount} USDC`)
 
             console.log('Transaction created, freezing with signer...')
+
+            // Validate signer before use
+            if (!isValidSigner(signer)) {
+                throw new Error('Invalid signer: wallet not properly connected')
+            }
 
             // 2. Congelar con el signer
             const frozenTx = await transaction.freezeWithSigner(signer)
@@ -123,7 +142,8 @@ export function DepositDialog({ open, onOpenChange, userAccountId, signer }: Dep
             onOpenChange(false)
         } catch (error: unknown) {
             console.error('Deposit error:', error)
-            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+            const errorMessage =
+                error instanceof Error ? error.message : 'Error desconocido'
             setError(errorMessage)
             setStep('')
         } finally {

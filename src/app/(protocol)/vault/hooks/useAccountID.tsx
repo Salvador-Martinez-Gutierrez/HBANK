@@ -1,6 +1,25 @@
 import { useEffect, useState } from 'react'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 
+// Types for wallet connectors and signers
+interface WalletSigner {
+    getAccountId?: () => unknown
+}
+
+interface WalletConnector {
+    getAccountIds?: () => Promise<string[]>
+    getSession?: () => Promise<{
+        namespaces?: {
+            hedera?: {
+                accounts?: string[]
+            }
+        }
+    }>
+    getProvider?: () => Promise<{
+        accountId?: unknown
+    }>
+}
+
 export function useAccountId() {
     const [accountId, setAccountId] = useState<string>('')
     const { isConnected, connector, signer } = useWallet()
@@ -14,17 +33,17 @@ export function useAccountId() {
 
             try {
                 // Método 1: Desde el signer
-                if (signer && typeof signer.getAccountId === 'function') {
-                    const id = await signer.getAccountId()
+                if (signer && 'getAccountId' in signer) {
+                    const id = await (signer as WalletSigner).getAccountId?.()
                     if (id) {
-                        setAccountId(id.toString())
+                        setAccountId(typeof id === 'string' ? id : String(id))
                         return
                     }
                 }
 
                 // Método 2: Desde el connector
-                if (connector.getAccountIds) {
-                    const ids = await connector.getAccountIds()
+                if ('getAccountIds' in connector) {
+                    const ids = await (connector as WalletConnector).getAccountIds?.()
                     if (ids && ids.length > 0) {
                         setAccountId(ids[0])
                         return
@@ -32,8 +51,8 @@ export function useAccountId() {
                 }
 
                 // Método 3: Desde la sesión (para WalletConnect)
-                if (connector.getSession) {
-                    const session = await connector.getSession()
+                if ('getSession' in connector) {
+                    const session = await (connector as WalletConnector).getSession?.()
                     const hederaAccount =
                         session?.namespaces?.hedera?.accounts?.[0]
                     if (hederaAccount) {
@@ -46,10 +65,10 @@ export function useAccountId() {
                 }
 
                 // Método 4: Desde el provider (para HashPack)
-                if (connector.getProvider) {
-                    const provider = await connector.getProvider()
-                    if (provider.accountId) {
-                        setAccountId(provider.accountId.toString())
+                if ('getProvider' in connector) {
+                    const provider = await (connector as WalletConnector).getProvider?.()
+                    if (provider?.accountId) {
+                        setAccountId(typeof provider.accountId === 'string' ? provider.accountId : String(provider.accountId))
                     }
                 }
             } catch (error) {
