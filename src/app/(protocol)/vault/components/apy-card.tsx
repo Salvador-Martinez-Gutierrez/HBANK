@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import Image from "next/image"
 
 interface ApyCardProps {
   apy: string
@@ -15,7 +16,7 @@ export function ApyCard({ apy }: ApyCardProps) {
         <Badge
           variant="default"
           className="bg-green-300 text-black text-md border-green-400" >
-          with <span className="text-2xl">🟠</span> hUSD
+          with <Image src="/usdc.svg" alt="USDC" width={20} height={20} className="rounded-full grayscale inline-block mx-1" /> hUSD
         </Badge>
     </CardContent>
     </Card >

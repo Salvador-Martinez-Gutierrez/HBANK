@@ -1,6 +1,7 @@
 "use client";
 
 import { TOKEN_IDS } from "@/app/constants";
+import { TESTNET_MIRROR_NODE_ENDPOINT } from "@/app/constants";
 
 interface TokenRelationship {
   automatic_association: boolean;
@@ -57,36 +58,31 @@ export async function checkTokenAssociation(accountId: string): Promise<boolean>
   }
 }
 
+interface NormalizedBalances {
+  hbar: string;
+  usdc: string;
+  husd: string;
+}
+
 /**
- * Gets the balance of hUSD tokens for an account
- * @param accountId - The Hedera account ID
- * @returns Promise<number> - The token balance, or 0 if not associated
+ * Fetches HBAR, USDC and hUSD balances for a given account using the Validation Cloud Mirror Node
  */
-export async function getTokenBalance(accountId: string): Promise<number> {
+export async function fetchAccountBalances(accountId: string): Promise<NormalizedBalances> {
+  if (!accountId) {
+    return { hbar: "0.00", usdc: "0.00", husd: "0.00" };
+  }
+
   try {
-    // Use the standard Hedera mirror node endpoint
-    const url = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/tokens?token.id=${TOKEN_IDS.hUSD}`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      return 0;
+    const url = `/api/account-balances?accountId=${encodeURIComponent(accountId)}`;
+    console.log("📡 Requesting balances via:", url);
+    const res = await fetch(url);
+    if (!res.ok) {
+      return { hbar: "0.00", usdc: "0.00", husd: "0.00" };
     }
-
-    const data: TokenRelationshipsResponse = await response.json();
-    
-    const tokenRelationship = data.tokens.find(
-      (token) => token.token_id === TOKEN_IDS.hUSD
-    );
-
-    return tokenRelationship?.balance || 0;
-  } catch (error) {
-    console.error("Error getting token balance:", error);
-    return 0;
+    const data = await res.json();
+    console.log("🔎 API balances response:", data);
+    return data as NormalizedBalances;
+  } catch {
+    return { hbar: "0", usdc: "0.00", husd: "0.00" };
   }
 }

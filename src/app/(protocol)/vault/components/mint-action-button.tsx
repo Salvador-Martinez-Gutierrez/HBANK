@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ConnectWalletButton } from "@/components/connect-wallet-button";
 import { useWallet, useAccountId, useAssociateTokens, useWatchTransactionReceipt } from "@buidlerlabs/hashgraph-react-wallets";
-import { checkTokenAssociation } from "@/services/token-association";
+import { checkTokenAssociation } from "@/services/token.services";
 import { TOKEN_IDS } from "@/app/constants";
 import { Wallet } from "lucide-react";
 import { TransferTransaction, AccountId } from '@hashgraph/sdk';

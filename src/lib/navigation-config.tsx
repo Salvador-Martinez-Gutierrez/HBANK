@@ -3,13 +3,11 @@ import {
   FileText,
   GithubIcon,
   PieChart,
-  Landmark,
   CircleDollarSign,
 } from 'lucide-react'
 
 export const navigation = [
   { name: 'hUSD', href: '/vault', icon: CircleDollarSign },
-  { name: 'Defi', href: '/defi', icon: Landmark },
   { name: 'Portfolio', href: '/portfolio', icon: PieChart },
   { name: 'Transparency', href: '/transparency', icon: Eye },
 ]
