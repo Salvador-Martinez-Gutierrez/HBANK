@@ -10,7 +10,7 @@ export function LogoSection({
   className = "flex flex-col items-start px-6 gap-2 mt-4"
 }: LogoSectionProps) {
   const { theme } = useTheme();
-  // Si el tema es claro, usar el logo negativo; si no, el normal
+  // If the theme is light, use the negative logo; otherwise, use the normal one
   const logoSrc = theme === 'light' ? '/valora_logo_no_bg_negative.png' : '/valora_logo_no_bg.png';
   return (
     <div className={className}>

@@ -35,7 +35,7 @@ export class HederaRateService {
 
     async getLatestRate(): Promise<RateMessage | null> {
         try {
-            // Usar Mirror Node API para obtener mensajes del topic
+            // Use Mirror Node API to get topic messages
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=10`
 
             const headers: Record<string, string> = {}
@@ -50,17 +50,17 @@ export class HederaRateService {
                 return null
             }
 
-            // Procesar mensajes para encontrar el último rate válido
+            // Process messages to find the latest valid rate
             for (const message of response.data.messages) {
                 try {
-                    // Decodificar el mensaje de base64
+                    // Decode the message from base64
                     const decodedMessage = Buffer.from(
                         message.message,
                         'base64'
                     ).toString('utf-8')
                     const parsedMessage = JSON.parse(decodedMessage)
 
-                    // Buscar el campo rate en el mensaje
+                    // Look for the rate field in the message
                     const rate =
                         parsedMessage.rate ||
                         parsedMessage.valor ||
@@ -76,7 +76,7 @@ export class HederaRateService {
                     }
                 } catch (e) {
                     console.error('Error parsing message:', e)
-                    // Intentar con el siguiente mensaje
+                    // Try with the next message
                 }
             }
 
@@ -92,7 +92,7 @@ export class HederaRateService {
         }
     }
 
-    // Método alternativo para obtener todos los rates recientes
+    // Alternative method to get all recent rates
     async getRecentRates(limit: number = 10): Promise<RateMessage[]> {
         try {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=${limit}`
@@ -143,7 +143,7 @@ export class HederaRateService {
         }
     }
 
-    // Método de depuración para ver los mensajes raw
+    // Debug method to see raw messages
     async debugTopicMessages(): Promise<unknown[]> {
         try {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=5`

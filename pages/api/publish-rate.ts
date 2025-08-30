@@ -94,12 +94,12 @@ export default async function handler(
             husdSupply
         )
 
-        // Return success response - ASEGÚRATE DE QUE INCLUYA transactionId
+        // Return success response - MAKE SURE IT INCLUDES transactionId
         return res.status(200).json({
             status: 'published',
             topicId: result.topicId,
             rate: result.rate,
-            transactionId: result.transactionId, // <- Verifica que esta línea esté
+            transactionId: result.transactionId, // <- Verify this line is there
         })
     } catch (error) {
         console.error('Publish rate endpoint error:', error)

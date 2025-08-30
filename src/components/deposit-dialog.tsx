@@ -41,17 +41,17 @@ export function DepositDialog({
         setError('')
 
         try {
-            // Validar cantidad
+            // Validate amount
             const amountNum = Number(amount)
             if (isNaN(amountNum) || amountNum <= 0) {
-                throw new Error('Cantidad inválida')
+                throw new Error('Invalid amount')
             }
 
-            setStep('Creando transacción de depósito...')
+            setStep('Creating deposit transaction...')
             console.log('Creating deposit transaction for:', amountNum, 'USDC')
 
-            // 1. Crear transacción de USDC
-            const amountInTinybar = amountNum * 1_000_000 // USDC tiene 6 decimales
+            // 1. Create USDC transaction
+            const amountInTinybar = amountNum * 1_000_000 // USDC has 6 decimals
 
             const transaction = new TransferTransaction()
                 .addTokenTransfer(
@@ -73,28 +73,28 @@ export function DepositDialog({
                 throw new Error('Invalid signer: wallet not properly connected')
             }
 
-            // 2. Congelar con el signer
+            // 2. Freeze with the signer
             const frozenTx = await transaction.freezeWithSigner(signer)
 
-            setStep('Esperando firma del usuario...')
+            setStep('Waiting for user signature...')
             console.log('Requesting signature from wallet...')
 
-            // 3. Usuario firma
+            // 3. User signs
             const signedTx = await frozenTx.signWithSigner(signer)
 
-            setStep('Ejecutando transacción de depósito...')
+            setStep('Executing deposit transaction...')
             console.log('Executing deposit transaction...')
 
-            // 4. Ejecutar
+            // 4. Execute
             const txResponse = await signedTx.executeWithSigner(signer)
             console.log(
                 'Transaction executed:',
                 txResponse.transactionId?.toString()
             )
 
-            setStep('Obteniendo recibo...')
+            setStep('Getting receipt...')
 
-            // 5. Obtener recibo
+            // 5. Get receipt
             const receipt = await txResponse.getReceiptWithSigner(signer)
             console.log('Receipt:', receipt.status.toString())
 

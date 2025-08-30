@@ -32,7 +32,7 @@ export function useAccountId() {
             }
 
             try {
-                // Método 1: Desde el signer
+                // Method 1: From the signer
                 if (signer && 'getAccountId' in signer) {
                     const id = await (signer as WalletSigner).getAccountId?.()
                     if (id) {
@@ -41,7 +41,7 @@ export function useAccountId() {
                     }
                 }
 
-                // Método 2: Desde el connector
+                // Method 2: From the connector
                 if ('getAccountIds' in connector) {
                     const ids = await (connector as WalletConnector).getAccountIds?.()
                     if (ids && ids.length > 0) {
@@ -50,7 +50,7 @@ export function useAccountId() {
                     }
                 }
 
-                // Método 3: Desde la sesión (para WalletConnect)
+                // Method 3: From the session (for WalletConnect)
                 if ('getSession' in connector) {
                     const session = await (connector as WalletConnector).getSession?.()
                     const hederaAccount =
@@ -64,7 +64,7 @@ export function useAccountId() {
                     }
                 }
 
-                // Método 4: Desde el provider (para HashPack)
+                // Method 4: From the provider (for HashPack)
                 if ('getProvider' in connector) {
                     const provider = await (connector as WalletConnector).getProvider?.()
                     if (provider?.accountId) {

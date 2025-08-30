@@ -12,7 +12,7 @@ export default async function handler(
     try {
         const hederaService = new HederaRateService()
         
-        // Si se pasa el parámetro debug, mostrar mensajes raw
+        // If debug parameter is passed, show raw messages
         if (req.query.debug === 'true') {
             const debugMessages = await hederaService.debugTopicMessages()
             return res.status(200).json({
@@ -26,12 +26,12 @@ export default async function handler(
         const latestRate = await hederaService.getLatestRate()
 
         if (!latestRate) {
-            // Intentar obtener información de depuración
+            // Try to get debug information
             const debugMessages = await hederaService.debugTopicMessages()
             return res.status(404).json({
                 error: 'No rate messages found in topic',
                 topicId: process.env.TOPIC_ID,
-                debug: debugMessages.slice(0, 2) // Mostrar solo los primeros 2 mensajes para debugging
+                debug: debugMessages.slice(0, 2) // Show only the first 2 messages for debugging
             })
         }
 

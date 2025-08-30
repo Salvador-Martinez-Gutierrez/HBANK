@@ -213,7 +213,7 @@ Para una implementación completa en producción, considera:
 ## 📝 Ejemplo de Uso
 
 ```javascript
-// Ejemplo de depósito
+// Deposit example
 const depositResponse = await fetch('/api/deposit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -226,7 +226,7 @@ const depositResponse = await fetch('/api/deposit', {
 const depositResult = await depositResponse.json()
 // { status: "success", scheduleId: "0.0.99999", husdAmount: 99.5 }
 
-// Ejemplo de publicación de rate
+// Rate publication example
 const rateResponse = await fetch('/api/publish-rate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

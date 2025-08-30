@@ -45,10 +45,10 @@ export default async function handler(
         const {
             userAccountId,
             amount,
-            depositTxId, // ID de la transacción ya ejecutada
+            depositTxId, // ID of the already executed transaction
         } = req.body
 
-        // Validación de campos
+        // Field validation
         if (!userAccountId || !amount || !depositTxId) {
             console.error('Missing fields:', {
                 userAccountId,
@@ -71,7 +71,7 @@ export default async function handler(
             depositTx: depositTxId,
         })
 
-        // Configurar cliente Hedera
+        // Configure Hedera client
         const client = Client.forTestnet()
         const treasuryAccountId = AccountId.fromString(process.env.TREASURY_ID!)
         const operatorKey = PrivateKey.fromString(process.env.OPERATOR_KEY!)
@@ -82,7 +82,7 @@ export default async function handler(
             treasuryAccountId.toString()
         )
 
-        // Verificar el depósito en Mirror Node
+        // Verify the deposit on Mirror Node
         const mirrorTxId = depositTxId
             .replace('@', '-')
             .replace(/(\d+)\.(\d+)$/, '$1-$2')
@@ -106,10 +106,10 @@ export default async function handler(
                     break
                 }
             } catch (error) {
-                // Ignorar error, reintentar
+                // Ignore error, retry
                 console.warn('Mirror node retry failed:', error)
             }
-            // Esperar 2 segundos antes de reintentar
+            // Wait 2 seconds before retrying
             await new Promise((resolve) => setTimeout(resolve, 2000))
         }
         if (!mirrorVerified) {
@@ -121,14 +121,14 @@ export default async function handler(
         const usdcDecimals = 6
         const husdDecimals = 8
 
-        // amount recibido en unidades mínimas de USDC
+        // amount received in minimum USDC units
         const amountInUSDC = Number(amount)
 
-        // Convierte a unidades mínimas de hUSD (1:1 en valor)
+        // Convert to minimum hUSD units (1:1 in value)
         const amountToTransfer =
             amountInUSDC * 10 ** (husdDecimals - usdcDecimals)
 
-        // Crear transferencia de hUSD
+        // Create hUSD transfer
         const hUSDTransfer = new TransferTransaction()
             .addTokenTransfer(
                 process.env.HUSD_TOKEN_ID!,
@@ -142,20 +142,20 @@ export default async function handler(
             )
             .setTransactionMemo(`hUSD for deposit ${depositTxId}`)
 
-        // Congelar y firmar
+        // Freeze and sign
         const frozenTx = hUSDTransfer.freezeWith(client)
         const signedTx = await frozenTx.sign(operatorKey)
 
         console.log('Executing hUSD transfer...')
 
-        // Ejecutar
+        // Execute
         const response = await signedTx.execute(client)
         console.log(
             'Transaction submitted:',
             response.transactionId?.toString()
         )
 
-        // Obtener recibo
+        // Get receipt
         const receipt = await response.getReceipt(client)
         console.log('Receipt status:', receipt.status.toString())
 

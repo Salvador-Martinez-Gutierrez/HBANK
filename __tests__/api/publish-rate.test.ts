@@ -1,7 +1,7 @@
 import { createMocks } from 'node-mocks-http'
 import handler from '../../pages/api/publish-rate'
 
-// Mock del servicio de Hedera
+// Mock for Hedera service
 const mockPublishRate = jest.fn()
 
 jest.mock('../../src/services/hederaService', () => {

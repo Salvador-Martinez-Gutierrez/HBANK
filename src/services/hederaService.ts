@@ -18,7 +18,7 @@ export class HederaService {
     private topicId: TopicId
 
     constructor() {
-        // Verificar si estamos usando testnet real
+        // Check if we are using real testnet
         const useRealTestnet = process.env.USE_REAL_TESTNET === 'true'
 
         if (!useRealTestnet) {
@@ -27,7 +27,7 @@ export class HederaService {
             )
         }
 
-        // Configurar credenciales
+        // Configure credentials
         const operatorIdStr = process.env.OPERATOR_ID
         const operatorKeyStr = process.env.OPERATOR_KEY
         const topicIdStr = process.env.TOPIC_ID
@@ -38,16 +38,16 @@ export class HederaService {
             )
         }
 
-        // Inicializar cliente de Hedera
+        // Initialize Hedera client
         this.operatorId = AccountId.fromString(operatorIdStr)
         this.operatorKey = PrivateKey.fromString(operatorKeyStr)
         this.topicId = TopicId.fromString(topicIdStr)
 
-        // Configurar cliente para testnet
+        // Configure client for testnet
         this.client = Client.forTestnet()
         this.client.setOperator(this.operatorId, this.operatorKey)
 
-        // Configurar límites de transacción
+        // Configure transaction limits
         this.client.setDefaultMaxTransactionFee(new Hbar(10))
         this.client.setDefaultMaxQueryPayment(new Hbar(5))
 
@@ -57,11 +57,11 @@ export class HederaService {
     }
 
     /**
-     * Publica información del exchange rate al Hedera Consensus Service
+     * Publishes exchange rate information to Hedera Consensus Service
      */
     async publishRate(rate: number, totalUsd: number, husdSupply: number) {
         try {
-            // Validaciones
+            // Validations
             if (rate <= 0) {
                 throw new Error('Rate must be positive')
             }
@@ -70,7 +70,7 @@ export class HederaService {
                 throw new Error('totalUsd and husdSupply must be positive')
             }
 
-            // Verificar consistencia del rate
+            // Verify rate consistency
             const calculatedRate = totalUsd / husdSupply
             const tolerance = 0.001 // 0.1%
             if (Math.abs(calculatedRate - rate) / rate > tolerance) {
@@ -79,7 +79,7 @@ export class HederaService {
                 )
             }
 
-            // Crear mensaje para HCS
+            // Create message for HCS
             const message = JSON.stringify({
                 rate,
                 totalUsd,
@@ -95,16 +95,16 @@ export class HederaService {
                 husdSupply,
             })
 
-            // Crear y ejecutar la transacción de mensaje
+            // Create and execute message transaction
             const submitMessage = new TopicMessageSubmitTransaction({
                 topicId: this.topicId,
                 message: message,
             })
 
-            // Ejecutar la transacción
+            // Execute the transaction
             const submitResponse = await submitMessage.execute(this.client)
 
-            // Obtener el receipt para confirmar que se procesó
+            // Get the receipt to confirm it was processed
             const receipt = await submitResponse.getReceipt(this.client)
 
             console.log('✅ Rate published successfully')
@@ -130,16 +130,16 @@ export class HederaService {
     }
 
     /**
-     * Obtiene el rate actual del exchange
+     * Gets the current exchange rate
      */
     async getCurrentRate(): Promise<number> {
-        // Por ahora retorna un valor fijo
-        // En producción esto debería consultar el último mensaje del topic
+        // For now returns a fixed value
+        // In production this should query the latest message from the topic
         return 1.005
     }
 
     /**
-     * Verifica el balance de un token para una cuenta
+     * Checks the balance of a token for an account
      */
     async checkBalance(accountId: string, tokenId: string): Promise<number> {
         try {
@@ -149,7 +149,7 @@ export class HederaService {
 
             const balance = await query.execute(this.client)
 
-            // Obtener balance del token específico
+            // Get specific token balance
             const tokenBalance = balance.tokens?.get(
                 TokenId.fromString(tokenId)
             )
@@ -158,17 +158,17 @@ export class HederaService {
                 return 0
             }
 
-            // Convertir a número (asumiendo 6 decimales para USDC)
+            // Convert to number (assuming 6 decimals for USDC)
             return Number(tokenBalance.toString()) / 1_000_000
         } catch (error) {
             console.error('Error checking balance:', error)
-            // Si hay error, asumir que no hay balance
+            // If there's an error, assume no balance
             return 0
         }
     }
 
     /**
-     * Crea una transacción programada para depósito
+     * Creates a scheduled transaction for deposit
      */
     async scheduleDeposit(userId: string, amountUsdc: number) {
         try {
@@ -181,7 +181,7 @@ export class HederaService {
                 throw new Error('Missing required token or account IDs')
             }
 
-            // Calcular cantidad de hUSD basado en el rate actual
+            // Calculate hUSD amount based on current rate
             const currentRate = await this.getCurrentRate()
             const husdAmount = amountUsdc / currentRate
 
@@ -192,30 +192,30 @@ export class HederaService {
                 rate: currentRate,
             })
 
-            // Crear la transacción de transferencia
+            // Create the transfer transaction
             const transferTx = new TransferTransaction()
                 .addTokenTransfer(
                     TokenId.fromString(usdcTokenId),
                     AccountId.fromString(userId),
-                    -amountUsdc * 1_000_000 // Negativo = salida
+                    -amountUsdc * 1_000_000 // Negative = outgoing
                 )
                 .addTokenTransfer(
                     TokenId.fromString(usdcTokenId),
                     AccountId.fromString(treasuryId),
-                    amountUsdc * 1_000_000 // Positivo = entrada
+                    amountUsdc * 1_000_000 // Positive = incoming
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(emissionsId),
-                    -Math.floor(husdAmount * 1_000_000) // Salida de emissions
+                    -Math.floor(husdAmount * 1_000_000) // Outgoing from emissions
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(userId),
-                    Math.floor(husdAmount * 1_000_000) // Entrada al usuario
+                    Math.floor(husdAmount * 1_000_000) // Incoming to user
                 )
 
-            // Crear la transacción programada
+            // Create the scheduled transaction
             const scheduleTx = new ScheduleCreateTransaction()
                 .setScheduledTransaction(transferTx)
                 .setScheduleMemo(
@@ -226,7 +226,7 @@ export class HederaService {
                 .setAdminKey(this.operatorKey)
                 .setPayerAccountId(this.operatorId)
 
-            // Ejecutar la transacción
+            // Execute the transaction
             const scheduleResponse = await scheduleTx.execute(this.client)
             const scheduleReceipt = await scheduleResponse.getReceipt(
                 this.client
@@ -253,7 +253,7 @@ export class HederaService {
     }
 
     /**
-     * Cierra el cliente de Hedera
+     * Closes the Hedera client
      */
     close() {
         if (this.client) {

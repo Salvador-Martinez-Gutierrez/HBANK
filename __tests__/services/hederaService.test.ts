@@ -1,6 +1,6 @@
 import { HederaService } from '../../src/services/hederaService'
 
-// Mock del SDK de Hedera
+// Mock for Hedera SDK
 jest.mock('@hashgraph/sdk', () => ({
     Client: {
         forTestnet: jest.fn(() => ({

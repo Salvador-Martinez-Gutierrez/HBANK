@@ -66,7 +66,7 @@ const depositInsufficientBalance = async () => {
         },
         body: JSON.stringify({
             accountId: '0.0.12345',
-            amountUsdc: 1000, // Usuario solo tiene 50 USDC
+            amountUsdc: 1000, // User only has 50 USDC
         }),
     })
 
@@ -89,7 +89,7 @@ const depositBelowMinimum = async () => {
         },
         body: JSON.stringify({
             accountId: '0.0.12345',
-            amountUsdc: 5, // Mínimo es 10 USDC
+            amountUsdc: 5, // Minimum is 10 USDC
         }),
     })
 
@@ -150,7 +150,7 @@ const publishInconsistentRate = async () => {
         body: JSON.stringify({
             rate: 1.005,
             totalUsd: 100000,
-            husdSupply: 98500, // Esto daría rate = 1.015, no 1.005
+            husdSupply: 98500, // This would give rate = 1.015, not 1.005
         }),
     })
 
@@ -215,7 +215,7 @@ class ValoraAPI {
 // Uso
 const api = new ValoraAPI()
 
-// Depósito
+// Deposit
 const depositResult = await api.deposit('0.0.12345', 100)
 
 // Publicar rate
@@ -230,7 +230,7 @@ const isValidHederaAccountId = (accountId) => {
     return regex.test(accountId)
 }
 
-// Ejemplo de uso
+// Usage example
 console.log(isValidHederaAccountId('0.0.12345')) // true
 console.log(isValidHederaAccountId('invalid')) // false
 ```
@@ -256,7 +256,7 @@ const validateRateConsistency = (
     return difference <= tolerance
 }
 
-// Ejemplo de uso
+// Usage example
 const rate = 1.005
 const totalUsd = 100000
 const husdSupply = 99502.49
@@ -361,34 +361,34 @@ const completeDepositFlow = async (userAccountId, amount) => {
 
     try {
         console.log(
-            `Iniciando depósito de ${amount} USDC para ${userAccountId}`
+            `Starting deposit of ${amount} USDC for ${userAccountId}`
         )
 
-        // 1. Validar account ID
+        // 1. Validate account ID
         if (!isValidHederaAccountId(userAccountId)) {
             throw new Error('Invalid Hedera account ID format')
         }
 
-        // 2. Verificar monto mínimo
+        // 2. Verify minimum amount
         if (amount < 10) {
             throw new Error('Minimum deposit is 10 USDC')
         }
 
-        // 3. Ejecutar depósito
+        // 3. Execute deposit
         const result = await api.deposit(userAccountId, amount)
 
-        console.log('Depósito exitoso:', {
+        console.log('Successful deposit:', {
             scheduleId: result.scheduleId,
             husdAmount: result.husdAmount,
             timestamp: new Date().toISOString(),
         })
 
-        // 4. Aquí el frontend mostraría al usuario el scheduleId
-        // para que pueda firmar la transacción programada
+        // 4. Here the frontend would show the user the scheduleId
+        // so they can sign the scheduled transaction
 
         return result
     } catch (error) {
-        console.error('Error en flujo de depósito:', error.message)
+        console.error('Error in deposit flow:', error.message)
         throw error
     }
 }
@@ -416,14 +416,14 @@ class RateMonitor {
 
     async publishRateWithValidation(rate, totalUsd, husdSupply) {
         try {
-            // 1. Validar cambio de rate
+            // 1. Validate rate change
             if (!this.validateRateChange(rate)) {
                 throw new Error(
                     `Rate change exceeds ${this.maxChangePercent * 100}% limit`
                 )
             }
 
-            // 2. Validar consistencia
+            // 2. Validate consistency
             if (!validateRateConsistency(rate, totalUsd, husdSupply)) {
                 throw new Error('Rate calculation is inconsistent')
             }
@@ -471,7 +471,7 @@ class TransactionLogger {
 
         console.log(`[${type.toUpperCase()}] ${status}:`, logEntry)
 
-        // En producción, enviar a servicio de logging
+        // In production, send to logging service
         // this.sendToLoggingService(logEntry);
     }
 
@@ -480,7 +480,7 @@ class TransactionLogger {
     }
 }
 
-// Uso en el flujo de depósito
+// Usage in deposit flow
 const depositWithLogging = async (accountId, amount) => {
     try {
         TransactionLogger.log('deposit', { accountId, amount }, 'started')
