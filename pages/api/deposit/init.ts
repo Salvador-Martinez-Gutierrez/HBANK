@@ -66,6 +66,14 @@ export default async function handler(
             })
         }
 
+        // Validate userAccountId format
+        if (typeof userAccountId !== 'string' || !userAccountId.trim()) {
+            return res.status(400).json({
+                error: 'Invalid user account ID',
+                message: 'User account ID must be a non-empty string',
+            })
+        }
+
         // Amount validation
         const amountNum = Number(amount)
         if (isNaN(amountNum) || amountNum <= 0) {
@@ -80,12 +88,31 @@ export default async function handler(
             amount: amountNum,
         })
 
+        // Validate environment variables
+        const treasuryId = process.env.TREASURY_ID
+        const operatorKeyStr = process.env.OPERATOR_KEY
+        const usdcTokenIdStr = process.env.USDC_TOKEN_ID
+        const husdTokenIdStr = process.env.HUSD_TOKEN_ID
+
+        if (!treasuryId || !operatorKeyStr || !usdcTokenIdStr || !husdTokenIdStr) {
+            console.error('Missing environment variables:', {
+                TREASURY_ID: !!treasuryId,
+                OPERATOR_KEY: !!operatorKeyStr,
+                USDC_TOKEN_ID: !!usdcTokenIdStr,
+                HUSD_TOKEN_ID: !!husdTokenIdStr,
+            })
+            return res.status(500).json({
+                error: 'Server configuration error',
+                message: 'Missing required environment variables',
+            })
+        }
+
         // Configure Hedera client
         const client = Client.forTestnet()
-        const treasuryAccountId = AccountId.fromString(process.env.TREASURY_ID!)
-        const operatorKey = PrivateKey.fromString(process.env.OPERATOR_KEY!)
-        const usdcTokenId = TokenId.fromString(process.env.USDC_TOKEN_ID!)
-        const husdTokenId = TokenId.fromString(process.env.HUSD_TOKEN_ID!)
+        const treasuryAccountId = AccountId.fromString(treasuryId)
+        const operatorKey = PrivateKey.fromString(operatorKeyStr)
+        const usdcTokenId = TokenId.fromString(usdcTokenIdStr)
+        const husdTokenId = TokenId.fromString(husdTokenIdStr)
 
         client.setOperator(treasuryAccountId, operatorKey)
         console.log(

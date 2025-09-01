@@ -59,10 +59,25 @@ export default async function handler(
             clientRequestId,
         })
 
+        // Validate environment variables
+        const treasuryId = process.env.TREASURY_ID
+        const operatorKeyStr = process.env.OPERATOR_KEY
+
+        if (!treasuryId || !operatorKeyStr) {
+            console.error('Missing environment variables:', {
+                TREASURY_ID: !!treasuryId,
+                OPERATOR_KEY: !!operatorKeyStr,
+            })
+            return res.status(500).json({
+                error: 'Server configuration error',
+                message: 'Missing required environment variables',
+            })
+        }
+
         // Configure Hedera client
         const client = Client.forTestnet()
-        const treasuryAccountId = AccountId.fromString(process.env.TREASURY_ID!)
-        const operatorKey = PrivateKey.fromString(process.env.OPERATOR_KEY!)
+        const treasuryAccountId = AccountId.fromString(treasuryId)
+        const operatorKey = PrivateKey.fromString(operatorKeyStr)
 
         client.setOperator(treasuryAccountId, operatorKey)
         console.log(

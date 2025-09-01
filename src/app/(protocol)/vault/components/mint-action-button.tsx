@@ -514,10 +514,10 @@ export function MintActionButton({
     const usdcBalanceNum = parseFloat(usdcBalance) || 0
     const hasInsufficientBalance = fromAmountNum > usdcBalanceNum
     const isDisabled =
-        !fromAmount || 
-        !toAmount || 
-        fromAmountNum <= 0 || 
-        isProcessing || 
+        !fromAmount ||
+        !toAmount ||
+        fromAmountNum <= 0 ||
+        isProcessing ||
         hasInsufficientBalance
 
     return (
@@ -527,11 +527,11 @@ export function MintActionButton({
             disabled={isDisabled}
         >
             <span className='flex items-center gap-x-2 px-4'>
-                {isProcessing 
-                    ? 'Processing Atomic Mint...' 
-                    : hasInsufficientBalance 
-                        ? 'Insufficient Balance' 
-                        : `Mint (Atomic)`}
+                {isProcessing
+                    ? 'Processing Atomic Mint...'
+                    : hasInsufficientBalance
+                    ? 'Insufficient Balance'
+                    : `Mint (Atomic)`}
             </span>
         </Button>
     )
