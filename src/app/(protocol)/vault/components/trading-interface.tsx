@@ -112,6 +112,7 @@ export function TradingInterface({ exchangeRate }: TradingInterfaceProps) {
                 <MintActionButton
                     fromAmount={fromAmount}
                     toAmount={toAmount}
+                    usdcBalance={balances.USDC}
                     onBalanceRefresh={refreshBalances}
                 />
             ) : (

@@ -19,12 +19,14 @@ import { useTokenBalances } from '../hooks/useTokenBalances'
 interface MintActionButtonProps {
     fromAmount: string
     toAmount: string
+    usdcBalance: string
     onBalanceRefresh?: () => Promise<void>
 }
 
 export function MintActionButton({
     fromAmount,
     toAmount,
+    usdcBalance,
     onBalanceRefresh,
 }: MintActionButtonProps) {
     const { isConnected, isLoading: walletLoading, signer } = useWallet()
@@ -147,6 +149,12 @@ export function MintActionButton({
             const amountNum = parseFloat(fromAmount)
             if (isNaN(amountNum) || amountNum <= 0) {
                 throw new Error('Invalid amount')
+            }
+
+            // Validate sufficient balance
+            const usdcBalanceNum = parseFloat(usdcBalance) || 0
+            if (amountNum > usdcBalanceNum) {
+                throw new Error('Insufficient USDC balance')
             }
 
             console.log('Starting atomic mint for:', amountNum, 'USDC')
@@ -502,8 +510,15 @@ export function MintActionButton({
     }
 
     // Show mint button if everything is ready
+    const fromAmountNum = parseFloat(fromAmount) || 0
+    const usdcBalanceNum = parseFloat(usdcBalance) || 0
+    const hasInsufficientBalance = fromAmountNum > usdcBalanceNum
     const isDisabled =
-        !fromAmount || !toAmount || parseFloat(fromAmount) <= 0 || isProcessing
+        !fromAmount || 
+        !toAmount || 
+        fromAmountNum <= 0 || 
+        isProcessing || 
+        hasInsufficientBalance
 
     return (
         <Button
@@ -512,7 +527,11 @@ export function MintActionButton({
             disabled={isDisabled}
         >
             <span className='flex items-center gap-x-2 px-4'>
-                {isProcessing ? 'Processing Atomic Mint...' : `Mint (Atomic)`}
+                {isProcessing 
+                    ? 'Processing Atomic Mint...' 
+                    : hasInsufficientBalance 
+                        ? 'Insufficient Balance' 
+                        : `Mint (Atomic)`}
             </span>
         </Button>
     )
