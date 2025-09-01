@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { TransferTransaction, AccountId, Signer } from '@hashgraph/sdk'
+import { ScheduleSignTransaction, ScheduleId, Signer } from '@hashgraph/sdk'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -47,96 +47,120 @@ export function DepositDialog({
                 throw new Error('Invalid amount')
             }
 
-            setStep('Creating deposit transaction...')
-            console.log('Creating deposit transaction for:', amountNum, 'USDC')
+            console.log('Starting atomic deposit for:', amountNum, 'USDC')
 
-            // 1. Create USDC transaction
-            const amountInTinybar = amountNum * 1_000_000 // USDC has 6 decimals
+            // Step 1: Initialize deposit (backend creates ScheduleCreateTransaction)
+            setStep('Initializing atomic deposit...')
 
-            const transaction = new TransferTransaction()
-                .addTokenTransfer(
-                    '0.0.429274', // USDC_TOKEN_ID
-                    AccountId.fromString(userAccountId),
-                    -amountInTinybar
+            const initResponse = await fetch('/api/deposit/init', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userAccountId,
+                    amount: amountNum,
+                }),
+            })
+
+            console.log('Init response status:', initResponse.status)
+
+            if (!initResponse.ok) {
+                const errorData = await initResponse.json()
+                console.error('Init error:', errorData)
+                throw new Error(
+                    errorData.message ||
+                        errorData.error ||
+                        'Error initializing deposit'
                 )
-                .addTokenTransfer(
-                    '0.0.429274',
-                    AccountId.fromString('0.0.6510977'), // TREASURY_ID
-                    amountInTinybar
-                )
-                .setTransactionMemo(`Deposit ${amount} USDC`)
+            }
 
-            console.log('Transaction created, freezing with signer...')
+            const initResult = await initResponse.json()
+            console.log('Init success:', initResult)
+
+            const { scheduleId, amountHUSDC } = initResult
+
+            // Step 2: User signs the schedule
+            setStep('Requesting signature from wallet...')
+            console.log('Requesting schedule signature for:', scheduleId)
 
             // Validate signer before use
             if (!isValidSigner(signer)) {
                 throw new Error('Invalid signer: wallet not properly connected')
             }
 
-            // 2. Freeze with the signer
-            const frozenTx = await transaction.freezeWithSigner(signer)
-
-            setStep('Waiting for user signature...')
-            console.log('Requesting signature from wallet...')
-
-            // 3. User signs
-            const signedTx = await frozenTx.signWithSigner(signer)
-
-            setStep('Executing deposit transaction...')
-            console.log('Executing deposit transaction...')
-
-            // 4. Execute
-            const txResponse = await signedTx.executeWithSigner(signer)
-            console.log(
-                'Transaction executed:',
-                txResponse.transactionId?.toString()
+            // Create ScheduleSignTransaction for user to sign
+            const scheduleSignTx = new ScheduleSignTransaction().setScheduleId(
+                ScheduleId.fromString(scheduleId)
             )
 
-            setStep('Getting receipt...')
+            // Freeze with signer
+            const frozenScheduleTx = await scheduleSignTx.freezeWithSigner(
+                signer
+            )
 
-            // 5. Get receipt
-            const receipt = await txResponse.getReceiptWithSigner(signer)
-            console.log('Receipt:', receipt.status.toString())
+            // User signs the schedule
+            const signedScheduleTx = await frozenScheduleTx.signWithSigner(
+                signer
+            )
 
-            if (receipt.status.toString() !== 'SUCCESS') {
-                throw new Error(`Transaction failed: ${receipt.status}`)
-            }
+            // Execute the user's signature
+            const userSignResponse = await signedScheduleTx.executeWithSigner(
+                signer
+            )
+            console.log(
+                'User signature executed:',
+                userSignResponse.transactionId?.toString()
+            )
 
-            setStep('Solicitando hUSD...')
-            console.log('Requesting hUSD from backend...')
+            // Get receipt to confirm user signature
+            const userSignReceipt = await userSignResponse.getReceiptWithSigner(
+                signer
+            )
+            console.log(
+                'User signature receipt:',
+                userSignReceipt.status.toString()
+            )
 
-            // 6. Solicitar hUSD al backend
-            const response = await fetch('/api/deposit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userAccountId,
-                    amount: amountInTinybar,
-                    depositTxId: txResponse.transactionId?.toString(),
-                    tokenType: 'USDC',
-                }),
-            })
-
-            console.log('Backend response status:', response.status)
-
-            if (!response.ok) {
-                const errorData = await response.json()
-                console.error('Backend error:', errorData)
+            if (userSignReceipt.status.toString() !== 'SUCCESS') {
                 throw new Error(
-                    errorData.message ||
-                        errorData.error ||
-                        'Error en el servidor'
+                    `User signature failed: ${userSignReceipt.status}`
                 )
             }
 
-            const result = await response.json()
-            console.log('Success:', result)
+            // Step 3: Notify backend that user has signed
+            setStep('Completing atomic transaction...')
+            console.log('Notifying backend of user signature...')
+
+            const completeResponse = await fetch('/api/deposit/user-signed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    scheduleId,
+                    clientRequestId: userSignResponse.transactionId?.toString(),
+                }),
+            })
+
+            console.log('Complete response status:', completeResponse.status)
+
+            if (!completeResponse.ok) {
+                const errorData = await completeResponse.json()
+                console.error('Complete error:', errorData)
+                throw new Error(
+                    errorData.message ||
+                        errorData.error ||
+                        'Error completing deposit'
+                )
+            }
+
+            const completeResult = await completeResponse.json()
+            console.log('Complete success:', completeResult)
 
             setStep('')
             alert(
-                `¡Depósito exitoso!\nRecibiste ${
-                    result.hUSDReceived / 1_000_000
-                } hUSD\nTx ID: ${result.hUSDTxId}`
+                `¡Depósito atómico exitoso!\n` +
+                    `Enviaste: ${amountNum} USDC\n` +
+                    `Recibiste: ${amountHUSDC} HUSDC\n` +
+                    `Schedule ID: ${scheduleId}\n` +
+                    `Tx ID: ${completeResult.txId}`
             )
             setAmount('')
             onOpenChange(false)
@@ -155,7 +179,7 @@ export function DepositDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Depositar USDC por hUSD</DialogTitle>
+                    <DialogTitle>Depósito Atómico USDC ↔ HUSDC</DialogTitle>
                 </DialogHeader>
                 <div className='space-y-4'>
                     <Input
@@ -168,7 +192,8 @@ export function DepositDialog({
                     />
 
                     <div className='text-sm text-muted-foreground'>
-                        Recibirás: {amount || '0'} hUSD
+                        Recibirás: {amount || '0'} HUSDC (intercambio atómico
+                        1:1)
                     </div>
 
                     {step && (
@@ -188,7 +213,9 @@ export function DepositDialog({
                         disabled={loading || !amount}
                         className='w-full'
                     >
-                        {loading ? 'Procesando...' : 'Confirmar Depósito'}
+                        {loading
+                            ? 'Procesando transacción atómica...'
+                            : 'Ejecutar Depósito Atómico'}
                     </Button>
 
                     <div className='text-xs text-muted-foreground'>
