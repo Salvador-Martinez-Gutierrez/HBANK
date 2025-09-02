@@ -96,6 +96,9 @@ describe('/api/deposit/init', () => {
             body: {
                 userAccountId: '0.0.12345',
                 amount: 100.5,
+                expectedRate: 1.0,
+                rateSequenceNumber: 'test-sequence-123',
+                rateTimestamp: new Date().toISOString(),
             },
         })
 
@@ -121,6 +124,9 @@ describe('/api/deposit/init', () => {
             body: {
                 userAccountId: '0.0.12345',
                 amount: -10,
+                expectedRate: 1.0,
+                rateSequenceNumber: 'test-sequence-123',
+                rateTimestamp: new Date().toISOString(),
             },
         })
 
@@ -172,6 +178,9 @@ describe('/api/deposit/init', () => {
             body: {
                 userAccountId: '0.0.12345',
                 amount: 100.5,
+                expectedRate: 1.0,
+                rateSequenceNumber: 'test-sequence-123',
+                rateTimestamp: new Date().toISOString(),
             },
         })
 
@@ -204,6 +213,9 @@ describe('/api/deposit/init', () => {
             body: {
                 userAccountId: '0.0.12345',
                 amount: 100.5,
+                expectedRate: 1.0,
+                rateSequenceNumber: 'test-sequence-123',
+                rateTimestamp: new Date().toISOString(),
             },
         })
 

@@ -41,6 +41,7 @@ describe('/api/publish-rate', () => {
             status: 'published',
             topicId: '0.0.67890',
             rate: 1.005,
+            transactionId: 'mock-transaction-id',
         })
 
         expect(mockPublishRate).toHaveBeenCalledWith(1.005, 100000, 99502.49)

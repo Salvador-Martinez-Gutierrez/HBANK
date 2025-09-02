@@ -23,6 +23,7 @@ interface MintActionButtonProps {
     toAmount: string
     usdcBalance: string
     onBalanceRefresh?: () => Promise<void>
+    onInputClear?: () => void
     rateData: RateData | null
 }
 
@@ -31,6 +32,7 @@ export function MintActionButton({
     toAmount,
     usdcBalance,
     onBalanceRefresh,
+    onInputClear,
     rateData,
 }: MintActionButtonProps) {
     const { isConnected, isLoading: walletLoading, signer } = useWallet()
@@ -411,6 +413,11 @@ export function MintActionButton({
                     },
                 }
             )
+
+            // Clear the input field after successful mint
+            if (onInputClear) {
+                onInputClear()
+            }
 
             // Refresh token balances after successful mint
             console.log('🔄 Refreshing token balances after successful mint...')

@@ -15,6 +15,10 @@ const customJestConfig = {
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
     },
+    // Transform ESM modules to CommonJS for Jest
+    transformIgnorePatterns: [
+        'node_modules/(?!(@buidlerlabs/hashgraph-react-wallets)/)',
+    ],
     // Remove preset since Next.js handles TypeScript compilation
 }
 

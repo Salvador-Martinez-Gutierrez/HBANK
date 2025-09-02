@@ -10,6 +10,7 @@ import {
     AccountBalanceQuery,
     TokenId,
 } from '@hashgraph/sdk'
+import { WithdrawRequest, WithdrawResult } from '@/types/withdrawal'
 
 export class HederaService {
     private client: Client
@@ -207,12 +208,12 @@ export class HederaService {
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(emissionsId),
-                    -Math.floor(husdAmount * 1_000_000) // Outgoing from emissions
+                    -Math.floor(husdAmount * 100_000_000) // Outgoing from emissions (hUSD has 8 decimals)
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(userId),
-                    Math.floor(husdAmount * 1_000_000) // Incoming to user
+                    Math.floor(husdAmount * 100_000_000) // Incoming to user (hUSD has 8 decimals)
                 )
 
             // Create the scheduled transaction
@@ -249,6 +250,533 @@ export class HederaService {
         } catch (error) {
             console.error('❌ Error creating scheduled deposit:', error)
             throw error
+        }
+    }
+
+    /**
+     * Creates a scheduled HUSD transfer from user to treasury with unique memo
+     * Returns the schedule ID that the user needs to sign
+     */
+    async createScheduledHUSDTransfer(
+        user: string,
+        amountHUSD: number
+    ): Promise<string> {
+        const treasuryId = process.env.TREASURY_ID
+        const husdTokenId = process.env.HUSD_TOKEN_ID
+
+        if (!treasuryId || !husdTokenId) {
+            throw new Error('Missing required treasury or token IDs')
+        }
+
+        console.log('📋 Creating scheduled HUSD transfer:', {
+            user,
+            treasury: treasuryId,
+            amount: amountHUSD,
+        })
+
+        try {
+            // Create highly unique memo to avoid IDENTICAL_SCHEDULE_ALREADY_CREATED
+            const timestamp = Date.now()
+            const randomSuffix = Math.floor(Math.random() * 100000)
+            const userSuffix = user.slice(-6) // Last 6 chars of account ID
+            const uniqueMemo = `W-${timestamp}-${randomSuffix}-${userSuffix}: ${amountHUSD} HUSD`
+
+            // Create the transfer transaction that will be scheduled
+            const transferTx = new TransferTransaction()
+                .addTokenTransfer(
+                    TokenId.fromString(husdTokenId),
+                    AccountId.fromString(user),
+                    -Math.floor(amountHUSD * 100_000_000) // Negative = outgoing from user (hUSD has 8 decimals)
+                )
+                .addTokenTransfer(
+                    TokenId.fromString(husdTokenId),
+                    AccountId.fromString(treasuryId),
+                    Math.floor(amountHUSD * 100_000_000) // Positive = incoming to treasury (hUSD has 8 decimals)
+                )
+
+            // Create the schedule transaction with unique memo
+            const scheduleCreateTx = new ScheduleCreateTransaction()
+                .setScheduledTransaction(transferTx)
+                .setScheduleMemo(uniqueMemo)
+                .setAdminKey(this.operatorKey) // Treasury can manage the schedule
+
+            const scheduleResponse = await scheduleCreateTx.execute(this.client)
+            const scheduleReceipt = await scheduleResponse.getReceipt(
+                this.client
+            )
+            const scheduleId = scheduleReceipt.scheduleId
+
+            if (!scheduleId) {
+                throw new Error('Failed to create scheduled transaction')
+            }
+
+            console.log('✅ Scheduled transaction created successfully')
+            console.log(`   Schedule ID: ${scheduleId.toString()}`)
+            console.log(`   Memo: ${uniqueMemo}`)
+            console.log(
+                `   User must sign this schedule to execute the transfer`
+            )
+
+            return scheduleId.toString()
+        } catch (error) {
+            console.error('❌ Error creating scheduled HUSD transfer:', error)
+            throw error
+        }
+    }
+
+    /**
+     * Legacy method - now redirects to scheduled transaction
+     * @deprecated Use createScheduledHUSDTransfer instead
+     */
+    async transferHUSDToTreasury(
+        user: string,
+        amountHUSD: number
+    ): Promise<string> {
+        // For now, return the schedule ID as the "transaction ID"
+        return await this.createScheduledHUSDTransfer(user, amountHUSD)
+    }
+
+    /**
+     * Executes USDC transfer from treasury to user
+     */
+    async transferUSDCToUser(
+        user: string,
+        amountUSDC: number
+    ): Promise<string> {
+        try {
+            const treasuryId = process.env.TREASURY_ID
+            const usdcTokenId = process.env.USDC_TOKEN_ID
+
+            if (!treasuryId || !usdcTokenId) {
+                throw new Error('Missing required treasury or token IDs')
+            }
+
+            // Validate user parameter
+            if (!user || typeof user !== 'string') {
+                throw new Error(
+                    `Invalid user parameter: ${user} (type: ${typeof user})`
+                )
+            }
+
+            console.log('💰 Transferring USDC to user:', {
+                user,
+                treasury: treasuryId,
+                amount: amountUSDC,
+            })
+
+            // Create the transfer transaction
+            const transferTx = new TransferTransaction()
+                .addTokenTransfer(
+                    TokenId.fromString(usdcTokenId),
+                    AccountId.fromString(treasuryId),
+                    -Math.floor(amountUSDC * 1_000_000) // Negative = outgoing from treasury
+                )
+                .addTokenTransfer(
+                    TokenId.fromString(usdcTokenId),
+                    AccountId.fromString(user),
+                    Math.floor(amountUSDC * 1_000_000) // Positive = incoming to user
+                )
+
+            const transferResponse = await transferTx.execute(this.client)
+            const receipt = await transferResponse.getReceipt(this.client)
+
+            if (receipt.status.toString() !== 'SUCCESS') {
+                throw new Error(
+                    `Transfer failed with status: ${receipt.status}`
+                )
+            }
+
+            console.log('✅ USDC transferred to user successfully')
+            console.log(
+                `   Transaction ID: ${transferResponse.transactionId.toString()}`
+            )
+
+            return transferResponse.transactionId.toString()
+        } catch (error) {
+            console.error('❌ Error transferring USDC to user:', error)
+            throw error
+        }
+    }
+
+    /**
+     * Publishes a withdrawal request to HCS
+     */
+    async publishWithdrawRequest(
+        requestId: string,
+        user: string,
+        amountHUSD: number,
+        rate: number,
+        rateSequenceNumber: string,
+        scheduleId: string
+    ): Promise<string> {
+        try {
+            const withdrawTopicId = process.env.WITHDRAW_TOPIC_ID
+
+            if (!withdrawTopicId) {
+                throw new Error('Missing WITHDRAW_TOPIC_ID')
+            }
+
+            const message: WithdrawRequest = {
+                type: 'withdraw_request',
+                requestId,
+                user,
+                amountHUSD,
+                rate,
+                rateSequenceNumber,
+                scheduleId,
+                requestedAt: new Date().toISOString(),
+                unlockAt: new Date(
+                    Date.now() + 48 * 60 * 60 * 1000
+                ).toISOString(), // 48h from now
+                status: 'pending',
+            }
+
+            const response = await new TopicMessageSubmitTransaction()
+                .setTopicId(TopicId.fromString(withdrawTopicId))
+                .setMessage(JSON.stringify(message))
+                .execute(this.client)
+
+            const receipt = await response.getReceipt(this.client)
+
+            if (receipt.status.toString() !== 'SUCCESS') {
+                throw new Error(
+                    `Failed to publish withdrawal request: ${receipt.status}`
+                )
+            }
+
+            console.log('✅ Withdrawal request published to HCS')
+            console.log(`   Request ID: ${requestId}`)
+            console.log(`   Topic: ${withdrawTopicId}`)
+            console.log(`   Message: ${JSON.stringify(message, null, 2)}`)
+
+            return response.transactionId.toString()
+        } catch (error) {
+            console.error('❌ Error publishing withdrawal request:', error)
+            throw error
+        }
+    }
+
+    /**
+     * Publishes a withdrawal result to HCS
+     */
+    async publishWithdrawResult(
+        requestId: string,
+        status: 'completed' | 'failed',
+        txId?: string,
+        error?: string
+    ): Promise<string> {
+        try {
+            const withdrawTopicId = process.env.WITHDRAW_TOPIC_ID
+
+            if (!withdrawTopicId) {
+                throw new Error('Missing WITHDRAW_TOPIC_ID')
+            }
+
+            const message: WithdrawResult = {
+                type: 'withdraw_result',
+                requestId,
+                status,
+                txId,
+                failureReason: error,
+                processedAt: new Date().toISOString(),
+            }
+
+            const response = await new TopicMessageSubmitTransaction()
+                .setTopicId(TopicId.fromString(withdrawTopicId))
+                .setMessage(JSON.stringify(message))
+                .execute(this.client)
+
+            const receipt = await response.getReceipt(this.client)
+
+            if (receipt.status.toString() !== 'SUCCESS') {
+                throw new Error(
+                    `Failed to publish withdrawal result: ${receipt.status}`
+                )
+            }
+
+            console.log('✅ Withdrawal result published successfully')
+            console.log(`   Request ID: ${requestId}`)
+            console.log(`   Status: ${status}`)
+
+            return response.transactionId.toString()
+        } catch (error) {
+            console.error('❌ Error publishing withdrawal result:', error)
+            throw error
+        }
+    }
+
+    /**
+     * Rollback HUSD tokens to user when withdrawal fails
+     */
+    async rollbackHUSDToUser(
+        user: string,
+        amountHUSD: number
+    ): Promise<string> {
+        try {
+            const treasuryId = process.env.TREASURY_ID
+            const husdTokenId = process.env.HUSD_TOKEN_ID
+
+            if (!treasuryId || !husdTokenId) {
+                throw new Error('Missing required treasury or token IDs')
+            }
+
+            // Validate user parameter
+            if (!user || typeof user !== 'string') {
+                throw new Error(`Invalid user parameter: ${user}`)
+            }
+
+            console.log('🔄 Rolling back HUSD to user:', {
+                user,
+                treasury: treasuryId,
+                amount: amountHUSD,
+            })
+
+            // Create the transfer transaction to return HUSD to user
+            const transferTx = new TransferTransaction()
+                .addTokenTransfer(
+                    TokenId.fromString(husdTokenId),
+                    AccountId.fromString(treasuryId),
+                    -Math.floor(amountHUSD * 100_000_000) // Negative = outgoing from treasury (hUSD has 8 decimals)
+                )
+                .addTokenTransfer(
+                    TokenId.fromString(husdTokenId),
+                    AccountId.fromString(user),
+                    Math.floor(amountHUSD * 100_000_000) // Positive = incoming to user (hUSD has 8 decimals)
+                )
+
+            const transferResponse = await transferTx.execute(this.client)
+            const receipt = await transferResponse.getReceipt(this.client)
+
+            if (receipt.status.toString() !== 'SUCCESS') {
+                throw new Error(
+                    `Rollback failed with status: ${receipt.status}`
+                )
+            }
+
+            console.log('✅ HUSD rollback completed successfully')
+            console.log(
+                `   Transaction ID: ${transferResponse.transactionId.toString()}`
+            )
+
+            return transferResponse.transactionId.toString()
+        } catch (error) {
+            console.error('❌ Error rolling back HUSD to user:', error)
+            throw error
+        }
+    }
+
+    /**
+     * Verifies if a Schedule Transaction has been executed by checking its status
+     */
+    async verifyScheduleTransactionExecuted(
+        scheduleId: string
+    ): Promise<boolean> {
+        try {
+            console.log(`🔍 Verifying Schedule Transaction: ${scheduleId}`)
+
+            // Query the Mirror Node for the schedule information
+            const mirrorNodeUrl =
+                process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+                'https://testnet.mirrornode.hedera.com'
+            const response = await fetch(
+                `${mirrorNodeUrl}/api/v1/schedules/${scheduleId}`
+            )
+
+            if (!response.ok) {
+                console.log(
+                    `❌ Schedule ${scheduleId} not found in Mirror Node`
+                )
+                return false
+            }
+
+            const scheduleData = await response.json()
+
+            // Check if the schedule has been executed
+            const isExecuted = scheduleData.executed_timestamp !== null
+
+            console.log(`📋 Schedule ${scheduleId} status:`, {
+                executed: isExecuted,
+                executed_timestamp: scheduleData.executed_timestamp,
+                deleted: scheduleData.deleted,
+            })
+
+            return isExecuted
+        } catch (error) {
+            console.error(
+                `❌ Error verifying Schedule Transaction ${scheduleId}:`,
+                error
+            )
+            return false
+        }
+    }
+
+    /**
+     * Verifies that HUSD tokens were transferred from user to treasury
+     * Checks recent transactions involving the user and treasury accounts
+     */
+    async verifyHUSDTransfer(
+        userAccountId: string,
+        treasuryId: string,
+        expectedAmount: number,
+        since: string
+    ): Promise<boolean> {
+        try {
+            console.log(
+                `🔍 Verifying HUSD transfer from ${userAccountId} to ${treasuryId}`
+            )
+            console.log(`   Expected amount: ${expectedAmount} HUSD`)
+            console.log(`   Since: ${since}`)
+
+            const husdTokenId = process.env.HUSD_TOKEN_ID
+            if (!husdTokenId) {
+                throw new Error('Missing HUSD_TOKEN_ID')
+            }
+
+            console.log(`   HUSD Token ID: ${husdTokenId}`)
+
+            // Query Mirror Node for token transfers
+            const mirrorNodeUrl =
+                process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+                'https://testnet.mirrornode.hedera.com'
+            const sinceTimestamp = new Date(since).getTime() / 1000 // Convert to seconds
+
+            const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=50`
+            console.log(`🔍 Querying Mirror Node:`, queryUrl)
+
+            // Get transfers involving the user account since the withdrawal request
+            const response = await fetch(queryUrl)
+
+            if (!response.ok) {
+                console.log(
+                    `❌ Failed to fetch transactions for ${userAccountId}: ${response.status} ${response.statusText}`
+                )
+                return false
+            }
+
+            const data = await response.json()
+            const transactions = data.transactions || []
+
+            console.log(
+                `📋 Found ${transactions.length} transactions since ${since}`
+            )
+
+            // Look for a transaction where user sent HUSD to treasury
+            for (const tx of transactions) {
+                console.log(
+                    `🔍 Checking transaction ${tx.transaction_id} (${tx.consensus_timestamp})`
+                )
+
+                if (tx.token_transfers) {
+                    console.log(
+                        `   Token transfers found: ${tx.token_transfers.length}`
+                    )
+
+                    for (const tokenTransfer of tx.token_transfers) {
+                        console.log(
+                            `   Token ID: ${tokenTransfer.token_id} (looking for ${husdTokenId})`
+                        )
+
+                        if (tokenTransfer.token_id === husdTokenId) {
+                            console.log(`   ✅ Found HUSD token transfer!`)
+                            console.log(
+                                `   Transfer details:`,
+                                JSON.stringify(tokenTransfer, null, 2)
+                            )
+
+                            // Check if this is the transfer we're looking for
+                            // The Mirror Node returns token_transfers as an array where each item has account and amount
+                            const transferredAmount =
+                                Math.abs(tokenTransfer.amount) / 100_000_000 // Convert from tinybars (hUSD has 8 decimals)
+
+                            // Check if this transfer is from user to treasury or treasury to user
+                            const isUserSending =
+                                tokenTransfer.account === userAccountId &&
+                                tokenTransfer.amount < 0
+                            const isTreasuryReceiving =
+                                tokenTransfer.account === treasuryId &&
+                                tokenTransfer.amount > 0
+
+                            console.log(
+                                `   Transfer from account: ${tokenTransfer.account}`
+                            )
+                            console.log(
+                                `   Transfer amount: ${tokenTransfer.amount} (${transferredAmount} HUSD)`
+                            )
+                            console.log(`   Is user sending: ${isUserSending}`)
+                            console.log(
+                                `   Is treasury receiving: ${isTreasuryReceiving}`
+                            )
+
+                            // We need to find both the outgoing and incoming transfers in the same transaction
+                            if (
+                                isUserSending &&
+                                Math.abs(transferredAmount - expectedAmount) <
+                                    0.001
+                            ) {
+                                // Check if there's also a corresponding incoming transfer to treasury in this transaction
+                                const treasuryTransfer =
+                                    tx.token_transfers.find(
+                                        (transfer: {
+                                            token_id: string
+                                            account: string
+                                            amount: number
+                                        }) =>
+                                            transfer.token_id === husdTokenId &&
+                                            transfer.account === treasuryId &&
+                                            transfer.amount > 0
+                                    )
+
+                                if (treasuryTransfer) {
+                                    const treasuryAmount =
+                                        treasuryTransfer.amount / 100_000_000
+                                    console.log(
+                                        `📋 Found complete HUSD transfer:`,
+                                        {
+                                            from: userAccountId,
+                                            to: treasuryId,
+                                            userAmount: -transferredAmount,
+                                            treasuryAmount: treasuryAmount,
+                                            expected: expectedAmount,
+                                            transaction_id: tx.transaction_id,
+                                            timestamp: tx.consensus_timestamp,
+                                        }
+                                    )
+
+                                    if (
+                                        Math.abs(
+                                            treasuryAmount - expectedAmount
+                                        ) < 0.001
+                                    ) {
+                                        console.log(
+                                            `✅ HUSD transfer verified: ${expectedAmount} HUSD`
+                                        )
+                                        return true
+                                    } else {
+                                        console.log(
+                                            `❌ Amount mismatch: treasury received ${treasuryAmount} vs expected ${expectedAmount}`
+                                        )
+                                    }
+                                } else {
+                                    console.log(
+                                        `❌ No corresponding treasury transfer found`
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    console.log(`   No token_transfers in this transaction`)
+                }
+            }
+
+            console.log(`❌ No matching HUSD transfer found`)
+            console.log(
+                `📋 Expected ${expectedAmount} HUSD from ${userAccountId} to ${treasuryId}`
+            )
+            return false
+        } catch (error) {
+            console.error(`❌ Error verifying HUSD transfer:`, error)
+            return false
         }
     }
 
