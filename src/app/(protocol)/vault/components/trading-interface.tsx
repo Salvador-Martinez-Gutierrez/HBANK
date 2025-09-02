@@ -30,6 +30,7 @@ export function TradingInterface() {
     const [redeemType, setRedeemType] = useState<'instant' | 'standard'>(
         'instant'
     )
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const { isConnected } = useWallet()
     const {
         balances,
@@ -73,6 +74,12 @@ export function TradingInterface() {
     const handleInputClear = () => {
         setFromAmount('')
         setToAmount('')
+    }
+
+    // Handlers for redeem type selection
+    const handleRedeemTypeSelect = (type: 'instant' | 'standard') => {
+        setRedeemType(type)
+        setIsPopoverOpen(false) // Close the popover after selection
     }
 
     // TODO: This should be fetched from an API endpoint
@@ -137,6 +144,7 @@ export function TradingInterface() {
                     onBalanceRefresh={refreshBalances}
                     onInputClear={handleInputClear}
                     rateData={rateData || undefined}
+                    redeemType={redeemType}
                 />
             ) : (
                 /* For history tab, show connect wallet for now */
@@ -187,7 +195,10 @@ export function TradingInterface() {
                     {/* Transaction Type Selector - Only for Redeem Tab */}
                     {activeTab === 'redeem' && (
                         <div className='flex items-center'>
-                            <Popover>
+                            <Popover 
+                                open={isPopoverOpen} 
+                                onOpenChange={setIsPopoverOpen}
+                            >
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant='outline'
@@ -249,7 +260,7 @@ export function TradingInterface() {
                                                         : 'outline'
                                                 }
                                                 onClick={() =>
-                                                    setRedeemType('instant')
+                                                    handleRedeemTypeSelect('instant')
                                                 }
                                                 className={`w-full p-4 h-auto justify-start ${
                                                     redeemType === 'instant'
@@ -292,7 +303,7 @@ export function TradingInterface() {
                                                         : 'outline'
                                                 }
                                                 onClick={() =>
-                                                    setRedeemType('standard')
+                                                    handleRedeemTypeSelect('standard')
                                                 }
                                                 className={`w-full p-4 h-auto justify-start ${
                                                     redeemType === 'standard'

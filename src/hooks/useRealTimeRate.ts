@@ -157,7 +157,10 @@ class RateManager {
             )
         }
         // Detectar errores de red/servidor
-        else if ((response?.status && response.status >= 500) || errorMessage.includes('fetch')) {
+        else if (
+            (response?.status && response.status >= 500) ||
+            errorMessage.includes('fetch')
+        ) {
             this.currentInterval = Math.min(
                 MAX_INTERVAL,
                 this.currentInterval * 1.5
@@ -310,7 +313,8 @@ class RateManager {
             // ✅ Manejar error con el sistema adaptativo
             this.handleError(err, response)
             console.error('Mirror Node fetch failed:', err)
-            const errorMessage = err instanceof Error ? err.message : String(err)
+            const errorMessage =
+                err instanceof Error ? err.message : String(err)
             this.error = `Failed to fetch from Mirror Node: ${errorMessage}`
             return null
         }

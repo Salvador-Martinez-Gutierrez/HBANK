@@ -28,6 +28,7 @@ interface RedeemActionButtonProps {
         rate: number
         sequenceNumber: string
     }
+    redeemType?: 'instant' | 'standard'
 }
 
 export function RedeemActionButton({
@@ -36,6 +37,7 @@ export function RedeemActionButton({
     onBalanceRefresh,
     onInputClear,
     rateData,
+    redeemType = 'standard',
 }: RedeemActionButtonProps) {
     const { isConnected, signer } = useWallet()
     const accountId = useAccountId()
@@ -243,6 +245,33 @@ export function RedeemActionButton({
 
     if (!isConnected || !accountId) {
         return <ConnectWalletButton variant='full-width' />
+    }
+
+    // If instant redeem is selected, show coming soon message
+    if (redeemType === 'instant') {
+        return (
+            <div className='space-y-4'>
+                {/* Coming Soon Notice for Instant Redeems */}
+                <div className='bg-blue-50 border border-blue-200 p-4 rounded-lg'>
+                    <div className='text-center'>
+                        <div className='text-sm text-blue-700 font-medium mb-2'>
+                            ⚡ Instant Redeems
+                        </div>
+                        <div className='text-xs text-blue-600'>
+                            Instant redeems are coming soon! Switch to Standard redeem to proceed with the current 48-hour process.
+                        </div>
+                    </div>
+                </div>
+
+                <Button
+                    disabled={true}
+                    className='w-full opacity-50 cursor-not-allowed'
+                    size='lg'
+                >
+                    Instant Redeems Coming Soon
+                </Button>
+            </div>
+        )
     }
 
     const canSubmit =

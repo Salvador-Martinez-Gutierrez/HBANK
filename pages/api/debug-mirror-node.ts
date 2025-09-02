@@ -70,7 +70,7 @@ export default async function handler(
             })
         }
 
-        const data = await response.json() as MirrorNodeResponse
+        const data = (await response.json()) as MirrorNodeResponse
         const transactions = data.transactions || []
 
         console.log(`📋 Found ${transactions.length} transactions`)
@@ -105,7 +105,9 @@ export default async function handler(
 
         // Look specifically for HUSD transfers
         const husdTransactions = transactions.filter((tx: Transaction) =>
-            tx.token_transfers?.some((tt: TokenTransfer) => tt.token_id === husdTokenId)
+            tx.token_transfers?.some(
+                (tt: TokenTransfer) => tt.token_id === husdTokenId
+            )
         )
 
         console.log(`📋 HUSD transactions found: ${husdTransactions.length}`)

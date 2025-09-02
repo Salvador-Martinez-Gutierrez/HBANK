@@ -303,7 +303,10 @@ export function MintActionButton({
                         (errorObj.error as string) ||
                         (errorObj.reason as string) ||
                         ''
-                    errorType = (errorObj.name as string) || (errorObj.type as string) || ''
+                    errorType =
+                        (errorObj.name as string) ||
+                        (errorObj.type as string) ||
+                        ''
                 }
 
                 const fullErrorText =
