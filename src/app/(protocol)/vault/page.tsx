@@ -6,8 +6,7 @@ import { InfoCard } from './components/info-card'
 import { StatsCards } from './components/stats-cards'
 
 export default function VaultPage() {
-    // Mock exchange rate and data
-    const exchangeRate = 1.0 // Changed to 1:1 exchange rate
+    // Mock data
     const apy = '13.33'
 
     return (
@@ -21,7 +20,7 @@ export default function VaultPage() {
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
                     {/* Main Trading Interface */}
                     <div className='md:col-span-2'>
-                        <TradingInterface exchangeRate={exchangeRate} />
+                        <TradingInterface />
                     </div>
 
                     {/* Sidebar Information - Only visible on medium+ screens */}

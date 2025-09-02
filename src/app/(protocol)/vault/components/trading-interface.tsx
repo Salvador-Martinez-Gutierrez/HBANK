@@ -14,14 +14,12 @@ import { SwapButton } from './swap-button'
 import { TransactionDetails } from './transaction-details'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
 import { MintActionButton } from './mint-action-button'
+import { RealTimeRateDisplay } from '@/components/real-time-rate-display'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { useTokenBalances } from '../hooks/useTokenBalances'
+import { useRealTimeRate } from '@/hooks/useRealTimeRate'
 
-interface TradingInterfaceProps {
-    exchangeRate: number
-}
-
-export function TradingInterface({ exchangeRate }: TradingInterfaceProps) {
+export function TradingInterface() {
     // State management
     const [activeTab, setActiveTab] = useState<'mint' | 'redeem' | 'history'>(
         'mint'
@@ -38,6 +36,9 @@ export function TradingInterface({ exchangeRate }: TradingInterfaceProps) {
         refreshBalances,
     } = useTokenBalances()
 
+    // Real-time rate hook
+    const { rateData } = useRealTimeRate()
+
     // Token configuration based on active tab
     const fromToken = activeTab === 'mint' ? 'USDC' : 'hUSD'
     const toToken = activeTab === 'mint' ? 'hUSD' : 'USDC'
@@ -53,10 +54,16 @@ export function TradingInterface({ exchangeRate }: TradingInterfaceProps) {
 
     const handleFromAmountChange = (value: string) => {
         setFromAmount(value)
-        if (value && !isNaN(parseFloat(value))) {
-            // With 1:1 exchange rate, the amounts are equal
-            const calculatedTo = parseFloat(value).toFixed(4)
-            setToAmount(calculatedTo)
+        if (value && !isNaN(parseFloat(value)) && rateData) {
+            let calculatedTo: number
+            if (activeTab === 'mint') {
+                // USDC to hUSD: divide by rate
+                calculatedTo = parseFloat(value) / rateData.rate
+            } else {
+                // hUSD to USDC: multiply by rate
+                calculatedTo = parseFloat(value) * rateData.rate
+            }
+            setToAmount(calculatedTo.toFixed(6))
         } else {
             setToAmount('')
         }
@@ -114,14 +121,18 @@ export function TradingInterface({ exchangeRate }: TradingInterfaceProps) {
                     toAmount={toAmount}
                     usdcBalance={balances.USDC}
                     onBalanceRefresh={refreshBalances}
+                    rateData={rateData}
                 />
             ) : (
                 /* For redeem and history tabs, show connect wallet for now */
                 <ConnectWalletButton variant='full-width' />
             )}
 
+            {/* Real-time Rate Display */}
+            <RealTimeRateDisplay showDetails={true} />
+
             {/* Transaction Details */}
-            <TransactionDetails exchangeRate={exchangeRate} />
+            <TransactionDetails exchangeRate={rateData?.rate || 1.0} />
         </div>
     )
 

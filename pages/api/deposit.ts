@@ -5,27 +5,33 @@ import {
     AccountId,
     PrivateKey,
 } from '@hashgraph/sdk'
+import { HederaRateService } from '../../src/services/hederaRateService'
 
 /**
  * POST /api/deposit
  *
- * Handles USDC deposits and schedules hUSD minting
+ * Handles USDC deposits with rate validation and schedules hUSD minting
  *
- * @param req - Request object containing accountId and amountUsdc
+ * @param req - Request object containing accountId, amountUsdc, rate, and sequenceNumber
  * @param res - Response object
  *
  * @example
  * POST /api/deposit
  * {
- *   "accountId": "0.0.12345",
- *   "amountUsdc": 100
+ *   "userAccountId": "0.0.12345",
+ *   "amount": 100000000,
+ *   "depositTxId": "0.0.1234@1234567890.123456789",
+ *   "expectedRate": 1.005,
+ *   "rateSequenceNumber": "123",
+ *   "rateTimestamp": "1234567890.123456789"
  * }
  *
  * @returns
  * {
- *   "status": "success",
- *   "scheduleId": "0.0.99999",
- *   "husdAmount": 99.5
+ *   "success": true,
+ *   "hUSDTxId": "0.0.9999@1234567890.123456789",
+ *   "hUSDReceived": 99502487,
+ *   "actualRate": 1.005
  * }
  */
 export default async function handler(
@@ -46,14 +52,25 @@ export default async function handler(
             userAccountId,
             amount,
             depositTxId, // ID of the already executed transaction
+            expectedRate, // Rate expected by the frontend
+            rateSequenceNumber, // Sequence number of the rate
+            rateTimestamp, // Timestamp of the rate
         } = req.body
 
         // Field validation
-        if (!userAccountId || !amount || !depositTxId) {
+        if (
+            !userAccountId ||
+            !amount ||
+            !depositTxId ||
+            !expectedRate ||
+            !rateSequenceNumber
+        ) {
             console.error('Missing fields:', {
-                userAccountId,
-                amount,
-                depositTxId,
+                userAccountId: !!userAccountId,
+                amount: !!amount,
+                depositTxId: !!depositTxId,
+                expectedRate: !!expectedRate,
+                rateSequenceNumber: !!rateSequenceNumber,
             })
             return res.status(400).json({
                 error: 'Missing required fields',
@@ -61,6 +78,8 @@ export default async function handler(
                     userAccountId: !!userAccountId,
                     amount: !!amount,
                     depositTxId: !!depositTxId,
+                    expectedRate: !!expectedRate,
+                    rateSequenceNumber: !!rateSequenceNumber,
                 },
             })
         }
@@ -69,6 +88,60 @@ export default async function handler(
             user: userAccountId,
             amount: amount,
             depositTx: depositTxId,
+            expectedRate,
+            rateSequenceNumber,
+            rateTimestamp,
+        })
+
+        // STEP 1: Validate the rate against Hedera topic
+        console.log('Validating rate against Hedera topic...')
+        const rateService = new HederaRateService()
+        const latestRate = await rateService.getLatestRate()
+
+        if (!latestRate) {
+            return res.status(400).json({
+                error: 'No rate available from Hedera topic',
+                message: 'Unable to fetch current rate from consensus service',
+            })
+        }
+
+        // Check if the rate data matches what the frontend sent
+        const rateMatches =
+            latestRate.sequenceNumber === rateSequenceNumber &&
+            Math.abs(latestRate.rate - expectedRate) < 0.0001 // Allow small floating point differences
+
+        if (!rateMatches) {
+            console.log('Rate validation failed:', {
+                expected: {
+                    rate: expectedRate,
+                    sequenceNumber: rateSequenceNumber,
+                },
+                actual: {
+                    rate: latestRate.rate,
+                    sequenceNumber: latestRate.sequenceNumber,
+                },
+            })
+
+            return res.status(409).json({
+                error: 'Rate has changed',
+                message:
+                    'The exchange rate has been updated. Please review the new rate and try again.',
+                currentRate: {
+                    rate: latestRate.rate,
+                    sequenceNumber: latestRate.sequenceNumber,
+                    timestamp: latestRate.timestamp,
+                },
+                submittedRate: {
+                    rate: expectedRate,
+                    sequenceNumber: rateSequenceNumber,
+                    timestamp: rateTimestamp,
+                },
+            })
+        }
+
+        console.log('✅ Rate validation successful:', {
+            rate: latestRate.rate,
+            sequenceNumber: latestRate.sequenceNumber,
         })
 
         // Validate environment variables
@@ -139,9 +212,26 @@ export default async function handler(
         // amount received in minimum USDC units
         const amountInUSDC = Number(amount)
 
-        // Convert to minimum hUSD units (1:1 in value)
-        const amountToTransfer =
-            amountInUSDC * 10 ** (husdDecimals - usdcDecimals)
+        // Convert to hUSD using the validated rate
+        // amountInUSDC is in minimum units (1 USDC = 1,000,000 units)
+        // Convert to actual USDC value first
+        const actualUSDCAmount = amountInUSDC / Math.pow(10, usdcDecimals)
+
+        // Apply the exchange rate
+        const actualHUSDAmount = actualUSDCAmount / latestRate.rate
+
+        // Convert to minimum hUSD units
+        const amountToTransfer = Math.floor(
+            actualHUSDAmount * Math.pow(10, husdDecimals)
+        )
+
+        console.log('Amount calculation:', {
+            usdcMinimumUnits: amountInUSDC,
+            actualUSDC: actualUSDCAmount,
+            rate: latestRate.rate,
+            actualHUSD: actualHUSDAmount,
+            husdMinimumUnits: amountToTransfer,
+        })
 
         // Create hUSD transfer
         const hUSDTransfer = new TransferTransaction()
@@ -182,6 +272,8 @@ export default async function handler(
             success: true,
             hUSDTxId: response.transactionId?.toString(),
             hUSDReceived: amountToTransfer,
+            actualRate: latestRate.rate,
+            rateSequenceNumber: latestRate.sequenceNumber,
             status: receipt.status.toString(),
         }
 
@@ -189,7 +281,8 @@ export default async function handler(
         return res.status(200).json(result)
     } catch (error: unknown) {
         console.error('=== DEPOSIT ERROR ===')
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+        const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error'
         const errorStack = error instanceof Error ? error.stack : undefined
         console.error('Error message:', errorMessage)
         console.error('Error stack:', errorStack)
@@ -198,9 +291,7 @@ export default async function handler(
             error: 'Deposit failed',
             message: errorMessage,
             details:
-                process.env.NODE_ENV === 'development'
-                    ? errorStack
-                    : undefined,
+                process.env.NODE_ENV === 'development' ? errorStack : undefined,
         })
     }
 }

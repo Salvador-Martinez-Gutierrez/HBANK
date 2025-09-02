@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
+import { RateConflictModal } from '@/components/rate-conflict-modal'
 import {
     useWallet,
     useAccountId,
@@ -15,12 +16,14 @@ import { Wallet } from 'lucide-react'
 import { ScheduleSignTransaction, ScheduleId } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
 import { useTokenBalances } from '../hooks/useTokenBalances'
+import { RateData } from '@/hooks/useRealTimeRate'
 
 interface MintActionButtonProps {
     fromAmount: string
     toAmount: string
     usdcBalance: string
     onBalanceRefresh?: () => Promise<void>
+    rateData: RateData | null
 }
 
 export function MintActionButton({
@@ -28,6 +31,7 @@ export function MintActionButton({
     toAmount,
     usdcBalance,
     onBalanceRefresh,
+    rateData,
 }: MintActionButtonProps) {
     const { isConnected, isLoading: walletLoading, signer } = useWallet()
     const { data: accountId } = useAccountId()
@@ -41,6 +45,16 @@ export function MintActionButton({
         boolean | null
     >(null)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [showRateConflict, setShowRateConflict] = useState(false)
+    const [rateConflictData, setRateConflictData] = useState<{
+        currentRate: { rate: number; sequenceNumber: string; timestamp: string }
+        submittedRate: {
+            rate: number
+            sequenceNumber: string
+            timestamp: string
+        }
+        usdcAmount: number
+    } | null>(null)
 
     const checkAssociation = useCallback(async () => {
         if (!accountId) return
@@ -145,6 +159,13 @@ export function MintActionButton({
     const handleMint = async () => {
         setIsProcessing(true)
         try {
+            // Validate rate data is available
+            if (!rateData) {
+                throw new Error(
+                    'Exchange rate not available. Please wait for rate to load.'
+                )
+            }
+
             // Validate amount
             const amountNum = parseFloat(fromAmount)
             if (isNaN(amountNum) || amountNum <= 0) {
@@ -158,6 +179,7 @@ export function MintActionButton({
             }
 
             console.log('Starting atomic mint for:', amountNum, 'USDC')
+            console.log('Using rate data:', rateData)
 
             // Check if signer is available
             if (!signer) {
@@ -167,7 +189,9 @@ export function MintActionButton({
             // Step 1: Initialize atomic deposit (backend creates ScheduleCreateTransaction)
             console.log('Initializing atomic mint transaction...')
             const initToastId = toast.loading(
-                `🔄 Initializing atomic mint:\n💰 ${amountNum} USDC → ${amountNum} hUSD (1:1 rate)`
+                `🔄 Initializing atomic mint:\n💰 ${amountNum} USDC → ${toAmount} hUSD\n📊 Rate: ${rateData.rate.toFixed(
+                    6
+                )}`
             )
 
             const initResponse = await fetch('/api/deposit/init', {
@@ -176,6 +200,9 @@ export function MintActionButton({
                 body: JSON.stringify({
                     userAccountId: accountId,
                     amount: amountNum,
+                    expectedRate: rateData.rate,
+                    rateSequenceNumber: rateData.sequenceNumber,
+                    rateTimestamp: rateData.timestamp,
                 }),
             })
 
@@ -185,6 +212,20 @@ export function MintActionButton({
                 const errorData = await initResponse.json()
                 console.error('Init error:', errorData)
                 toast.dismiss(initToastId)
+
+                // Handle rate conflict specifically
+                if (initResponse.status === 409 && errorData.currentRate) {
+                    console.log('Rate conflict detected, showing modal')
+                    setRateConflictData({
+                        currentRate: errorData.currentRate,
+                        submittedRate: errorData.submittedRate,
+                        usdcAmount: amountNum,
+                    })
+                    setShowRateConflict(true)
+                    setIsProcessing(false)
+                    return
+                }
+
                 throw new Error(
                     errorData.message ||
                         errorData.error ||
@@ -475,6 +516,19 @@ export function MintActionButton({
         }
     }
 
+    const handleAcceptNewRate = () => {
+        setShowRateConflict(false)
+        setRateConflictData(null)
+        // Retry mint operation with new rate from hook
+        handleMint()
+    }
+
+    const handleCancelRateConflict = () => {
+        setShowRateConflict(false)
+        setRateConflictData(null)
+        setIsProcessing(false)
+    }
+
     // Show connect wallet button if not connected
     if (!isConnected) {
         return <ConnectWalletButton variant='full-width' />
@@ -521,18 +575,32 @@ export function MintActionButton({
         hasInsufficientBalance
 
     return (
-        <Button
-            className='w-full h-14 bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-400'
-            onClick={handleMint}
-            disabled={isDisabled}
-        >
-            <span className='flex items-center gap-x-2 px-4'>
-                {isProcessing
-                    ? 'Processing Atomic Mint...'
-                    : hasInsufficientBalance
-                    ? 'Insufficient Balance'
-                    : `Mint (Atomic)`}
-            </span>
-        </Button>
+        <>
+            <Button
+                className='w-full h-14 bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-400'
+                onClick={handleMint}
+                disabled={isDisabled}
+            >
+                <span className='flex items-center gap-x-2 px-4'>
+                    {isProcessing
+                        ? 'Processing Atomic Mint...'
+                        : hasInsufficientBalance
+                        ? 'Insufficient Balance'
+                        : `Mint (Atomic)`}
+                </span>
+            </Button>
+
+            {/* Rate Conflict Modal */}
+            {rateConflictData && (
+                <RateConflictModal
+                    isOpen={showRateConflict}
+                    onAcceptNewRate={handleAcceptNewRate}
+                    onCancel={handleCancelRateConflict}
+                    currentRate={rateConflictData.currentRate}
+                    submittedRate={rateConflictData.submittedRate}
+                    usdcAmount={rateConflictData.usdcAmount}
+                />
+            )}
+        </>
     )
 }

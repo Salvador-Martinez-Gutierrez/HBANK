@@ -37,5 +37,8 @@ export const TOKEN_IDS = {
     USDC: '0.0.429274',
 } as const
 
+//TOPIC_ID
+export const TOPIC_ID = '0.0.6626120'
+
 export const TESTNET_MIRROR_NODE_ENDPOINT =
     'https://testnet.hedera.validationcloud.io/v1'

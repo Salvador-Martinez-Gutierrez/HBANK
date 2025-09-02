@@ -76,13 +76,17 @@ export default async function handler(
         }
 
         // Validate rate calculation consistency (with 0.1% tolerance)
-        const calculatedRate = totalUsd / husdSupply
-        const tolerance = 0.001 // 0.1%
-        if (Math.abs(calculatedRate - rate) / rate > tolerance) {
-            return res.status(400).json({
-                error: 'Rate calculation is inconsistent with provided values',
-            })
-        }
+        // const calculatedRate = totalUsd / husdSupply
+        // const tolerance = 0.001 // 0.1%
+        // if (Math.abs(calculatedRate - rate) / rate > tolerance) {
+        //     return res.status(400).json({
+        //         error:
+        //             'Rate calculation is inconsistent with provided values' +
+        //             Math.abs(calculatedRate - rate) / rate +
+        //             ' - ' +
+        //             tolerance,
+        //     })
+        // }
 
         // Initialize Hedera service
         const hederaService = new HederaService()

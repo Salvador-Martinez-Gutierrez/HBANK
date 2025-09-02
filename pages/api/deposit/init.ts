@@ -9,33 +9,33 @@ import {
     AccountBalanceQuery,
     Timestamp,
 } from '@hashgraph/sdk'
-import {
-    calculateHUSDCAmount,
-    getCurrentRateConfig,
-} from '../../../src/lib/deposit-rate'
+import { HederaRateService } from '../../../src/services/hederaRateService'
 
 /**
  * POST /api/deposit/init
  *
  * Initializes atomic deposit by creating a ScheduleCreateTransaction
- * Validates balances on-chain and returns scheduleId for user signing
+ * Validates balances on-chain and rate data, then returns scheduleId for user signing
  *
- * @param req - Request object containing userAccountId and amount
+ * @param req - Request object containing userAccountId, amount, and rate validation data
  * @param res - Response object
  *
  * @example
  * POST /api/deposit/init
  * {
  *   "userAccountId": "0.0.12345",
- *   "amount": 100.50
+ *   "amount": 100.50,
+ *   "expectedRate": 1.005,
+ *   "rateSequenceNumber": "123",
+ *   "rateTimestamp": "1234567890.123456789"
  * }
  *
  * @returns
  * {
  *   "success": true,
  *   "scheduleId": "0.0.99999",
- *   "amountHUSDC": 100.50,
- *   "rate": 1.0
+ *   "amountHUSDC": 99.502487,
+ *   "rate": 1.005
  * }
  */
 export default async function handler(
@@ -52,16 +52,29 @@ export default async function handler(
     }
 
     try {
-        const { userAccountId, amount } = req.body
+        const {
+            userAccountId,
+            amount,
+            expectedRate,
+            rateSequenceNumber,
+            rateTimestamp,
+        } = req.body
 
         // Field validation
-        if (!userAccountId || !amount) {
-            console.error('Missing fields:', { userAccountId, amount })
+        if (!userAccountId || !amount || !expectedRate || !rateSequenceNumber) {
+            console.error('Missing fields:', {
+                userAccountId: !!userAccountId,
+                amount: !!amount,
+                expectedRate: !!expectedRate,
+                rateSequenceNumber: !!rateSequenceNumber,
+            })
             return res.status(400).json({
                 error: 'Missing required fields',
                 details: {
                     userAccountId: !!userAccountId,
                     amount: !!amount,
+                    expectedRate: !!expectedRate,
+                    rateSequenceNumber: !!rateSequenceNumber,
                 },
             })
         }
@@ -83,9 +96,72 @@ export default async function handler(
             })
         }
 
+        // Rate validation
+        const expectedRateNum = Number(expectedRate)
+        if (isNaN(expectedRateNum) || expectedRateNum <= 0) {
+            return res.status(400).json({
+                error: 'Invalid rate',
+                message: 'Expected rate must be a positive number',
+            })
+        }
+
         console.log('Processing deposit initialization:', {
             user: userAccountId,
             amount: amountNum,
+            expectedRate: expectedRateNum,
+            rateSequenceNumber,
+            rateTimestamp,
+        })
+
+        // STEP 1: Validate the rate against Hedera topic
+        console.log('Validating rate against Hedera topic...')
+        const rateService = new HederaRateService()
+        const latestRate = await rateService.getLatestRate()
+
+        if (!latestRate) {
+            return res.status(400).json({
+                error: 'No rate available from Hedera topic',
+                message: 'Unable to fetch current rate from consensus service',
+            })
+        }
+
+        // Check if the rate data matches what the frontend sent
+        const rateMatches =
+            latestRate.sequenceNumber === rateSequenceNumber &&
+            Math.abs(latestRate.rate - expectedRateNum) < 0.0001 // Allow small floating point differences
+
+        if (!rateMatches) {
+            console.log('Rate validation failed:', {
+                expected: {
+                    rate: expectedRateNum,
+                    sequenceNumber: rateSequenceNumber,
+                },
+                actual: {
+                    rate: latestRate.rate,
+                    sequenceNumber: latestRate.sequenceNumber,
+                },
+            })
+
+            return res.status(409).json({
+                error: 'Rate has changed',
+                message:
+                    'The exchange rate has been updated. Please review the new rate and try again.',
+                currentRate: {
+                    rate: latestRate.rate,
+                    sequenceNumber: latestRate.sequenceNumber,
+                    timestamp: latestRate.timestamp,
+                },
+                submittedRate: {
+                    rate: expectedRateNum,
+                    sequenceNumber: rateSequenceNumber,
+                    timestamp: rateTimestamp,
+                },
+            })
+        }
+
+        console.log('✅ Rate validation successful:', {
+            rate: latestRate.rate,
+            sequenceNumber: latestRate.sequenceNumber,
         })
 
         // Validate environment variables
@@ -94,7 +170,12 @@ export default async function handler(
         const usdcTokenIdStr = process.env.USDC_TOKEN_ID
         const husdTokenIdStr = process.env.HUSD_TOKEN_ID
 
-        if (!treasuryId || !operatorKeyStr || !usdcTokenIdStr || !husdTokenIdStr) {
+        if (
+            !treasuryId ||
+            !operatorKeyStr ||
+            !usdcTokenIdStr ||
+            !husdTokenIdStr
+        ) {
             console.error('Missing environment variables:', {
                 TREASURY_ID: !!treasuryId,
                 OPERATOR_KEY: !!operatorKeyStr,
@@ -120,14 +201,15 @@ export default async function handler(
             treasuryAccountId.toString()
         )
 
-        // Get current rate configuration
-        const rateConfig = await getCurrentRateConfig()
-        const amountHUSDC = calculateHUSDCAmount(amountNum, rateConfig)
+        // Calculate hUSD amount using the validated rate
+        // amountNum is in USDC, latestRate.rate is USDC/hUSD
+        const amountHUSDC = amountNum / latestRate.rate
 
         console.log('Rate calculation:', {
             usdcAmount: amountNum,
-            husdcAmount: amountHUSDC,
-            rate: rateConfig.baseRate,
+            rate: latestRate.rate,
+            husdAmount: amountHUSDC,
+            sequenceNumber: latestRate.sequenceNumber,
         })
 
         // On-chain balance validation
@@ -248,7 +330,8 @@ export default async function handler(
             success: true,
             scheduleId: scheduleId.toString(),
             amountHUSDC,
-            rate: rateConfig.baseRate,
+            rate: latestRate.rate,
+            rateSequenceNumber: latestRate.sequenceNumber,
             usdcAmount: amountNum,
             timestamp: new Date().toISOString(),
             txId: scheduleResponse.transactionId.toString(),

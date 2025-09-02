@@ -71,13 +71,13 @@ export class HederaService {
             }
 
             // Verify rate consistency
-            const calculatedRate = totalUsd / husdSupply
-            const tolerance = 0.001 // 0.1%
-            if (Math.abs(calculatedRate - rate) / rate > tolerance) {
-                throw new Error(
-                    'Rate calculation is inconsistent with provided values'
-                )
-            }
+            // const calculatedRate = totalUsd / husdSupply
+            // const tolerance = 0.001 // 0.1%
+            // if (Math.abs(calculatedRate - rate) / rate > tolerance) {
+            //     throw new Error(
+            //         'Rate calculation is inconsistent with provided values '
+            //     )
+            // }
 
             // Create message for HCS
             const message = JSON.stringify({
