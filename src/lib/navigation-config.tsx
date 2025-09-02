@@ -4,12 +4,10 @@ import {
     GithubIcon,
     PieChart,
     CircleDollarSign,
-    ArrowDownLeft,
 } from 'lucide-react'
 
 export const navigation = [
     { name: 'hUSD', href: '/vault', icon: CircleDollarSign },
-    { name: 'Withdraw', href: '/withdraw', icon: ArrowDownLeft },
     { name: 'Portfolio', href: '/portfolio', icon: PieChart },
     { name: 'Transparency', href: '/transparency', icon: Eye },
 ]
