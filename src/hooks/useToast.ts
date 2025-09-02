@@ -121,7 +121,7 @@ export const useToast = () => {
         }: {
             loading: string
             success: string | ((data: T) => string)
-            error: string | ((err: any) => string)
+            error: string | ((err: unknown) => string)
         }
     ) => {
         return toast.promise(
@@ -168,17 +168,4 @@ export const useToast = () => {
     }
 }
 
-// Export individual functions for convenience
-export const showToast = {
-    success: (message: string, config?: ToastConfig) =>
-        useToast().success(message, config),
-    error: (message: string, config?: ToastConfig) =>
-        useToast().error(message, config),
-    loading: (message: string, options?: { id?: string }) =>
-        useToast().loading(message, options),
-    info: (message: string, config?: ToastConfig) =>
-        useToast().info(message, config),
-    warning: (message: string, config?: ToastConfig) =>
-        useToast().warning(message, config),
-    dismiss: (toastId?: string) => useToast().dismiss(toastId),
-}
+

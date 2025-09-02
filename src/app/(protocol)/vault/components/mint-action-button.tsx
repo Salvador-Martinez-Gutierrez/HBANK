@@ -258,9 +258,8 @@ export function MintActionButton({
                 )
 
             // Freeze with signer
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const frozenScheduleTx = await scheduleSignTx.freezeWithSigner(
-                signer as any
+                signer as any // eslint-disable-line @typescript-eslint/no-explicit-any
             )
 
             let signedScheduleTx
@@ -269,17 +268,15 @@ export function MintActionButton({
             try {
                 // User signs the schedule
                 console.log('Requesting user signature...')
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 signedScheduleTx = await frozenScheduleTx.signWithSigner(
-                    signer as any
+                    signer as any // eslint-disable-line @typescript-eslint/no-explicit-any
                 )
                 console.log('✅ User signature completed successfully')
 
                 // Execute the user's signature
                 console.log('Executing signed transaction...')
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 userSignResponse = await signedScheduleTx.executeWithSigner(
-                    signer as any
+                    signer as any // eslint-disable-line @typescript-eslint/no-explicit-any
                 )
                 console.log(
                     'User signature executed:',
@@ -300,13 +297,13 @@ export function MintActionButton({
                     errorMessage = signingError
                 } else if (signingError && typeof signingError === 'object') {
                     // Check common error properties
-                    const errorObj = signingError as any
+                    const errorObj = signingError as Record<string, unknown>
                     errorMessage =
-                        errorObj.message ||
-                        errorObj.error ||
-                        errorObj.reason ||
+                        (errorObj.message as string) ||
+                        (errorObj.error as string) ||
+                        (errorObj.reason as string) ||
                         ''
-                    errorType = errorObj.name || errorObj.type || ''
+                    errorType = (errorObj.name as string) || (errorObj.type as string) || ''
                 }
 
                 const fullErrorText =
@@ -352,9 +349,8 @@ export function MintActionButton({
             }
 
             // Get receipt to confirm user signature
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const userSignReceipt = await userSignResponse.getReceiptWithSigner(
-                signer as any
+                signer as any // eslint-disable-line @typescript-eslint/no-explicit-any
             )
             console.log(
                 'User signature receipt:',

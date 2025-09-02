@@ -1,5 +1,25 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
+interface TokenTransfer {
+    token_id: string
+    transfers: Array<{
+        account: string
+        amount: number
+    }>
+}
+
+interface Transaction {
+    transaction_id: string
+    consensus_timestamp: string
+    result: string
+    name: string
+    token_transfers?: TokenTransfer[]
+}
+
+interface MirrorNodeResponse {
+    transactions: Transaction[]
+}
+
 export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
@@ -50,7 +70,7 @@ export default async function handler(
             })
         }
 
-        const data = await response.json()
+        const data = await response.json() as MirrorNodeResponse
         const transactions = data.transactions || []
 
         console.log(`📋 Found ${transactions.length} transactions`)
@@ -66,26 +86,26 @@ export default async function handler(
                 since,
                 sinceTimestamp,
             },
-            transactions: transactions.map((tx: any) => ({
+            transactions: transactions.map((tx: Transaction) => ({
                 transaction_id: tx.transaction_id,
                 consensus_timestamp: tx.consensus_timestamp,
                 result: tx.result,
                 name: tx.name,
                 token_transfers:
-                    tx.token_transfers?.map((tt: any) => ({
+                    tx.token_transfers?.map((tt: TokenTransfer) => ({
                         token_id: tt.token_id,
                         transfers: tt.transfers,
                     })) || [],
                 hasHUSDTransfers:
                     tx.token_transfers?.some(
-                        (tt: any) => tt.token_id === husdTokenId
+                        (tt: TokenTransfer) => tt.token_id === husdTokenId
                     ) || false,
             })),
         }
 
         // Look specifically for HUSD transfers
-        const husdTransactions = transactions.filter((tx: any) =>
-            tx.token_transfers?.some((tt: any) => tt.token_id === husdTokenId)
+        const husdTransactions = transactions.filter((tx: Transaction) =>
+            tx.token_transfers?.some((tt: TokenTransfer) => tt.token_id === husdTokenId)
         )
 
         console.log(`📋 HUSD transactions found: ${husdTransactions.length}`)
@@ -93,9 +113,9 @@ export default async function handler(
         res.status(200).json({
             success: true,
             analysis,
-            husdTransactions: husdTransactions.map((tx: any) => {
-                const husdTransfer = tx.token_transfers.find(
-                    (tt: any) => tt.token_id === husdTokenId
+            husdTransactions: husdTransactions.map((tx: Transaction) => {
+                const husdTransfer = tx.token_transfers?.find(
+                    (tt: TokenTransfer) => tt.token_id === husdTokenId
                 )
                 return {
                     transaction_id: tx.transaction_id,

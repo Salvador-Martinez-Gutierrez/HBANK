@@ -133,15 +133,17 @@ class RateManager {
     }
 
     // ✅ Detección y manejo de rate limits
-    private handleError(err: any, response?: Response): void {
+    private handleError(err: Error | unknown, response?: Response): void {
         this.consecutiveErrors++
         this.consecutiveSuccesses = 0
+
+        const errorMessage = err instanceof Error ? err.message : String(err)
 
         // Detectar rate limit
         if (
             response?.status === 429 ||
-            err.message?.includes('429') ||
-            err.message?.includes('rate limit')
+            errorMessage.includes('429') ||
+            errorMessage.includes('rate limit')
         ) {
             this.rateLimitDetected = true
             this.currentInterval = Math.min(
@@ -155,7 +157,7 @@ class RateManager {
             )
         }
         // Detectar errores de red/servidor
-        else if (response?.status >= 500 || err.message?.includes('fetch')) {
+        else if ((response?.status && response.status >= 500) || errorMessage.includes('fetch')) {
             this.currentInterval = Math.min(
                 MAX_INTERVAL,
                 this.currentInterval * 1.5
@@ -300,7 +302,7 @@ class RateManager {
             console.log('📊 [Singleton] No valid rate messages found')
             return null
         } catch (err) {
-            if (err.name === 'AbortError') {
+            if (err instanceof Error && err.name === 'AbortError') {
                 console.log('🚫 [Singleton] Request aborted')
                 return null
             }
@@ -308,7 +310,8 @@ class RateManager {
             // ✅ Manejar error con el sistema adaptativo
             this.handleError(err, response)
             console.error('Mirror Node fetch failed:', err)
-            this.error = `Failed to fetch from Mirror Node: ${err.message}`
+            const errorMessage = err instanceof Error ? err.message : String(err)
+            this.error = `Failed to fetch from Mirror Node: ${errorMessage}`
             return null
         }
     }

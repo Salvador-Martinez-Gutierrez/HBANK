@@ -183,7 +183,7 @@ export class WithdrawService {
                 )
             }
 
-            for (const [requestId, { request, result }] of requestMap) {
+            for (const [, { request, result }] of requestMap) {
                 if (request && !result) {
                     // No result means still pending
                     const unlockTime = new Date(request.unlockAt)

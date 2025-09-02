@@ -63,12 +63,14 @@ export function ToastExamples() {
 
                 <button
                     onClick={() => {
-                        toast.promise(
+                        void toast.promise(
                             new Promise((resolve, reject) => {
                                 setTimeout(() => {
-                                    Math.random() > 0.5
-                                        ? resolve('Success!')
-                                        : reject(new Error('Failed!'))
+                                    if (Math.random() > 0.5) {
+                                        resolve('Success!')
+                                    } else {
+                                        reject(new Error('Failed!'))
+                                    }
                                 }, 2000)
                             }),
                             {

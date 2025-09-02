@@ -172,7 +172,7 @@ export function useTokenBalances() {
             setLoading(false)
             console.log('✨ [useTokenBalances] Fetch complete')
         }
-    }, [isConnected, accountId])
+    }, [isConnected, accountId, balances.USDC, balances.hUSD])
 
     // Refresh function that can be called externally
     const refreshBalances = useCallback(async () => {
