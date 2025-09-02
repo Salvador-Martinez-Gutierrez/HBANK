@@ -258,11 +258,13 @@ export default async function handler(
         // Create the atomic transfer transaction
         console.log('Creating atomic transfer transaction...')
 
-        // Generate unique identifier for this deposit (include user account for extra uniqueness)
-        const uniqueId = `${userAccountId}-${Date.now()}-${Math.random()
-            .toString(36)
-            .substr(2, 9)}`
-        console.log('Generated unique ID:', uniqueId)
+        // Create highly unique but concise memo to avoid MEMO_TOO_LONG and IDENTICAL_SCHEDULE_ALREADY_CREATED
+        const timestamp = Date.now()
+        const randomSuffix = Math.floor(Math.random() * 100000)
+        const userSuffix = userAccountId.slice(-6) // Last 6 chars of account ID
+        const uniqueMemo = `D-${timestamp}-${randomSuffix}-${userSuffix}: ${amountHUSDC.toFixed(2)} hUSD`
+        
+        console.log('Generated unique memo:', uniqueMemo)
 
         const usdcDecimals = 6
         const husdcDecimals = 8
@@ -293,18 +295,13 @@ export default async function handler(
                 AccountId.fromString(userAccountId),
                 husdcAmountTinybar
             )
-            .setTransactionMemo(
-                `VALORA: Mint ${amountHUSDC} hUSD by depositing ${amountNum} USDC (Rate: 1:1) [${uniqueId}]`
-            )
 
         // Create the scheduled transaction
         console.log('Creating ScheduleCreateTransaction...')
 
         const scheduleCreateTx = new ScheduleCreateTransaction()
             .setScheduledTransaction(transferTransaction)
-            .setScheduleMemo(
-                `VALORA Protocol: Exchange ${amountNum} USDC for ${amountHUSDC} hUSD tokens [${uniqueId}]`
-            )
+            .setScheduleMemo(uniqueMemo)
             .setAdminKey(operatorKey.publicKey)
             .setPayerAccountId(treasuryAccountId) // Treasury pays for execution
             .setExpirationTime(

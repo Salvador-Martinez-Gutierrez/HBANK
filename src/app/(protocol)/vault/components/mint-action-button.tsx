@@ -254,7 +254,7 @@ export function MintActionButton({
             const scheduleSignTx = new ScheduleSignTransaction()
                 .setScheduleId(ScheduleId.fromString(scheduleId))
                 .setTransactionMemo(
-                    `VALORA: Sign to mint ${amountHUSDC} hUSD tokens`
+                    `VALORA: Sign to mint ${amountHUSDC.toFixed(2)} hUSD`
                 )
 
             // Freeze with signer
