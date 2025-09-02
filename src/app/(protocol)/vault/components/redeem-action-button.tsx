@@ -5,7 +5,7 @@ import { ConnectWalletButton } from '@/components/connect-wallet-button'
 import { Button } from '@/components/ui/button'
 import { Loader2, AlertTriangle } from 'lucide-react'
 import { useRealTimeRate } from '@/hooks/useRealTimeRate'
-import { useWithdrawals } from '@/hooks/useWithdrawals'
+import { useWithdrawSubmit } from '@/hooks/useWithdrawSubmit'
 import { useTokenBalances } from '../hooks/useTokenBalances'
 import { ScheduleSignTransaction, ScheduleId, Signer } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
@@ -40,9 +40,8 @@ export function RedeemActionButton({
     const { isConnected, signer } = useWallet()
     const accountId = useAccountId()
     const { rateData: realTimeRateData } = useRealTimeRate()
-    const { submitWithdrawal } = useWithdrawals({
+    const { submitWithdrawal } = useWithdrawSubmit({
         userAccountId: accountId,
-        enabled: !!accountId,
     })
     const { refreshBalances } = useTokenBalances()
     const { success: toastSuccess } = useToast()
@@ -187,9 +186,14 @@ export function RedeemActionButton({
                 if (onBalanceRefresh) {
                     await onBalanceRefresh()
                 }
-                console.log('✅ Immediate balance refresh completed after redeem')
+                console.log(
+                    '✅ Immediate balance refresh completed after redeem'
+                )
             } catch (refreshError) {
-                console.warn('⚠️ Failed immediate balance refresh after redeem:', refreshError)
+                console.warn(
+                    '⚠️ Failed immediate balance refresh after redeem:',
+                    refreshError
+                )
             }
 
             // Wait a bit for the mirror node to update (Hedera network delay)
@@ -199,9 +203,14 @@ export function RedeemActionButton({
                     if (onBalanceRefresh) {
                         await onBalanceRefresh()
                     }
-                    console.log('✅ Delayed balance refresh completed after redeem')
+                    console.log(
+                        '✅ Delayed balance refresh completed after redeem'
+                    )
                 } catch (refreshError) {
-                    console.warn('⚠️ Failed delayed balance refresh after redeem:', refreshError)
+                    console.warn(
+                        '⚠️ Failed delayed balance refresh after redeem:',
+                        refreshError
+                    )
                 }
             }, 3000) // 3 seconds for mirror node sync
 
@@ -212,9 +221,14 @@ export function RedeemActionButton({
                     if (onBalanceRefresh) {
                         await onBalanceRefresh()
                     }
-                    console.log('✅ Final balance refresh completed after redeem')
+                    console.log(
+                        '✅ Final balance refresh completed after redeem'
+                    )
                 } catch (refreshError) {
-                    console.warn('⚠️ Failed final balance refresh after redeem:', refreshError)
+                    console.warn(
+                        '⚠️ Failed final balance refresh after redeem:',
+                        refreshError
+                    )
                 }
             }, 10000) // 10 second final refresh
         } catch (err) {

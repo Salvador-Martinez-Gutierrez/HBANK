@@ -54,7 +54,7 @@ export function WithdrawDialog({
     } = useRealTimeRate()
     const { submitWithdrawal } = useWithdrawals({
         userAccountId,
-        enabled: !!userAccountId,
+        enabled: isOpen && !!userAccountId,
     })
 
     const rate = rateData?.rate

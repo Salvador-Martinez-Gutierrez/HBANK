@@ -37,8 +37,12 @@ export function useWithdrawals({
 
     // Fetch user withdrawals from API
     const fetchWithdrawals = useCallback(async () => {
-        if (!userAccountId || !enabled) return
+        if (!userAccountId || !enabled) {
+            console.log(`🚫 useWithdrawals: Skipping fetch - userAccountId: ${userAccountId}, enabled: ${enabled}`)
+            return
+        }
 
+        console.log(`🔄 useWithdrawals: Fetching withdrawals for user: ${userAccountId}`)
         setIsLoading(true)
         setError(null)
 
@@ -164,16 +168,28 @@ export function useWithdrawals({
                             ).toString('utf8')
                             const withdrawMessage = JSON.parse(decodedMessage)
 
+                            console.log('📝 Parsed message:', {
+                                type: withdrawMessage.type,
+                                requestId: withdrawMessage.requestId,
+                                user: withdrawMessage.user,
+                                status: withdrawMessage.status
+                            })
+
                             // If this is a message for our user, refresh the withdrawals
                             if (
                                 (withdrawMessage.type === 'withdraw_request' &&
                                     withdrawMessage.user === userAccountId) ||
-                                withdrawMessage.type === 'withdraw_result'
+                                (withdrawMessage.type === 'withdraw_result' &&
+                                    withdrawMessage.user === userAccountId)
                             ) {
                                 console.log(
-                                    '🔄 Received withdrawal update, refreshing...'
+                                    '🔄 Received withdrawal update for our user, refreshing...'
                                 )
                                 fetchWithdrawals()
+                            } else {
+                                console.log(
+                                    '⏭️ Message not for our user, ignoring...'
+                                )
                             }
                         }
                     } catch (parseError) {
