@@ -16,7 +16,8 @@ import { ConnectWalletButton } from '@/components/connect-wallet-button'
 import { MintActionButton } from './mint-action-button'
 import { RedeemActionButton } from './redeem-action-button'
 import { RealTimeRateDisplay } from '@/components/real-time-rate-display'
-import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
+import { HistoryCards } from '@/components/history-cards'
+import { useWallet, useAccountId } from '@buidlerlabs/hashgraph-react-wallets'
 import { useTokenBalances } from '../hooks/useTokenBalances'
 import { useRealTimeRate } from '@/hooks/useRealTimeRate'
 import { useInstantWithdraw } from '@/hooks/useInstantWithdraw'
@@ -34,6 +35,7 @@ export function TradingInterface() {
     )
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const { isConnected } = useWallet()
+    const { data: accountId } = useAccountId()
     const {
         balances,
         loading: balancesLoading,
@@ -394,10 +396,7 @@ export function TradingInterface() {
                         {activeTab === 'mint' && renderTabContent()}
                         {activeTab === 'redeem' && renderTabContent()}
                         {activeTab === 'history' && (
-                            <div className='text-center text-muted-foreground'>
-                                <p>Transaction History</p>
-                                <p className='text-sm'>Coming soon...</p>
-                            </div>
+                            <HistoryCards userAccountId={accountId} />
                         )}
                     </div>
                 </div>

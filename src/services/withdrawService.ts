@@ -105,6 +105,12 @@ export class WithdrawService {
 
             for (const msg of data.messages || []) {
                 try {
+                    // Check if message exists and is not empty
+                    if (!msg.message) {
+                        console.log('⚠️ Skipping message without message content')
+                        continue
+                    }
+
                     const decodedMessage = Buffer.from(
                         msg.message,
                         'base64'
@@ -116,13 +122,32 @@ export class WithdrawService {
                         requestId: parsedMessage.requestId,
                         user: parsedMessage.user,
                         status: parsedMessage.status,
+                        payload: parsedMessage.payload ? 'has payload' : 'no payload'
                     })
 
+                    // Handle different message formats
+                    let processedMessage = parsedMessage
+                    
+                    // Check if it's the old format with payload
+                    if (parsedMessage.payload) {
+                        if (parsedMessage.type === 'withdraw_result') {
+                            // Convert old format to new format
+                            processedMessage = {
+                                type: 'withdraw_result',
+                                requestId: parsedMessage.payload.requestId || parsedMessage.requestId,
+                                status: parsedMessage.payload.success ? 'completed' : 'failed',
+                                txId: parsedMessage.payload.txId,
+                                failureReason: parsedMessage.payload.success ? undefined : parsedMessage.payload.reason,
+                                processedAt: new Date().toISOString()
+                            }
+                        }
+                    }
+
                     if (
-                        parsedMessage.type === 'withdraw_request' ||
-                        parsedMessage.type === 'withdraw_result'
+                        processedMessage.type === 'withdraw_request' ||
+                        processedMessage.type === 'withdraw_result'
                     ) {
-                        messages.push(parsedMessage)
+                        messages.push(processedMessage)
                     }
                 } catch (parseError) {
                     console.warn('Failed to parse message:', parseError)
@@ -238,24 +263,28 @@ export class WithdrawService {
                 { request?: WithdrawRequest; result?: WithdrawResult }
             >()
 
+            // First pass: identify all withdraw_request messages for this user
+            const userRequestIds = new Set<string>()
             for (const message of messages) {
                 if (
                     message.type === 'withdraw_request' &&
                     message.user === userAccountId
                 ) {
+                    userRequestIds.add(message.requestId)
+                    userRequestMap.set(message.requestId, {
+                        request: message,
+                    })
+                }
+            }
+
+            // Second pass: add withdraw_result messages for user's requests
+            for (const message of messages) {
+                if (message.type === 'withdraw_result' && userRequestIds.has(message.requestId)) {
                     const existing = userRequestMap.get(message.requestId) || {}
                     userRequestMap.set(message.requestId, {
                         ...existing,
-                        request: message,
+                        result: message,
                     })
-                } else if (message.type === 'withdraw_result') {
-                    const existing = userRequestMap.get(message.requestId)
-                    if (existing?.request?.user === userAccountId) {
-                        userRequestMap.set(message.requestId, {
-                            ...existing,
-                            result: message,
-                        })
-                    }
                 }
             }
 

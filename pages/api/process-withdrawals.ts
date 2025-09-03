@@ -169,16 +169,21 @@ export default async function handler(
                             transferError
                         )
 
-                        console.log(`🔄 USDC transfer failed, attempting to rollback HUSD...`)
+                        console.log(
+                            `🔄 USDC transfer failed, attempting to rollback HUSD...`
+                        )
 
                         try {
                             // Rollback the HUSD to the user since the USDC transfer failed
-                            const rollbackTxId = await hederaService.rollbackHUSDToUser(
-                                withdrawal.user,
-                                withdrawal.amountHUSD
-                            )
+                            const rollbackTxId =
+                                await hederaService.rollbackHUSDToUser(
+                                    withdrawal.user,
+                                    withdrawal.amountHUSD
+                                )
 
-                            console.log(`✅ HUSD rollback completed after USDC transfer failure: ${rollbackTxId}`)
+                            console.log(
+                                `✅ HUSD rollback completed after USDC transfer failure: ${rollbackTxId}`
+                            )
 
                             await hederaService.publishWithdrawResult(
                                 withdrawal.requestId,
@@ -196,8 +201,11 @@ export default async function handler(
                                 `USDC transfer failed, HUSD returned: ${withdrawal.requestId}`
                             )
                         } catch (rollbackError) {
-                            console.error(`❌ Failed to rollback HUSD after USDC transfer failure:`, rollbackError)
-                            
+                            console.error(
+                                `❌ Failed to rollback HUSD after USDC transfer failure:`,
+                                rollbackError
+                            )
+
                             await hederaService.publishWithdrawResult(
                                 withdrawal.requestId,
                                 'failed',
@@ -225,12 +233,15 @@ export default async function handler(
 
                     try {
                         // Rollback the HUSD to the user since we can't complete the withdrawal
-                        const rollbackTxId = await hederaService.rollbackHUSDToUser(
-                            withdrawal.user,
-                            withdrawal.amountHUSD
-                        )
+                        const rollbackTxId =
+                            await hederaService.rollbackHUSDToUser(
+                                withdrawal.user,
+                                withdrawal.amountHUSD
+                            )
 
-                        console.log(`✅ HUSD rollback completed: ${rollbackTxId}`)
+                        console.log(
+                            `✅ HUSD rollback completed: ${rollbackTxId}`
+                        )
 
                         await hederaService.publishWithdrawResult(
                             withdrawal.requestId,
@@ -244,8 +255,11 @@ export default async function handler(
                             `Insufficient USDC balance, HUSD returned: ${withdrawal.requestId}`
                         )
                     } catch (rollbackError) {
-                        console.error(`❌ Failed to rollback HUSD:`, rollbackError)
-                        
+                        console.error(
+                            `❌ Failed to rollback HUSD:`,
+                            rollbackError
+                        )
+
                         await hederaService.publishWithdrawResult(
                             withdrawal.requestId,
                             'failed',
