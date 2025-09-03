@@ -21,7 +21,26 @@ export interface WithdrawResult {
     processedAt: string
 }
 
-export type WithdrawMessage = WithdrawRequest | WithdrawResult
+// New interface for instant withdrawal results
+export interface InstantWithdrawResult {
+    type: 'instant_withdraw_result'
+    requestId: string
+    user: string
+    amountHUSD: number
+    grossUSDC: number
+    fee: number
+    netUSDC: number
+    rate: number
+    rateSequenceNumber: string
+    txId: string
+    status: 'completed'
+    processedAt: string
+}
+
+export type WithdrawMessage =
+    | WithdrawRequest
+    | WithdrawResult
+    | InstantWithdrawResult
 
 export interface WithdrawStatus {
     requestId: string

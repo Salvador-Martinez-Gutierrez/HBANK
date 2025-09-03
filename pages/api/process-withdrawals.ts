@@ -169,36 +169,99 @@ export default async function handler(
                             transferError
                         )
 
+                        console.log(`🔄 USDC transfer failed, attempting to rollback HUSD...`)
+
+                        try {
+                            // Rollback the HUSD to the user since the USDC transfer failed
+                            const rollbackTxId = await hederaService.rollbackHUSDToUser(
+                                withdrawal.user,
+                                withdrawal.amountHUSD
+                            )
+
+                            console.log(`✅ HUSD rollback completed after USDC transfer failure: ${rollbackTxId}`)
+
+                            await hederaService.publishWithdrawResult(
+                                withdrawal.requestId,
+                                'failed',
+                                rollbackTxId,
+                                `USDC transfer failed: ${
+                                    transferError instanceof Error
+                                        ? transferError.message
+                                        : transferError
+                                }. HUSD tokens have been returned to your account.`
+                            )
+
+                            results.failed++
+                            results.errors.push(
+                                `USDC transfer failed, HUSD returned: ${withdrawal.requestId}`
+                            )
+                        } catch (rollbackError) {
+                            console.error(`❌ Failed to rollback HUSD after USDC transfer failure:`, rollbackError)
+                            
+                            await hederaService.publishWithdrawResult(
+                                withdrawal.requestId,
+                                'failed',
+                                undefined,
+                                `USDC transfer failed and failed to return HUSD: ${
+                                    transferError instanceof Error
+                                        ? transferError.message
+                                        : transferError
+                                }. Rollback error: ${
+                                    rollbackError instanceof Error
+                                        ? rollbackError.message
+                                        : rollbackError
+                                }`
+                            )
+
+                            results.failed++
+                            results.errors.push(
+                                `Critical error - USDC failed and HUSD not returned: ${withdrawal.requestId}`
+                            )
+                        }
+                    }
+                } else {
+                    console.log(`❌ Insufficient treasury USDC balance`)
+                    console.log(`🔄 Attempting to rollback HUSD to user...`)
+
+                    try {
+                        // Rollback the HUSD to the user since we can't complete the withdrawal
+                        const rollbackTxId = await hederaService.rollbackHUSDToUser(
+                            withdrawal.user,
+                            withdrawal.amountHUSD
+                        )
+
+                        console.log(`✅ HUSD rollback completed: ${rollbackTxId}`)
+
+                        await hederaService.publishWithdrawResult(
+                            withdrawal.requestId,
+                            'failed',
+                            rollbackTxId,
+                            'Insufficient treasury USDC balance. HUSD tokens have been returned to your account.'
+                        )
+
+                        results.failed++
+                        results.errors.push(
+                            `Insufficient USDC balance, HUSD returned: ${withdrawal.requestId}`
+                        )
+                    } catch (rollbackError) {
+                        console.error(`❌ Failed to rollback HUSD:`, rollbackError)
+                        
                         await hederaService.publishWithdrawResult(
                             withdrawal.requestId,
                             'failed',
                             undefined,
-                            `USDC transfer failed: ${
-                                transferError instanceof Error
-                                    ? transferError.message
-                                    : transferError
+                            `Insufficient treasury USDC balance and failed to return HUSD: ${
+                                rollbackError instanceof Error
+                                    ? rollbackError.message
+                                    : rollbackError
                             }`
                         )
 
                         results.failed++
                         results.errors.push(
-                            `USDC transfer failed: ${withdrawal.requestId}`
+                            `Critical error - HUSD not returned: ${withdrawal.requestId}`
                         )
                     }
-                } else {
-                    console.log(`❌ Insufficient treasury USDC balance`)
-
-                    await hederaService.publishWithdrawResult(
-                        withdrawal.requestId,
-                        'failed',
-                        undefined,
-                        'Insufficient treasury USDC balance'
-                    )
-
-                    results.failed++
-                    results.errors.push(
-                        `Insufficient USDC balance: ${withdrawal.requestId}`
-                    )
                 }
             } catch (error) {
                 console.error(

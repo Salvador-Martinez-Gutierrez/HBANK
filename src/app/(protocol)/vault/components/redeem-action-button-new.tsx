@@ -111,17 +111,14 @@ export function RedeemActionButton({
         try {
             if (redeemType === 'instant') {
                 await handleInstantWithdraw(amount)
-                // Don't clear step here for instant withdrawals - it's handled in the timeout
             } else {
                 await handleStandardWithdraw(amount)
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error')
-            // Clear step immediately on error regardless of withdrawal type
-            setStep('')
         } finally {
             setIsSubmitting(false)
-            // Don't clear step here for any withdrawal type - it's handled in the timeout callbacks
+            setStep('')
         }
     }
 
@@ -201,55 +198,20 @@ export function RedeemActionButton({
             )} USDC (fee: ${result.fee?.toFixed(6)} USDC)`
         )
 
-        // Clear the input field
+        // Clear the input field and refresh balances
         if (onInputClear) {
             onInputClear()
         }
 
-        // Refresh balances with delay to allow network propagation
-        setStep('Updating balances...')
-
         try {
-            // Immediate refresh for hUSD (already sent)
-            await refreshBalances()
-            console.log('✅ Initial balance refresh completed')
-
-            // Wait for backend transaction to propagate through Hedera network
-            setTimeout(async () => {
-                try {
-                    setStep('Finalizing balance update...')
-                    await Promise.all([
-                        refreshBalances(),
-                        onBalanceRefresh?.(),
-                        refreshMaxAmount(),
-                    ])
-                    console.log(
-                        '✅ Final balance refresh completed after instant withdrawal'
-                    )
-                } catch (refreshError) {
-                    console.warn(
-                        '⚠️ Failed final balance refresh after instant withdrawal:',
-                        refreshError
-                    )
-                }
-            }, 3000) // 3 second delay for network propagation
-
-            // Additional refresh after longer delay to ensure USDC balance is updated
-            setTimeout(async () => {
-                try {
-                    await Promise.all([refreshBalances(), onBalanceRefresh?.()])
-                    console.log('✅ Extended balance refresh completed')
-                    setStep('') // Clear step after final refresh
-                } catch (refreshError) {
-                    console.warn(
-                        '⚠️ Failed extended balance refresh:',
-                        refreshError
-                    )
-                    setStep('') // Clear step even if refresh fails
-                }
-            }, 8000) // 8 second delay for complete network settlement
+            await Promise.all([
+                refreshBalances(),
+                onBalanceRefresh?.(),
+                refreshMaxAmount(),
+            ])
+            console.log('✅ Balances refreshed after instant withdrawal')
         } catch (refreshError) {
-            console.warn('⚠️ Failed immediate balance refresh:', refreshError)
+            console.warn('⚠️ Failed to refresh balances:', refreshError)
         }
     }
 
@@ -272,6 +234,11 @@ export function RedeemActionButton({
 
         // Step 2: User signs the Schedule Transaction
         await handleScheduleSignature(result.scheduleId || '')
+
+        // Refresh balances after successful withdrawal
+        if (onBalanceRefresh) {
+            onBalanceRefresh()
+        }
     }
 
     const handleScheduleSignature = async (scheduleTransactionId: string) => {
@@ -338,57 +305,18 @@ export function RedeemActionButton({
                 onInputClear()
             }
 
-            // Refresh balances with delay to allow network propagation
-            setStep('Updating balances...')
-
+            // Refresh balances after successful withdrawal
             try {
-                // Immediate refresh attempt
                 await refreshBalances()
+                if (onBalanceRefresh) {
+                    await onBalanceRefresh()
+                }
                 console.log(
-                    '✅ Initial balance refresh completed after standard withdrawal'
+                    '✅ Immediate balance refresh completed after redeem'
                 )
-
-                // Wait for Schedule Transaction to propagate through Hedera network
-                setTimeout(async () => {
-                    try {
-                        setStep('Finalizing balance update...')
-                        await Promise.all([
-                            refreshBalances(),
-                            onBalanceRefresh?.(),
-                        ])
-                        console.log(
-                            '✅ Final balance refresh completed after standard withdrawal'
-                        )
-                    } catch (refreshError) {
-                        console.warn(
-                            '⚠️ Failed final balance refresh after standard withdrawal:',
-                            refreshError
-                        )
-                    }
-                }, 3000) // 3 second delay for network propagation
-
-                // Additional refresh after longer delay to ensure hUSD balance is updated
-                setTimeout(async () => {
-                    try {
-                        await Promise.all([
-                            refreshBalances(),
-                            onBalanceRefresh?.(),
-                        ])
-                        console.log(
-                            '✅ Extended balance refresh completed for standard withdrawal'
-                        )
-                        setStep('') // Clear step after final refresh
-                    } catch (refreshError) {
-                        console.warn(
-                            '⚠️ Failed extended balance refresh for standard withdrawal:',
-                            refreshError
-                        )
-                        setStep('') // Clear step even if refresh fails
-                    }
-                }, 8000) // 8 second delay for complete network settlement
             } catch (refreshError) {
                 console.warn(
-                    '⚠️ Failed immediate balance refresh after standard withdrawal:',
+                    '⚠️ Failed immediate balance refresh after redeem:',
                     refreshError
                 )
             }
@@ -399,7 +327,6 @@ export function RedeemActionButton({
                     ? err.message
                     : 'Failed to sign withdrawal transaction'
             )
-            setStep('') // Clear step immediately on error
         }
     }
 

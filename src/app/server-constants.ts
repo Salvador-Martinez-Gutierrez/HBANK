@@ -27,3 +27,8 @@ export const WITHDRAWAL_WORKER_INTERVAL_MINUTES = 60
 
 // Rate validation
 export const RATE_TOLERANCE = 0.0001 // 0.01%
+
+// Instant Withdrawal Configuration
+export const INSTANT_WITHDRAW_FEE = parseFloat(
+    process.env.INSTANT_WITHDRAW_FEE || '0.01'
+)

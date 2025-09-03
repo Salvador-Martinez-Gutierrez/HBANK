@@ -19,6 +19,8 @@ import { RealTimeRateDisplay } from '@/components/real-time-rate-display'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { useTokenBalances } from '../hooks/useTokenBalances'
 import { useRealTimeRate } from '@/hooks/useRealTimeRate'
+import { useInstantWithdraw } from '@/hooks/useInstantWithdraw'
+import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 
 export function TradingInterface() {
     // State management
@@ -40,6 +42,10 @@ export function TradingInterface() {
 
     // Real-time rate hook
     const { rateData } = useRealTimeRate()
+
+    // Instant withdrawal hook for checking limits
+    const { maxInstantWithdrawable, isLoading: isLoadingMaxAmount } =
+        useInstantWithdraw()
 
     // Token configuration based on active tab
     const fromToken = activeTab === 'mint' ? 'USDC' : 'hUSD'
@@ -64,6 +70,17 @@ export function TradingInterface() {
             } else {
                 // hUSD to USDC: multiply by rate
                 calculatedTo = parseFloat(value) * rateData.rate
+
+                // For instant withdrawals, check if calculated USDC exceeds max instant limit
+                if (
+                    redeemType === 'instant' &&
+                    calculatedTo > maxInstantWithdrawable
+                ) {
+                    // Calculate max hUSD based on instant withdrawal limit
+                    const maxHUSD = maxInstantWithdrawable / rateData.rate
+                    setFromAmount(maxHUSD.toFixed(6))
+                    calculatedTo = maxInstantWithdrawable
+                }
             }
             setToAmount(calculatedTo.toFixed(6))
         } else {
@@ -126,6 +143,23 @@ export function TradingInterface() {
                     />
                 </div>
             </div>
+
+            {/* Instant withdrawal limit warning */}
+            {activeTab === 'redeem' && redeemType === 'instant' && rateData && (
+                <div className='bg-blue-50 border border-blue-200 p-3 rounded-lg'>
+                    <div className='text-sm text-blue-800'>
+                        <strong>Instant Withdrawal Limit:</strong> Maximum{' '}
+                        {maxInstantWithdrawable.toFixed(6)} USDC (
+                        {(maxInstantWithdrawable / rateData.rate).toFixed(6)}{' '}
+                        hUSD at current rate)
+                    </div>
+                    {isLoadingMaxAmount && (
+                        <div className='text-xs text-blue-600 mt-1'>
+                            Checking treasury balance...
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Tab-specific action button */}
             {activeTab === 'mint' ? (
@@ -195,8 +229,8 @@ export function TradingInterface() {
                     {/* Transaction Type Selector - Only for Redeem Tab */}
                     {activeTab === 'redeem' && (
                         <div className='flex items-center'>
-                            <Popover 
-                                open={isPopoverOpen} 
+                            <Popover
+                                open={isPopoverOpen}
                                 onOpenChange={setIsPopoverOpen}
                             >
                                 <PopoverTrigger asChild>
@@ -260,7 +294,9 @@ export function TradingInterface() {
                                                         : 'outline'
                                                 }
                                                 onClick={() =>
-                                                    handleRedeemTypeSelect('instant')
+                                                    handleRedeemTypeSelect(
+                                                        'instant'
+                                                    )
                                                 }
                                                 className={`w-full p-4 h-auto justify-start ${
                                                     redeemType === 'instant'
@@ -288,7 +324,12 @@ export function TradingInterface() {
                                                                 Instant
                                                             </span>
                                                             <span className='text-sm opacity-75'>
-                                                                (0.5% fee)
+                                                                (
+                                                                {(
+                                                                    INSTANT_WITHDRAW_FEE *
+                                                                    100
+                                                                ).toFixed(1)}
+                                                                % fee)
                                                             </span>
                                                         </div>
                                                     </div>
@@ -303,7 +344,9 @@ export function TradingInterface() {
                                                         : 'outline'
                                                 }
                                                 onClick={() =>
-                                                    handleRedeemTypeSelect('standard')
+                                                    handleRedeemTypeSelect(
+                                                        'standard'
+                                                    )
                                                 }
                                                 className={`w-full p-4 h-auto justify-start ${
                                                     redeemType === 'standard'
