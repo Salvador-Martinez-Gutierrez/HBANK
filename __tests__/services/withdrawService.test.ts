@@ -74,7 +74,7 @@ describe('WithdrawService', () => {
         withdrawService = new MockWithdrawService()
 
         // Setup environment variables for tests
-        process.env.TREASURY_ID = '0.0.123456'
+        process.env.STANDARD_WITHDRAW_WALLET_ID = '0.0.123456'
         process.env.USDC_TOKEN_ID = '0.0.429274'
         process.env.HUSD_TOKEN_ID = '0.0.6624255'
     })

@@ -10,9 +10,15 @@ export const TOKEN_IDS = {
 export const RATE_TOPIC_ID = '0.0.6626120'
 export const WITHDRAW_TOPIC_ID = '0.0.6750041'
 
-// Hedera Environment
+// Wallet IDs (without keys for frontend usage)
 export const TREASURY_ID = process.env.TREASURY_ID || '0.0.6510977'
 export const EMISSIONS_ID = process.env.EMISSIONS_ID || '0.0.6624253'
+export const DEPOSIT_WALLET_ID = process.env.DEPOSIT_WALLET_ID || '0.0.6510977'
+export const INSTANT_WITHDRAW_WALLET_ID = process.env.INSTANT_WITHDRAW_WALLET_ID || '0.0.6510977'
+export const STANDARD_WITHDRAW_WALLET_ID = process.env.STANDARD_WITHDRAW_WALLET_ID || '0.0.6510977'
+export const RATE_PUBLISHER_ID = process.env.RATE_PUBLISHER_ID || '0.0.6510977'
+
+// Hedera Environment
 export const TESTNET_MIRROR_NODE_ENDPOINT =
     process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
     'https://testnet.mirrornode.hedera.com'

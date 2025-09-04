@@ -12,10 +12,10 @@ export default async function handler(
     try {
         console.log('📊 Getting maximum instant withdrawable amount...')
 
-        const treasuryId = process.env.TREASURY_ID
+        const instantWithdrawWalletId = process.env.INSTANT_WITHDRAW_WALLET_ID
         const usdcTokenId = process.env.USDC_TOKEN_ID
 
-        if (!treasuryId || !usdcTokenId) {
+        if (!instantWithdrawWalletId || !usdcTokenId) {
             console.error('❌ Missing required environment variables')
             return res.status(500).json({
                 error: 'Server configuration error',
@@ -24,17 +24,17 @@ export default async function handler(
 
         const hederaService = new HederaService()
 
-        // Get treasury USDC balance
-        const treasuryUSDCBalance = await hederaService.checkBalance(
-            treasuryId,
+        // Get instant withdraw wallet USDC balance
+        const instantWithdrawUSDCBalance = await hederaService.checkBalance(
+            instantWithdrawWalletId,
             usdcTokenId
         )
 
-        console.log(`💰 Treasury USDC balance: ${treasuryUSDCBalance}`)
+        console.log(`💰 Instant Withdraw Wallet USDC balance: ${instantWithdrawUSDCBalance}`)
 
-        // The maximum instant withdrawable is the current treasury balance
+        // The maximum instant withdrawable is the current instant withdraw wallet balance
         // This ensures we never allow instant withdrawals beyond what we can immediately fulfill
-        const maxInstantWithdrawable = treasuryUSDCBalance
+        const maxInstantWithdrawable = instantWithdrawUSDCBalance
 
         console.log(
             `✅ Maximum instant withdrawable: ${maxInstantWithdrawable} USDC`
@@ -42,7 +42,7 @@ export default async function handler(
 
         return res.status(200).json({
             maxInstantWithdrawable,
-            treasuryBalance: treasuryUSDCBalance,
+            treasuryBalance: instantWithdrawUSDCBalance,
         })
     } catch (error) {
         console.error('❌ Error getting max instant withdrawable:', error)

@@ -16,13 +16,13 @@ export class HederaRateService {
     constructor() {
         this.client = Client.forTestnet()
 
-        if (!process.env.OPERATOR_ID || !process.env.OPERATOR_KEY) {
-            throw new Error('Hedera credentials not configured')
+        if (!process.env.RATE_PUBLISHER_ID || !process.env.RATE_PUBLISHER_KEY) {
+            throw new Error('Rate publisher credentials not configured')
         }
 
         this.client.setOperator(
-            process.env.OPERATOR_ID,
-            process.env.OPERATOR_KEY
+            process.env.RATE_PUBLISHER_ID,
+            process.env.RATE_PUBLISHER_KEY
         )
 
         if (!process.env.TOPIC_ID) {

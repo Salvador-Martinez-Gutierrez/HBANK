@@ -60,13 +60,13 @@ export default async function handler(
         })
 
         // Validate environment variables
-        const treasuryId = process.env.TREASURY_ID
-        const operatorKeyStr = process.env.OPERATOR_KEY
+        const depositWalletId = process.env.DEPOSIT_WALLET_ID
+        const depositWalletKey = process.env.DEPOSIT_WALLET_KEY
 
-        if (!treasuryId || !operatorKeyStr) {
+        if (!depositWalletId || !depositWalletKey) {
             console.error('Missing environment variables:', {
-                TREASURY_ID: !!treasuryId,
-                OPERATOR_KEY: !!operatorKeyStr,
+                DEPOSIT_WALLET_ID: !!depositWalletId,
+                DEPOSIT_WALLET_KEY: !!depositWalletKey,
             })
             return res.status(500).json({
                 error: 'Server configuration error',
@@ -76,13 +76,13 @@ export default async function handler(
 
         // Configure Hedera client
         const client = Client.forTestnet()
-        const treasuryAccountId = AccountId.fromString(treasuryId)
-        const operatorKey = PrivateKey.fromString(operatorKeyStr)
+        const depositWalletAccountId = AccountId.fromString(depositWalletId)
+        const depositWalletPrivateKey = PrivateKey.fromString(depositWalletKey)
 
-        client.setOperator(treasuryAccountId, operatorKey)
+        client.setOperator(depositWalletAccountId, depositWalletPrivateKey)
         console.log(
-            'Client configured for treasury:',
-            treasuryAccountId.toString()
+            'Client configured for deposit wallet:',
+            depositWalletAccountId.toString()
         )
 
         // Query the schedule to verify user signature

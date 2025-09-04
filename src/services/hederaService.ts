@@ -28,7 +28,7 @@ export class HederaService {
             )
         }
 
-        // Configure credentials
+        // Configure credentials (using legacy operator for backward compatibility)
         const operatorIdStr = process.env.OPERATOR_ID
         const operatorKeyStr = process.env.OPERATOR_KEY
         const topicIdStr = process.env.TOPIC_ID
@@ -55,6 +55,60 @@ export class HederaService {
         console.log('✅ Hedera client initialized for testnet')
         console.log(`   Operator: ${this.operatorId.toString()}`)
         console.log(`   Topic: ${this.topicId.toString()}`)
+    }
+
+    /**
+     * Creates a client configured for a specific wallet
+     */
+    private createClientForWallet(walletId: string, walletKey: string): Client {
+        const client = Client.forTestnet()
+        client.setOperator(
+            AccountId.fromString(walletId),
+            PrivateKey.fromString(walletKey)
+        )
+        client.setDefaultMaxTransactionFee(new Hbar(10))
+        client.setDefaultMaxQueryPayment(new Hbar(5))
+        return client
+    }
+
+    /**
+     * Gets the appropriate wallet credentials for different operations
+     */
+    private getWalletCredentials(walletType: 'deposit' | 'instant-withdraw' | 'standard-withdraw' | 'treasury' | 'emissions' | 'rate-publisher') {
+        switch (walletType) {
+            case 'deposit':
+                return {
+                    id: process.env.DEPOSIT_WALLET_ID!,
+                    key: process.env.DEPOSIT_WALLET_KEY!
+                }
+            case 'instant-withdraw':
+                return {
+                    id: process.env.INSTANT_WITHDRAW_WALLET_ID!,
+                    key: process.env.INSTANT_WITHDRAW_WALLET_KEY!
+                }
+            case 'standard-withdraw':
+                return {
+                    id: process.env.STANDARD_WITHDRAW_WALLET_ID!,
+                    key: process.env.STANDARD_WITHDRAW_WALLET_KEY!
+                }
+            case 'treasury':
+                return {
+                    id: process.env.TREASURY_ID!,
+                    key: process.env.TREASURY_KEY!
+                }
+            case 'emissions':
+                return {
+                    id: process.env.EMISSIONS_ID!,
+                    key: process.env.EMISSIONS_KEY!
+                }
+            case 'rate-publisher':
+                return {
+                    id: process.env.RATE_PUBLISHER_ID!,
+                    key: process.env.RATE_PUBLISHER_KEY!
+                }
+            default:
+                throw new Error(`Unknown wallet type: ${walletType}`)
+        }
     }
 
     /**
@@ -173,13 +227,13 @@ export class HederaService {
      */
     async scheduleDeposit(userId: string, amountUsdc: number) {
         try {
-            const treasuryId = process.env.TREASURY_ID
-            const emissionsId = process.env.EMISSIONS_ID
+            const depositWallet = this.getWalletCredentials('deposit')
+            const emissionsWallet = this.getWalletCredentials('emissions')
             const usdcTokenId = process.env.USDC_TOKEN_ID
             const husdTokenId = process.env.HUSD_TOKEN_ID
 
-            if (!treasuryId || !emissionsId || !usdcTokenId || !husdTokenId) {
-                throw new Error('Missing required token or account IDs')
+            if (!usdcTokenId || !husdTokenId) {
+                throw new Error('Missing required token IDs')
             }
 
             // Calculate hUSD amount based on current rate
@@ -191,6 +245,8 @@ export class HederaService {
                 usdcAmount: amountUsdc,
                 husdAmount: husdAmount.toFixed(2),
                 rate: currentRate,
+                depositWallet: depositWallet.id,
+                emissionsWallet: emissionsWallet.id,
             })
 
             // Create the transfer transaction
@@ -202,12 +258,12 @@ export class HederaService {
                 )
                 .addTokenTransfer(
                     TokenId.fromString(usdcTokenId),
-                    AccountId.fromString(treasuryId),
-                    amountUsdc * 1_000_000 // Positive = incoming
+                    AccountId.fromString(depositWallet.id),
+                    amountUsdc * 1_000_000 // Positive = incoming to deposit wallet
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
-                    AccountId.fromString(emissionsId),
+                    AccountId.fromString(emissionsWallet.id),
                     -Math.floor(husdAmount * 100_000_000) // Outgoing from emissions (hUSD has 8 decimals)
                 )
                 .addTokenTransfer(
@@ -261,16 +317,16 @@ export class HederaService {
         user: string,
         amountHUSD: number
     ): Promise<string> {
-        const treasuryId = process.env.TREASURY_ID
+        const treasuryWallet = this.getWalletCredentials('treasury')
         const husdTokenId = process.env.HUSD_TOKEN_ID
 
-        if (!treasuryId || !husdTokenId) {
-            throw new Error('Missing required treasury or token IDs')
+        if (!husdTokenId) {
+            throw new Error('Missing required token ID')
         }
 
         console.log('📋 Creating scheduled HUSD transfer:', {
             user,
-            treasury: treasuryId,
+            treasury: treasuryWallet.id,
             amount: amountHUSD,
         })
 
@@ -290,7 +346,7 @@ export class HederaService {
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
-                    AccountId.fromString(treasuryId),
+                    AccountId.fromString(treasuryWallet.id),
                     Math.floor(amountHUSD * 100_000_000) // Positive = incoming to treasury (hUSD has 8 decimals)
                 )
 
@@ -337,18 +393,18 @@ export class HederaService {
     }
 
     /**
-     * Executes USDC transfer from treasury to user
+     * Executes USDC transfer from standard withdrawal wallet to user
      */
     async transferUSDCToUser(
         user: string,
         amountUSDC: number
     ): Promise<string> {
         try {
-            const treasuryId = process.env.TREASURY_ID
+            const standardWithdrawWallet = this.getWalletCredentials('standard-withdraw')
             const usdcTokenId = process.env.USDC_TOKEN_ID
 
-            if (!treasuryId || !usdcTokenId) {
-                throw new Error('Missing required treasury or token IDs')
+            if (!usdcTokenId) {
+                throw new Error('Missing required token ID')
             }
 
             // Validate user parameter
@@ -360,16 +416,19 @@ export class HederaService {
 
             console.log('💰 Transferring USDC to user:', {
                 user,
-                treasury: treasuryId,
+                standardWithdrawWallet: standardWithdrawWallet.id,
                 amount: amountUSDC,
             })
+
+            // Create client with standard withdrawal wallet credentials
+            const standardWithdrawClient = this.createClientForWallet(standardWithdrawWallet.id, standardWithdrawWallet.key)
 
             // Create the transfer transaction
             const transferTx = new TransferTransaction()
                 .addTokenTransfer(
                     TokenId.fromString(usdcTokenId),
-                    AccountId.fromString(treasuryId),
-                    -Math.floor(amountUSDC * 1_000_000) // Negative = outgoing from treasury
+                    AccountId.fromString(standardWithdrawWallet.id),
+                    -Math.floor(amountUSDC * 1_000_000) // Negative = outgoing from standard withdraw wallet
                 )
                 .addTokenTransfer(
                     TokenId.fromString(usdcTokenId),
@@ -377,8 +436,8 @@ export class HederaService {
                     Math.floor(amountUSDC * 1_000_000) // Positive = incoming to user
                 )
 
-            const transferResponse = await transferTx.execute(this.client)
-            const receipt = await transferResponse.getReceipt(this.client)
+            const transferResponse = await transferTx.execute(standardWithdrawClient)
+            const receipt = await transferResponse.getReceipt(standardWithdrawClient)
 
             if (receipt.status.toString() !== 'SUCCESS') {
                 throw new Error(
@@ -513,11 +572,11 @@ export class HederaService {
         amountHUSD: number
     ): Promise<string> {
         try {
-            const treasuryId = process.env.TREASURY_ID
+            const treasuryWallet = this.getWalletCredentials('treasury')
             const husdTokenId = process.env.HUSD_TOKEN_ID
 
-            if (!treasuryId || !husdTokenId) {
-                throw new Error('Missing required treasury or token IDs')
+            if (!husdTokenId) {
+                throw new Error('Missing required token ID')
             }
 
             // Validate user parameter
@@ -527,15 +586,18 @@ export class HederaService {
 
             console.log('🔄 Rolling back HUSD to user:', {
                 user,
-                treasury: treasuryId,
+                treasury: treasuryWallet.id,
                 amount: amountHUSD,
             })
+
+            // Create client with treasury wallet credentials
+            const treasuryClient = this.createClientForWallet(treasuryWallet.id, treasuryWallet.key)
 
             // Create the transfer transaction to return HUSD to user
             const transferTx = new TransferTransaction()
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
-                    AccountId.fromString(treasuryId),
+                    AccountId.fromString(treasuryWallet.id),
                     -Math.floor(amountHUSD * 100_000_000) // Negative = outgoing from treasury (hUSD has 8 decimals)
                 )
                 .addTokenTransfer(
@@ -544,8 +606,8 @@ export class HederaService {
                     Math.floor(amountHUSD * 100_000_000) // Positive = incoming to user (hUSD has 8 decimals)
                 )
 
-            const transferResponse = await transferTx.execute(this.client)
-            const receipt = await transferResponse.getReceipt(this.client)
+            const transferResponse = await transferTx.execute(treasuryClient)
+            const receipt = await transferResponse.getReceipt(treasuryClient)
 
             if (receipt.status.toString() !== 'SUCCESS') {
                 throw new Error(

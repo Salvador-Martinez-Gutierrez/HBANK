@@ -165,20 +165,20 @@ export default async function handler(
         })
 
         // Validate environment variables
-        const treasuryId = process.env.TREASURY_ID
-        const operatorKeyStr = process.env.OPERATOR_KEY
+        const depositWalletId = process.env.DEPOSIT_WALLET_ID
+        const depositWalletKey = process.env.DEPOSIT_WALLET_KEY
         const usdcTokenIdStr = process.env.USDC_TOKEN_ID
         const husdTokenIdStr = process.env.HUSD_TOKEN_ID
 
         if (
-            !treasuryId ||
-            !operatorKeyStr ||
+            !depositWalletId ||
+            !depositWalletKey ||
             !usdcTokenIdStr ||
             !husdTokenIdStr
         ) {
             console.error('Missing environment variables:', {
-                TREASURY_ID: !!treasuryId,
-                OPERATOR_KEY: !!operatorKeyStr,
+                DEPOSIT_WALLET_ID: !!depositWalletId,
+                DEPOSIT_WALLET_KEY: !!depositWalletKey,
                 USDC_TOKEN_ID: !!usdcTokenIdStr,
                 HUSD_TOKEN_ID: !!husdTokenIdStr,
             })
@@ -190,15 +190,15 @@ export default async function handler(
 
         // Configure Hedera client
         const client = Client.forTestnet()
-        const treasuryAccountId = AccountId.fromString(treasuryId)
-        const operatorKey = PrivateKey.fromString(operatorKeyStr)
+        const depositWalletAccountId = AccountId.fromString(depositWalletId)
+        const depositWalletPrivateKey = PrivateKey.fromString(depositWalletKey)
         const usdcTokenId = TokenId.fromString(usdcTokenIdStr)
         const husdTokenId = TokenId.fromString(husdTokenIdStr)
 
-        client.setOperator(treasuryAccountId, operatorKey)
+        client.setOperator(depositWalletAccountId, depositWalletPrivateKey)
         console.log(
-            'Client configured for treasury:',
-            treasuryAccountId.toString()
+            'Client configured for deposit wallet:',
+            depositWalletAccountId.toString()
         )
 
         // Calculate hUSD amount using the validated rate
@@ -235,23 +235,24 @@ export default async function handler(
             })
         }
 
-        // Check treasury HUSDC balance
-        const treasuryBalanceQuery = new AccountBalanceQuery().setAccountId(
-            treasuryAccountId
+        // Check emissions wallet HUSDC balance
+        const emissionsWalletId = process.env.EMISSIONS_ID!
+        const emissionsBalanceQuery = new AccountBalanceQuery().setAccountId(
+            AccountId.fromString(emissionsWalletId)
         )
-        const treasuryBalance = await treasuryBalanceQuery.execute(client)
-        const treasuryHusdcBalance = treasuryBalance.tokens?.get(husdTokenId)
-        const treasuryHusdcBalanceNum = treasuryHusdcBalance
-            ? Number(treasuryHusdcBalance.toString()) / 100_000_000
+        const emissionsBalance = await emissionsBalanceQuery.execute(client)
+        const emissionsHusdcBalance = emissionsBalance.tokens?.get(husdTokenId)
+        const emissionsHusdcBalanceNum = emissionsHusdcBalance
+            ? Number(emissionsHusdcBalance.toString()) / 100_000_000
             : 0 // HUSDC has 8 decimals
 
-        console.log('Treasury HUSDC balance:', treasuryHusdcBalanceNum)
+        console.log('Emissions wallet HUSDC balance:', emissionsHusdcBalanceNum)
 
-        if (treasuryHusdcBalanceNum < amountHUSDC) {
+        if (emissionsHusdcBalanceNum < amountHUSDC) {
             return res.status(400).json({
-                error: 'Insufficient treasury HUSDC balance',
+                error: 'Insufficient emissions wallet HUSDC balance',
                 required: amountHUSDC,
-                available: treasuryHusdcBalanceNum,
+                available: emissionsHusdcBalanceNum,
             })
         }
 
@@ -277,17 +278,17 @@ export default async function handler(
         )
 
         const transferTransaction = new TransferTransaction()
-            // USDC: user → treasury
+            // USDC: user → deposit wallet
             .addTokenTransfer(
                 usdcTokenId,
                 AccountId.fromString(userAccountId),
                 -usdcAmountTinybar
             )
-            .addTokenTransfer(usdcTokenId, treasuryAccountId, usdcAmountTinybar)
-            // HUSDC: treasury → user
+            .addTokenTransfer(usdcTokenId, depositWalletAccountId, usdcAmountTinybar)
+            // HUSDC: emissions → user
             .addTokenTransfer(
                 husdTokenId,
-                treasuryAccountId,
+                AccountId.fromString(emissionsWalletId),
                 -husdcAmountTinybar
             )
             .addTokenTransfer(
@@ -302,8 +303,8 @@ export default async function handler(
         const scheduleCreateTx = new ScheduleCreateTransaction()
             .setScheduledTransaction(transferTransaction)
             .setScheduleMemo(uniqueMemo)
-            .setAdminKey(operatorKey.publicKey)
-            .setPayerAccountId(treasuryAccountId) // Treasury pays for execution
+            .setAdminKey(depositWalletPrivateKey.publicKey)
+            .setPayerAccountId(depositWalletAccountId) // Deposit wallet pays for execution
             .setExpirationTime(
                 Timestamp.fromDate(new Date(Date.now() + 60 * 60 * 1000))
             ) // 1 hour from now

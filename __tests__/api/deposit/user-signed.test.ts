@@ -42,8 +42,8 @@ describe('/api/deposit/user-signed', () => {
         jest.clearAllMocks()
 
         // Setup environment variables
-        process.env.TREASURY_ID = '0.0.6510977'
-        process.env.OPERATOR_KEY = 'mock-operator-key'
+        process.env.DEPOSIT_WALLET_ID = '0.0.6510977'
+        process.env.DEPOSIT_WALLET_KEY = 'mock-deposit-key'
 
         // Setup successful responses
         mockExecute.mockResolvedValue({

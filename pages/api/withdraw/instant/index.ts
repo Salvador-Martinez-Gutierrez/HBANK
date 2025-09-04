@@ -145,18 +145,33 @@ export default async function handler(
             Date.now() - 5 * 60 * 1000
         ).toISOString()
 
+        // IMPORTANT: For instant withdrawals, the user sends the full hUSD amount they want to withdraw
+        // The user sends exactly amountHUSD, and receives netUSDC after fees
+        const actualHUSDToVerify = amountHUSD
+
+        console.log('💡 HUSD amount verification:', {
+            requestedAmountHUSD: amountHUSD,
+            grossUSDC: grossUSDC,
+            fee: fee,
+            netUSDC: netUSDC,
+            actualHUSDToVerify: actualHUSDToVerify,
+            note: 'User sends the full hUSD amount, receives netUSDC after fee'
+        })
+
         const husdTransferVerified = await hederaService.verifyHUSDTransfer(
             userAccountId,
             treasuryId,
-            amountHUSD,
+            actualHUSDToVerify,
             fiveMinutesAgo
         )
 
         if (!husdTransferVerified) {
             console.log('❌ HUSD transfer verification failed')
+            console.log(`📋 Expected ${actualHUSDToVerify.toFixed(8)} hUSD from ${userAccountId} to ${treasuryId}`)
+            console.log(`💡 Note: User should send full hUSD amount (${actualHUSDToVerify.toFixed(8)} hUSD) to get ${netUSDC.toFixed(8)} USDC after fees`)
             return res.status(400).json({
                 success: false,
-                error: 'HUSD transfer not verified. Please ensure you have sent the HUSD to the treasury.',
+                error: `HUSD transfer not verified. Please ensure you have sent ${actualHUSDToVerify.toFixed(8)} hUSD to the treasury.`,
             })
         }
 
@@ -165,21 +180,21 @@ export default async function handler(
         // Step 5: Execute atomic USDC transfer to user
         console.log('🚀 Executing instant USDC transfer...')
 
-        const operatorId = process.env.OPERATOR_ID!
-        const operatorKey = process.env.OPERATOR_KEY!
+        const instantWithdrawWalletId = process.env.INSTANT_WITHDRAW_WALLET_ID!
+        const instantWithdrawWalletKey = process.env.INSTANT_WITHDRAW_WALLET_KEY!
 
         // Setup Hedera client
         const client = Client.forTestnet()
         client.setOperator(
-            AccountId.fromString(operatorId),
-            PrivateKey.fromString(operatorKey)
+            AccountId.fromString(instantWithdrawWalletId),
+            PrivateKey.fromString(instantWithdrawWalletKey)
         )
 
         // Create atomic transfer transaction
         const transferTx = new TransferTransaction()
             .addTokenTransfer(
                 TokenId.fromString(usdcTokenId),
-                AccountId.fromString(treasuryId),
+                AccountId.fromString(instantWithdrawWalletId),
                 -Math.floor(netUSDC * 1_000_000) // Convert to USDC minimum units (6 decimals)
             )
             .addTokenTransfer(
