@@ -30,6 +30,7 @@ interface WalletInfo {
     id: string
     name: string
     description: string
+    envKey: string
     balances: {
         hbar: number
         usdc: number
@@ -122,36 +123,10 @@ export default function WalletTrackingCard({
         }
     }, [propWallets, propLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Determine if a "healthy" wallet should be shown with warning styling due to low balances
-    const shouldShowWarningColor = (wallet: WalletInfo): boolean => {
-        if (wallet.health !== 'healthy') return false
-        
-        const { name, balances } = wallet
-        const minHbarBalance = 5
-
-        // Check if HBAR is low
-        if (balances.hbar < minHbarBalance) return true
-
-        // Specific checks for different wallet types
-        switch (name) {
-            case 'Instant Withdrawal':
-            case 'Standard Withdrawal':
-                return balances.usdc < 100 && balances.usdc > 0 // Low but not zero
-            
-            case 'Treasury':
-            case 'Emissions':
-                return balances.husd < 100 && balances.husd > 0 // Low but not zero
-        }
-
-        return false
-    }
-
-    const getHealthIcon = (health: string, showWarning: boolean = false) => {
+    const getHealthIcon = (health: string) => {
         switch (health) {
             case 'healthy':
-                return showWarning 
-                    ? <AlertTriangle className='h-4 w-4 text-yellow-500' />
-                    : <CheckCircle className='h-4 w-4 text-green-500' />
+                return <CheckCircle className='h-4 w-4 text-green-500' />
             case 'warning':
                 return <AlertTriangle className='h-4 w-4 text-yellow-500' />
             case 'critical':
@@ -161,10 +136,10 @@ export default function WalletTrackingCard({
         }
     }
 
-    const getHealthBadgeVariant = (health: string, showWarning: boolean = false) => {
+    const getHealthBadgeVariant = (health: string) => {
         switch (health) {
             case 'healthy':
-                return showWarning ? 'secondary' : 'default'
+                return 'default'
             case 'warning':
                 return 'secondary'
             case 'critical':
@@ -172,13 +147,6 @@ export default function WalletTrackingCard({
             default:
                 return 'outline'
         }
-    }
-
-    const getHealthText = (health: string, showWarning: boolean = false) => {
-        if (health === 'healthy' && showWarning) {
-            return 'healthy'
-        }
-        return health
     }
 
     const formatBalance = (balance: number, decimals: number = 2) => {
@@ -202,7 +170,7 @@ export default function WalletTrackingCard({
     const getHealthMessage = (wallet: WalletInfo): string => {
         const { name, balances, health } = wallet
 
-        if (health === 'healthy' && !shouldShowWarningColor(wallet)) {
+        if (health === 'healthy') {
             return 'All balances are within healthy thresholds'
         }
 
@@ -213,8 +181,6 @@ export default function WalletTrackingCard({
             issues.push(
                 'Critical: HBAR balance too low for transactions (< 1 HBAR)'
             )
-        } else if (balances.hbar < 5) {
-            issues.push('HBAR balance is low (< 5 HBAR recommended)')
         }
 
         // Specific checks for different wallet types
@@ -225,10 +191,6 @@ export default function WalletTrackingCard({
                     issues.push(
                         'Warning: USDC balance is 0 - cannot process withdrawals'
                     )
-                } else if (balances.usdc < 100) {
-                    issues.push(
-                        'USDC balance is low for withdrawal operations (< 100 USDC)'
-                    )
                 }
                 break
 
@@ -236,8 +198,6 @@ export default function WalletTrackingCard({
             case 'Emissions':
                 if (balances.husd === 0) {
                     issues.push('Warning: hUSD balance is 0 - cannot process operations')
-                } else if (balances.husd < 100) {
-                    issues.push('hUSD balance is low (< 100 hUSD)')
                 }
                 break
         }
@@ -363,7 +323,7 @@ export default function WalletTrackingCard({
                 <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'>
                     {wallets.map((wallet) => (
                         <Card
-                            key={wallet.id}
+                            key={wallet.envKey}
                             className='hover:shadow-md transition-all duration-200 hover:border-primary/20'
                         >
                             <CardHeader className='pb-3'>
@@ -380,7 +340,7 @@ export default function WalletTrackingCard({
                                     </div>
 
                                     {/* Health Badge with Popover */}
-                                    {wallet.health !== 'healthy' || shouldShowWarningColor(wallet) ? (
+                                    {wallet.health !== 'healthy' ? (
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -389,18 +349,12 @@ export default function WalletTrackingCard({
                                                     className='h-auto p-1'
                                                 >
                                                     <Badge
-                                                        variant={getHealthBadgeVariant(
-                                                            wallet.health,
-                                                            shouldShowWarningColor(wallet)
-                                                        )}
+                                                        variant={getHealthBadgeVariant(wallet.health)}
                                                         className='cursor-pointer'
                                                     >
                                                         <div className='flex items-center gap-1'>
-                                                            {getHealthIcon(
-                                                                wallet.health,
-                                                                shouldShowWarningColor(wallet)
-                                                            )}
-                                                            {getHealthText(wallet.health, shouldShowWarningColor(wallet))}
+                                                            {getHealthIcon(wallet.health)}
+                                                            {wallet.health}
                                                             <Info className='h-3 w-3 ml-1' />
                                                         </div>
                                                     </Badge>
@@ -421,14 +375,11 @@ export default function WalletTrackingCard({
                                         </Popover>
                                     ) : (
                                         <Badge
-                                            variant={getHealthBadgeVariant(
-                                                wallet.health,
-                                                shouldShowWarningColor(wallet)
-                                            )}
+                                            variant={getHealthBadgeVariant(wallet.health)}
                                         >
                                             <div className='flex items-center gap-1'>
-                                                {getHealthIcon(wallet.health, shouldShowWarningColor(wallet))}
-                                                {getHealthText(wallet.health, shouldShowWarningColor(wallet))}
+                                                {getHealthIcon(wallet.health)}
+                                                {wallet.health}
                                             </div>
                                         </Badge>
                                     )}

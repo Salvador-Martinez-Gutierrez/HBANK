@@ -5,6 +5,7 @@ interface WalletInfo {
     id: string
     name: string
     description: string
+    envKey: string
     balances: {
         hbar: number
         usdc: number
@@ -100,6 +101,7 @@ export default async function handler(
                     id: wallet.id,
                     name: wallet.name,
                     description: wallet.description,
+                    envKey: wallet.envKey,
                     balances: {
                         hbar: hbarBalance,
                         usdc: usdcBalance,
@@ -117,6 +119,7 @@ export default async function handler(
                     id: wallet.id,
                     name: wallet.name,
                     description: wallet.description,
+                    envKey: wallet.envKey,
                     balances: {
                         hbar: 0,
                         usdc: 0,
@@ -200,9 +203,6 @@ function determineWalletHealth(
     usdcBalance: number,
     husdBalance: number
 ): 'healthy' | 'warning' | 'critical' {
-    // HBAR threshold for transaction fees (minimum 5 HBAR recommended)
-    const minHbarBalance = 5
-
     if (hbarBalance < 1) {
         return 'critical' // Not enough HBAR for transactions
     }
@@ -215,7 +215,6 @@ function determineWalletHealth(
             if (usdcBalance === 0) {
                 return 'warning' // Main token (USDC) is 0
             }
-            // Return 'healthy' even with low balances (but not zero) - will show with warning color
             break
 
         case 'Treasury':
@@ -224,13 +223,12 @@ function determineWalletHealth(
             if (husdBalance === 0) {
                 return 'warning' // Main token (hUSD) is 0
             }
-            // Return 'healthy' even with low balances (but not zero) - will show with warning color
             break
 
         case 'Rate Publisher':
         case 'Deposit Wallet':
             // These wallets mainly need HBAR for operations
-            // Return 'healthy' even with low HBAR balance - will show with warning color
+            // They are healthy as long as they have enough HBAR
             break
     }
 

@@ -8,12 +8,13 @@ interface WalletInfo {
     id: string
     name: string
     description: string
+    envKey: string
     balances: {
         hbar: number
         usdc: number
         husd: number
     }
-    health: 'healthy' | 'warning' | 'unhealthy' | 'critical'
+    health: 'healthy' | 'warning' | 'critical'
 }
 
 interface InstantRedemptionCardProps {
