@@ -43,14 +43,56 @@ interface WalletBalancesResponse {
     lastUpdated: string
 }
 
-export default function WalletTrackingCard() {
-    const [wallets, setWallets] = useState<WalletInfo[]>([])
-    const [lastUpdated, setLastUpdated] = useState<string>('')
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+interface WalletTrackingCardProps {
+    wallets?: WalletInfo[]
+    lastUpdated?: string
+    loading?: boolean
+    error?: string | null
+    onRefresh?: () => Promise<void>
+}
+
+export default function WalletTrackingCard({
+    wallets: propWallets,
+    lastUpdated: propLastUpdated,
+    loading: propLoading,
+    error: propError,
+    onRefresh
+}: WalletTrackingCardProps) {
+    const [wallets, setWallets] = useState<WalletInfo[]>(propWallets || [])
+    const [lastUpdated, setLastUpdated] = useState<string>(propLastUpdated || '')
+    const [loading, setLoading] = useState(propLoading ?? true)
+    const [error, setError] = useState<string | null>(propError ?? null)
     const [refreshing, setRefreshing] = useState(false)
 
+    // Use props if provided, otherwise fetch data internally
+    useEffect(() => {
+        if (propWallets !== undefined) {
+            setWallets(propWallets)
+        }
+        if (propLastUpdated !== undefined) {
+            setLastUpdated(propLastUpdated)
+        }
+        if (propLoading !== undefined) {
+            setLoading(propLoading)
+        }
+        if (propError !== undefined) {
+            setError(propError)
+        }
+    }, [propWallets, propLastUpdated, propLoading, propError])
+
     const fetchWalletBalances = async () => {
+        if (onRefresh) {
+            // Use external refresh function
+            setRefreshing(true)
+            try {
+                await onRefresh()
+            } finally {
+                setRefreshing(false)
+            }
+            return
+        }
+
+        // Internal fetch logic (fallback)
         try {
             setRefreshing(true)
             const response = await fetch('/api/wallet-balances')
@@ -74,13 +116,42 @@ export default function WalletTrackingCard() {
     }
 
     useEffect(() => {
-        fetchWalletBalances()
-    }, [])
+        // Only fetch internally if no props provided
+        if (propWallets === undefined && propLoading === undefined) {
+            fetchWalletBalances()
+        }
+    }, [propWallets, propLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const getHealthIcon = (health: string) => {
+    // Determine if a "healthy" wallet should be shown with warning styling due to low balances
+    const shouldShowWarningColor = (wallet: WalletInfo): boolean => {
+        if (wallet.health !== 'healthy') return false
+        
+        const { name, balances } = wallet
+        const minHbarBalance = 5
+
+        // Check if HBAR is low
+        if (balances.hbar < minHbarBalance) return true
+
+        // Specific checks for different wallet types
+        switch (name) {
+            case 'Instant Withdrawal':
+            case 'Standard Withdrawal':
+                return balances.usdc < 100 && balances.usdc > 0 // Low but not zero
+            
+            case 'Treasury':
+            case 'Emissions':
+                return balances.husd < 100 && balances.husd > 0 // Low but not zero
+        }
+
+        return false
+    }
+
+    const getHealthIcon = (health: string, showWarning: boolean = false) => {
         switch (health) {
             case 'healthy':
-                return <CheckCircle className='h-4 w-4 text-green-500' />
+                return showWarning 
+                    ? <AlertTriangle className='h-4 w-4 text-yellow-500' />
+                    : <CheckCircle className='h-4 w-4 text-green-500' />
             case 'warning':
                 return <AlertTriangle className='h-4 w-4 text-yellow-500' />
             case 'critical':
@@ -90,10 +161,10 @@ export default function WalletTrackingCard() {
         }
     }
 
-    const getHealthBadgeVariant = (health: string) => {
+    const getHealthBadgeVariant = (health: string, showWarning: boolean = false) => {
         switch (health) {
             case 'healthy':
-                return 'default'
+                return showWarning ? 'secondary' : 'default'
             case 'warning':
                 return 'secondary'
             case 'critical':
@@ -101,6 +172,13 @@ export default function WalletTrackingCard() {
             default:
                 return 'outline'
         }
+    }
+
+    const getHealthText = (health: string, showWarning: boolean = false) => {
+        if (health === 'healthy' && showWarning) {
+            return 'healthy'
+        }
+        return health
     }
 
     const formatBalance = (balance: number, decimals: number = 2) => {
@@ -124,7 +202,7 @@ export default function WalletTrackingCard() {
     const getHealthMessage = (wallet: WalletInfo): string => {
         const { name, balances, health } = wallet
 
-        if (health === 'healthy') {
+        if (health === 'healthy' && !shouldShowWarningColor(wallet)) {
             return 'All balances are within healthy thresholds'
         }
 
@@ -136,24 +214,30 @@ export default function WalletTrackingCard() {
                 'Critical: HBAR balance too low for transactions (< 1 HBAR)'
             )
         } else if (balances.hbar < 5) {
-            issues.push('Warning: HBAR balance is low (< 5 HBAR recommended)')
+            issues.push('HBAR balance is low (< 5 HBAR recommended)')
         }
 
         // Specific checks for different wallet types
         switch (name) {
             case 'Instant Withdrawal':
             case 'Standard Withdrawal':
-                if (balances.usdc < 100) {
+                if (balances.usdc === 0) {
                     issues.push(
-                        'Warning: USDC balance is low for withdrawal operations (< 100 USDC)'
+                        'Warning: USDC balance is 0 - cannot process withdrawals'
+                    )
+                } else if (balances.usdc < 100) {
+                    issues.push(
+                        'USDC balance is low for withdrawal operations (< 100 USDC)'
                     )
                 }
                 break
 
             case 'Treasury':
             case 'Emissions':
-                if (balances.husd < 100) {
-                    issues.push('Warning: hUSD balance is low (< 100 hUSD)')
+                if (balances.husd === 0) {
+                    issues.push('Warning: hUSD balance is 0 - cannot process operations')
+                } else if (balances.husd < 100) {
+                    issues.push('hUSD balance is low (< 100 hUSD)')
                 }
                 break
         }
@@ -296,7 +380,7 @@ export default function WalletTrackingCard() {
                                     </div>
 
                                     {/* Health Badge with Popover */}
-                                    {wallet.health !== 'healthy' ? (
+                                    {wallet.health !== 'healthy' || shouldShowWarningColor(wallet) ? (
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -306,15 +390,17 @@ export default function WalletTrackingCard() {
                                                 >
                                                     <Badge
                                                         variant={getHealthBadgeVariant(
-                                                            wallet.health
+                                                            wallet.health,
+                                                            shouldShowWarningColor(wallet)
                                                         )}
                                                         className='cursor-pointer'
                                                     >
                                                         <div className='flex items-center gap-1'>
                                                             {getHealthIcon(
-                                                                wallet.health
+                                                                wallet.health,
+                                                                shouldShowWarningColor(wallet)
                                                             )}
-                                                            {wallet.health}
+                                                            {getHealthText(wallet.health, shouldShowWarningColor(wallet))}
                                                             <Info className='h-3 w-3 ml-1' />
                                                         </div>
                                                     </Badge>
@@ -336,12 +422,13 @@ export default function WalletTrackingCard() {
                                     ) : (
                                         <Badge
                                             variant={getHealthBadgeVariant(
-                                                wallet.health
+                                                wallet.health,
+                                                shouldShowWarningColor(wallet)
                                             )}
                                         >
                                             <div className='flex items-center gap-1'>
-                                                {getHealthIcon(wallet.health)}
-                                                {wallet.health}
+                                                {getHealthIcon(wallet.health, shouldShowWarningColor(wallet))}
+                                                {getHealthText(wallet.health, shouldShowWarningColor(wallet))}
                                             </div>
                                         </Badge>
                                     )}

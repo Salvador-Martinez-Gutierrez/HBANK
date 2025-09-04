@@ -207,26 +207,30 @@ function determineWalletHealth(
         return 'critical' // Not enough HBAR for transactions
     }
 
-    if (hbarBalance < minHbarBalance) {
-        return 'warning' // Low HBAR balance
-    }
-
-    // Specific checks for different wallet types
+    // Specific checks for different wallet types - WARNING only when main token is 0
     switch (walletName) {
         case 'Instant Withdrawal':
         case 'Standard Withdrawal':
             // Withdrawal wallets should have USDC
-            if (usdcBalance < 100) {
-                return 'warning'
+            if (usdcBalance === 0) {
+                return 'warning' // Main token (USDC) is 0
             }
+            // Return 'healthy' even with low balances (but not zero) - will show with warning color
             break
 
         case 'Treasury':
         case 'Emissions':
             // These wallets should have hUSD
-            if (husdBalance < 100) {
-                return 'warning'
+            if (husdBalance === 0) {
+                return 'warning' // Main token (hUSD) is 0
             }
+            // Return 'healthy' even with low balances (but not zero) - will show with warning color
+            break
+
+        case 'Rate Publisher':
+        case 'Deposit Wallet':
+            // These wallets mainly need HBAR for operations
+            // Return 'healthy' even with low HBAR balance - will show with warning color
             break
     }
 

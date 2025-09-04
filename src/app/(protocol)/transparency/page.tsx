@@ -1,9 +1,15 @@
+'use client'
+
 import CapitalAllocationCard from './components/capital-allocation-card'
 import InstantRedemptionCard from './components/instant-redeption-card'
 import ReportsCard from './components/reports-card'
 import WalletTrackingCard from './components/wallet-tracking-card'
+import { useWalletBalances } from './hooks/useWalletBalances'
 
 export default function TransparencyPage() {
+    const { wallets, lastUpdated, loading, error, refreshWalletBalances, getWithdrawalWallets } = useWalletBalances()
+    const withdrawalWallets = getWithdrawalWallets()
+
     return (
         <div className='h-full p-8'>
             <h1 className='text-3xl font-bold text-foreground'>Transparency</h1>
@@ -16,13 +22,23 @@ export default function TransparencyPage() {
             </div>
 
             <div className='my-8'>
-                <WalletTrackingCard />
+                <WalletTrackingCard 
+                    wallets={wallets}
+                    lastUpdated={lastUpdated}
+                    loading={loading}
+                    error={error}
+                    onRefresh={refreshWalletBalances}
+                />
                 <div className='mt-8'>
                     <CapitalAllocationCard />
                 </div>
                 <div className='py-8 grid grid-cols-1 gap-6 lg:grid-cols-2'>
                     <ReportsCard />
-                    <InstantRedemptionCard />
+                    <InstantRedemptionCard 
+                        instantWallet={withdrawalWallets.instant}
+                        standardWallet={withdrawalWallets.standard}
+                        loading={loading}
+                    />
                 </div>
             </div>
         </div>
