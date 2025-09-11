@@ -4,6 +4,14 @@ import {
     HWCConnector,
 } from '@buidlerlabs/hashgraph-react-wallets/connectors'
 
+// WalletConnect Project ID
+export const WALLETCONNECT_PROJECT_ID =
+    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+
+// App URL for metadata
+export const APP_URL =
+    process.env.NEXT_PUBLIC_APP_URL || 'https://localhost:3000'
+
 export const SUPPORTED_WALLETS = [
     {
         id: 'hashpack',
