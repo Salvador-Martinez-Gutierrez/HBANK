@@ -51,7 +51,7 @@ export default function Home() {
                             with Total Transparency
                         </h1>
                         <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                            Valora Protocol . Get superior yields with the security and
+                            Valora Protocol. Get superior yields with the security and
                             transparency that only blockchain technology can
                             offer.
                         </p>
