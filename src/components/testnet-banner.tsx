@@ -9,7 +9,7 @@ export function TestnetBanner() {
             <div className='flex items-center justify-center gap-2 py-1'>
                 <Network className='h-4 w-4' />
                 <AlertDescription className='text-center font-medium'>
-                    ⚠️ This protocol currently operates on the Hedera Testnet
+                    This protocol currently operates on the Hedera Testnet
                     only. Do not use real funds.
                 </AlertDescription>
             </div>
