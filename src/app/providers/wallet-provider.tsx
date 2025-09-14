@@ -38,10 +38,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     console.log('🌐 Using App URL:', appUrl)
 
     const metadata = {
-        name: 'Valora Protocol',
+        name: 'Hbank Protocol',
         description:
-            'Valora Protocol streamlines the emission of Liquid Yield Tokens.',
-        icons: [`${appUrl}/valora_logo_no_bg.png`],
+            'Hbank Protocol streamlines the emission of Liquid Yield Tokens.',
+        icons: [`${appUrl}/hbabk-logo.png`],
         url: appUrl,
     }
 

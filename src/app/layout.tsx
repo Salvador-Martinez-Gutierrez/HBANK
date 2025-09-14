@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import '../lib/polyfills'
-import { TestnetBanner } from '@/components/testnet-banner'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -16,9 +15,14 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-    title: 'Valora Protocol',
+    title: 'Hb Protocol',
     description:
-        'Valora Protocol streamlines the emission of Liquid Yield Tokens.',
+        'Hbank Protocol streamlines the emission of Liquid Yield Tokens.',
+    icons: {
+        icon: '/HB.png',
+        shortcut: '/HB.png',
+        apple: '/HB.png',
+    },
 }
 
 export default function RootLayout({
@@ -31,7 +35,6 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-                <TestnetBanner />
                 {children}
                 <Toaster
                     position='top-right'

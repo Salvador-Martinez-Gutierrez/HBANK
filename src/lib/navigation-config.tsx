@@ -15,7 +15,7 @@ export const navigation = [
 export const socialLinks = [
     {
         name: 'X',
-        href: 'https://x.com/ValoraProtocol',
+        href: 'https://x.com/HbankApp',
         icon: (
             <svg viewBox='0 0 24 24' aria-hidden='true' className='h-6 w-6'>
                 <g>

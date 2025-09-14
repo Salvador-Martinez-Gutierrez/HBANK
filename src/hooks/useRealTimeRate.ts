@@ -232,7 +232,7 @@ class RateManager {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'User-Agent': 'Valora-Protocol/1.0',
+                        'User-Agent': 'Hbank-Protocol/1.0',
                     },
                     signal: controller.signal,
                 }

@@ -83,7 +83,7 @@ export default function PortfolioPage() {
             <div className='h-full flex items-center justify-center'>
                 <div className='text-center space-y-6'>
                     <p className='text-xl md:text-4xl max-w-lg mx-auto font-semibold text-foreground'>
-                        Earn a 13.33% APY on your USDC with Valora Protocol
+                        Earn a 13.33% APY on your USDC with the Hbank Protocol
                     </p>
                     <div className='flex justify-center'>
                         <ConnectWalletButton variant='full-width' />
@@ -97,7 +97,7 @@ export default function PortfolioPage() {
         <div className='h-full p-8'>
             <h1 className='text-3xl font-bold text-foreground'>Portfolio</h1>
             <p className='text-muted-foreground mt-2'>
-                Track your Valora Protocol positions and balances.
+                Track your Hbank Protocol positions and balances.
             </p>
 
             {isConnected && balances.rate !== '1' && (

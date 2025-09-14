@@ -11,13 +11,13 @@ export function LogoSection({
 }: LogoSectionProps) {
   const { theme } = useTheme();
   // If the theme is light, use the negative logo; otherwise, use the normal one
-  const logoSrc = theme === 'light' ? '/valora_logo_no_bg_negative.png' : '/valora_logo_no_bg.png';
+  const logoSrc = theme === 'light' ? '/hbank-logo-dark.png' : '/hbabk-logo.png';
   return (
     <div className={className}>
       <Link href="/">
         <Image
           src={logoSrc}
-          alt="Valora Protocol"
+          alt="Hbank Protocol"
           width={60}
           height={60}
           className="object-contain cursor-pointer"

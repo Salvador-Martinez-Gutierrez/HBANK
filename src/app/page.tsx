@@ -37,12 +37,11 @@ export default function Home() {
         <>
             <Head>
                 <title>
-                    Valora Protocol - Hedera DeFi Yield Vault | Maximize Your
-                    Crypto Returns
+                    Hbank Protocol - Tokenized Yield Solutions
                 </title>
                 <meta
                     name='description'
-                    content="Maximize your crypto yields with Valora Protocol's secure DeFi vault on Hedera Hashgraph. Get your APY with automated yield farming strategies and total transparency."
+                    content="Maximize your crypto yields with Hbank Protocol's secure DeFi vault on Hedera Hashgraph. Get your APY with automated yield farming strategies and total transparency."
                 />
                 <meta
                     name='keywords'
@@ -50,7 +49,7 @@ export default function Home() {
                 />
                 <meta
                     property='og:title'
-                    content="Valora Protocol - Hedera's Premier DeFi Yield Vault"
+                    content="Hbank Protocol - Tokenized Yield Solutions"
                 />
                 <meta
                     property='og:description'
@@ -58,7 +57,7 @@ export default function Home() {
                 />
                 <meta property='og:type' content='website' />
                 <meta name='twitter:card' content='summary_large_image' />
-                <link rel='canonical' href='https://valoraprotocol.com' />
+                <link rel='canonical' href='https://hbank.pro' />
             </Head>
 
             <div className='min-h-screen'>
@@ -69,22 +68,29 @@ export default function Home() {
                         <div className='text-center'>
                             <div className='mb-6 inline-flex items-center rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary'>
                                 <Sparkles className='mr-2 h-4 w-4' />
-                                Powered by Hedera Hashgraph Network
+                                Powered by Hedera Hashgraph
                             </div>
                             <h1 className='mb-6 text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl'>
                                 <span className='bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent'>
-                                    Hedera DeFi Yield Vault
+                                    Tokenized Yield Solutions
                                 </span>
                                 <br />
                                 Maximum Returns, Total Transparency
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                                Valora Protocol - The premier DeFi yield farming
-                                platform on Hedera Hashgraph. Maximize your
-                                crypto returns with automated vault strategies
-                                and enterprise-grade security.
+                                Hbank Protocol is the premier onchain asset management
+                                platform specialized in liquid yield tokens.
                             </p>
                             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
+                                <Button
+                                    size='lg'
+                                    className='min-w-[200px] text-base bg-white text-black hover:bg-gray-100 border-2 border-white'
+                                    onClick={() => {
+                                        document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' })
+                                    }}
+                                >
+                                    Learn More
+                                </Button>
                                 <Link href='/vault'>
                                     <Button
                                         size='lg'
@@ -98,156 +104,47 @@ export default function Home() {
                         </div>
 
                         {/* Enhanced Stats with Schema */}
-                        <div className='mt-20 grid grid-cols-2 gap-8 sm:grid-cols-4'>
-                            <div
-                                className='text-center'
-                                itemScope
-                                itemType='https://schema.org/Offer'
-                            >
-                                <div
-                                    className='text-3xl font-bold text-primary'
-                                    itemProp='price'
-                                >
-                                    $10M+
-                                </div>
-                                <div
-                                    className='mt-1 text-sm text-muted-foreground'
-                                    itemProp='description'
-                                >
-                                    Total Value Locked in Hedera DeFi
-                                </div>
-                            </div>
-                            <div className='text-center'>
-                                <div className='text-3xl font-bold text-primary'>
-                                    15%
-                                </div>
-                                <div className='mt-1 text-sm text-muted-foreground'>
-                                    Average APY Yield Farming
-                                </div>
-                            </div>
-                            <div className='text-center'>
-                                <div className='text-3xl font-bold text-primary'>
-                                    1000+
-                                </div>
-                                <div className='mt-1 text-sm text-muted-foreground'>
-                                    Active Users
-                                </div>
-                            </div>
-                            <div className='text-center'>
-                                <div className='text-3xl font-bold text-primary'>
-                                    100%
-                                </div>
-                                <div className='mt-1 text-sm text-muted-foreground'>
-                                    On-Chain
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Features Section - Optimized headings */}
-                <section className='px-4 py-20 sm:px-6 lg:px-8'>
-                    <div className='mx-auto max-w-7xl'>
-                        <div className='text-center'>
-                            <h2 className='mb-4 text-3xl font-bold sm:text-4xl'>
-                                Why Choose Our Hedera DeFi Vault Protocol?
-                            </h2>
-                            <p className='mx-auto mb-12 max-w-2xl text-lg text-muted-foreground'>
-                                We combine the best DeFi yield farming
-                                strategies with Hedera Hashgraph's speed,
-                                security, and low-cost transactions
-                            </p>
-                        </div>
-
-                        <div className='grid gap-8 md:grid-cols-2 lg:grid-cols-3'>
-                            <Card className='group relative overflow-hidden transition-all hover:shadow-lg'>
-                                <CardHeader>
-                                    <div className='mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary'>
-                                        <TrendingUp className='h-6 w-6' />
+                        <div className='grid grid-cols-2 gap-8 md:grid-cols-4 mt-20'>
+                            <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
+                                <div className='text-center'>
+                                    <div className='mb-2 text-2xl font-bold text-primary'>
+                                        +$10M
                                     </div>
-                                    <CardTitle>Superior DeFi Yields</CardTitle>
-                                    <CardDescription>
-                                        Automated yield farming strategies
-                                        optimized for Hedera's ecosystem
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className='space-y-2 text-sm'>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>Smart auto-compounding</span>
-                                        </li>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>Automatic rebalancing</span>
-                                        </li>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>No hidden fees</span>
-                                        </li>
-                                    </ul>
-                                </CardContent>
-                            </Card>
-
-                            <Card className='group relative overflow-hidden transition-all hover:shadow-lg'>
-                                <CardHeader>
-                                    <div className='mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary'>
-                                        <Shield className='h-6 w-6' />
+                                    <p className='text-muted-foreground'>
+                                        TVL
+                                    </p>
+                                </div>
+                            </div>
+                            <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
+                                <div className='text-center'>
+                                    <div className='mb-2 text-2xl font-bold text-primary'>
+                                        13.33%
                                     </div>
-                                    <CardTitle>Maximum Security</CardTitle>
-                                    <CardDescription>
-                                        Audited smart contracts backed by the
-                                        most secure network
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className='space-y-2 text-sm'>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>Verified contracts</span>
-                                        </li>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>Multi-sig protection</span>
-                                        </li>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>Regular audits</span>
-                                        </li>
-                                    </ul>
-                                </CardContent>
-                            </Card>
-
-                            <Card className='group relative overflow-hidden transition-all hover:shadow-lg'>
-                                <CardHeader>
-                                    <div className='mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary'>
-                                        <Zap className='h-6 w-6' />
+                                    <p className='text-muted-foreground'>
+                                        APY
+                                    </p>
+                                </div>
+                            </div>
+                            <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
+                                <div className='text-center'>
+                                    <div className='mb-2 text-2xl font-bold text-primary'>
+                                        +1,000
                                     </div>
-                                    <CardTitle>Hedera Speed</CardTitle>
-                                    <CardDescription>
-                                        Instant transactions with minimal fees
-                                        thanks to Hedera
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ul className='space-y-2 text-sm'>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>
-                                                3-5 seconds per transaction
-                                            </span>
-                                        </li>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>Fees &lt; $0.01</span>
-                                        </li>
-                                        <li className='flex items-start'>
-                                            <CheckCircle2 className='mr-2 mt-0.5 h-4 w-4 text-primary' />
-                                            <span>10,000+ TPS</span>
-                                        </li>
-                                    </ul>
-                                </CardContent>
-                            </Card>
+                                    <p className='text-muted-foreground'>
+                                        Unique Users
+                                    </p>
+                                </div>
+                            </div>
+                            <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
+                                <div className='text-center'>
+                                    <div className='mb-2 text-2xl font-bold text-primary'>
+                                        100%
+                                    </div>
+                                    <p className='text-muted-foreground'>
+                                        On-Chain
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -258,31 +155,20 @@ export default function Home() {
                         <div className='grid items-center gap-12 lg:grid-cols-2'>
                             <div>
                                 <h2 className='mb-6 text-3xl font-bold sm:text-4xl'>
-                                    Total Transparency with{' '}
+                                    Institutional Grade
+                                    <br />
                                     <span className='bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent'>
-                                        Hedera Hashgraph
+                                        Onchain Asset Management
                                     </span>
                                 </h2>
                                 <p className='mb-8 text-lg text-muted-foreground'>
-                                    Every transaction, every yield generated,
-                                    every movement is immutably recorded on the
-                                    Hedera network. Check the status of your
-                                    investments in real time with total
-                                    transparency.
+                                    Launch and invest in liquid, transparent and composable yield bearing tokens backed by
+                                    diversified DeFi strategies deployed on blue-chip DeFi protocols.
                                 </p>
+                            </div>
+                            <div className='relative'>
+                                <div className='absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl ml-10' />
                                 <div className='space-y-4'>
-                                    <div className='flex items-start'>
-                                        <Globe className='mr-3 mt-1 h-5 w-5 text-primary' />
-                                        <div>
-                                            <h3 className='font-semibold'>
-                                                100% On-Chain
-                                            </h3>
-                                            <p className='text-sm text-muted-foreground'>
-                                                All operations verifiable on
-                                                Hedera Explorer
-                                            </p>
-                                        </div>
-                                    </div>
                                     <div className='flex items-start'>
                                         <Lock className='mr-3 mt-1 h-5 w-5 text-primary' />
                                         <div>
@@ -296,90 +182,43 @@ export default function Home() {
                                         </div>
                                     </div>
                                     <div className='flex items-start'>
+                                        <Globe className='mr-3 mt-1 h-5 w-5 text-primary' />
+                                        <div>
+                                            <h3 className='font-semibold'>
+                                                Composable and liquid
+                                            </h3>
+                                            <p className='text-sm text-muted-foreground'>
+                                                Use our yield bearing tokens as collateral for other DeFi protocols
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className='flex items-start'>
                                         <BarChart3 className='mr-3 mt-1 h-5 w-5 text-primary' />
                                         <div>
                                             <h3 className='font-semibold'>
                                                 Real-Time Analytics
                                             </h3>
                                             <p className='text-sm text-muted-foreground'>
-                                                Dashboards with up-to-date
-                                                metrics instantly
+                                                Dashboards with auditable and up-to-date
+                                                metrics
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div className='relative'>
-                                <div className='absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl' />
-                                <Card className='relative'>
-                                    <CardHeader>
-                                        <CardTitle>Live Stats</CardTitle>
-                                        <CardDescription>
-                                            Real-time platform metrics
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent className='space-y-4'>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='flex items-center'>
-                                                <Activity className='mr-2 h-4 w-4 text-primary' />
-                                                <span className='text-sm'>
-                                                    Transacciones/24h
-                                                </span>
-                                            </div>
-                                            <span className='font-mono text-sm font-semibold'>
-                                                12,847
-                                            </span>
-                                        </div>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='flex items-center'>
-                                                <Coins className='mr-2 h-4 w-4 text-primary' />
-                                                <span className='text-sm'>
-                                                    Volume/24h
-                                                </span>
-                                            </div>
-                                            <span className='font-mono text-sm font-semibold'>
-                                                $2.4M
-                                            </span>
-                                        </div>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='flex items-center'>
-                                                <Users className='mr-2 h-4 w-4 text-primary' />
-                                                <span className='text-sm'>
-                                                    Active Users
-                                                </span>
-                                            </div>
-                                            <span className='font-mono text-sm font-semibold'>
-                                                1,234
-                                            </span>
-                                        </div>
-                                        <div className='flex items-center justify-between'>
-                                            <div className='flex items-center'>
-                                                <Award className='mr-2 h-4 w-4 text-primary' />
-                                                <span className='text-sm'>
-                                                    Average APY
-                                                </span>
-                                            </div>
-                                            <span className='font-mono text-sm font-semibold text-green-600'>
-                                                15.2%
-                                            </span>
-                                        </div>
-                                    </CardContent>
-                                </Card>
                             </div>
                         </div>
                     </div>
                 </section>
 
                 {/* Products Section */}
-                <section className='px-4 py-20 sm:px-6 lg:px-8'>
+                <section id='products-section' className='px-4 py-20 sm:px-6 lg:px-8'>
                     <div className='mx-auto max-w-7xl'>
                         <div className='text-center'>
                             <h2 className='mb-4 text-3xl font-bold sm:text-4xl'>
-                                Our DeFi Products
+                                Our Products
                             </h2>
                             <p className='mx-auto mb-12 max-w-2xl text-lg text-muted-foreground'>
-                                Complete solutions to maximize your capital in
-                                the Hedera ecosystem
+                                Complete solutions for investors and asset managers
                             </p>
                         </div>
 
@@ -387,15 +226,20 @@ export default function Home() {
                             <Card className='relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent'>
                                 <div className='absolute right-0 top-0 h-32 w-32 bg-primary/10 blur-3xl' />
                                 <CardHeader>
-                                    <div className='mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-                                        <Lock className='h-7 w-7' />
+                                    <div className='mb-4 flex items-center gap-4'>
+                                        <div className='inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                                            <Lock className='h-7 w-7' />
+                                        </div>
+                                        <span className='text-2xl font-semibold'>
+                                            hUSD Vault
+                                        </span>
                                     </div>
                                     <CardTitle className='text-2xl'>
-                                        Vault
+                                        For Qualified Investors
                                     </CardTitle>
                                     <CardDescription className='text-base'>
                                         Deposit your assets and generate yields
-                                        automatically with optimized strategies
+                                        automatically with optimized delta neutral strategies
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -404,24 +248,16 @@ export default function Home() {
                                             <span className='text-sm text-muted-foreground'>
                                                 Current APY
                                             </span>
-                                            <span className='text-lg font-semibold text-green-600'>
-                                                12-18%
+                                            <span className='text-sm font-semibold text-green-600'>
+                                                13.33%
                                             </span>
                                         </div>
                                         <div className='flex items-center justify-between'>
                                             <span className='text-sm text-muted-foreground'>
-                                                Risk
+                                                TVL
                                             </span>
                                             <span className='text-sm font-medium'>
-                                                Low-Medium
-                                            </span>
-                                        </div>
-                                        <div className='flex items-center justify-between'>
-                                            <span className='text-sm text-muted-foreground'>
-                                                Lock Period
-                                            </span>
-                                            <span className='text-sm font-medium'>
-                                                Flexible
+                                                $10M+
                                             </span>
                                         </div>
                                     </div>
@@ -437,41 +273,37 @@ export default function Home() {
                             <Card className='relative overflow-hidden border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent'>
                                 <div className='absolute right-0 top-0 h-32 w-32 bg-secondary/10 blur-3xl' />
                                 <CardHeader>
-                                    <div className='mb-4 inline-flex h-14 w-14 items-center justify-center rounded-xl bg-secondary/10 text-secondary'>
-                                        <TrendingUp className='h-7 w-7' />
+                                    <div className='mb-4 flex items-center gap-4'>
+                                        <div className='inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                                            <Lock className='h-7 w-7' />
+                                        </div>
+                                        <span className='text-2xl font-semibold'>
+                                            Hbank SDK <span className='text-sm text-muted-foreground'>(Coming Soon)</span>
+                                        </span>
                                     </div>
                                     <CardTitle className='text-2xl'>
-                                        DeFi Hub
+                                        For Asset Managers
                                     </CardTitle>
                                     <CardDescription className='text-base'>
-                                        Access multiple DeFi protocols from a
-                                        single unified interface
+                                        Launch and manage your own yield bearing tokens optimizing operational processes
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className='mb-6 space-y-3'>
                                         <div className='flex items-center justify-between'>
                                             <span className='text-sm text-muted-foreground'>
-                                                Protocols
+                                                Accelerate
                                             </span>
-                                            <span className='text-lg font-semibold'>
-                                                10+
-                                            </span>
-                                        </div>
-                                        <div className='flex items-center justify-between'>
-                                            <span className='text-sm text-muted-foreground'>
-                                                Total TVL
-                                            </span>
-                                            <span className='text-sm font-medium'>
-                                                $50M+
+                                            <span className='text-sm font-semibold'>
+                                                Time to Market
                                             </span>
                                         </div>
                                         <div className='flex items-center justify-between'>
                                             <span className='text-sm text-muted-foreground'>
-                                                Fees
+                                                Security 
                                             </span>
                                             <span className='text-sm font-medium'>
-                                                0.1-0.3%
+                                                Audited Platform
                                             </span>
                                         </div>
                                     </div>
@@ -481,70 +313,12 @@ export default function Home() {
                                             size='lg'
                                             variant='secondary'
                                         >
-                                            Access DeFi
+                                            Explore Docs
                                             <ArrowRight className='ml-2 h-4 w-4' />
                                         </Button>
                                     </Link>
                                 </CardContent>
                             </Card>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Partners Section */}
-                <section className='px-4 py-20 sm:px-6 lg:px-8'>
-                    <div className='mx-auto max-w-7xl'>
-                        <div className='text-center'>
-                            <h2 className='mb-4 text-3xl font-bold sm:text-4xl'>
-                                Ecosystem & Partners
-                            </h2>
-                            <p className='mx-auto mb-12 max-w-2xl text-lg text-muted-foreground'>
-                                Integrated with the best protocols and services
-                                in the Hedera ecosystem
-                            </p>
-                        </div>
-
-                        <div className='grid grid-cols-2 gap-8 md:grid-cols-4'>
-                            <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
-                                <div className='text-center'>
-                                    <div className='mb-2 text-2xl font-bold text-primary'>
-                                        Hedera
-                                    </div>
-                                    <p className='text-xs text-muted-foreground'>
-                                        Network
-                                    </p>
-                                </div>
-                            </div>
-                            <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
-                                <div className='text-center'>
-                                    <div className='mb-2 text-2xl font-bold text-primary'>
-                                        HashPack
-                                    </div>
-                                    <p className='text-xs text-muted-foreground'>
-                                        Wallet
-                                    </p>
-                                </div>
-                            </div>
-                            <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
-                                <div className='text-center'>
-                                    <div className='mb-2 text-2xl font-bold text-primary'>
-                                        SaucerSwap
-                                    </div>
-                                    <p className='text-xs text-muted-foreground'>
-                                        DEX
-                                    </p>
-                                </div>
-                            </div>
-                            <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
-                                <div className='text-center'>
-                                    <div className='mb-2 text-2xl font-bold text-primary'>
-                                        Kabila
-                                    </div>
-                                    <p className='text-xs text-muted-foreground'>
-                                        Wallet
-                                    </p>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </section>
@@ -557,7 +331,7 @@ export default function Home() {
                                 Frequently Asked Questions
                             </h2>
                             <p className='mx-auto mb-12 max-w-2xl text-lg text-muted-foreground'>
-                                Everything you need to know about Valora
+                                Everything you need to know about the Hbank
                                 Protocol
                             </p>
                         </div>
@@ -565,49 +339,31 @@ export default function Home() {
                         <div className='space-y-4'>
                             <details className='group rounded-lg border bg-card p-6'>
                                 <summary className='flex cursor-pointer items-center justify-between font-semibold'>
-                                    What is Valora Protocol?
+                                    What is Hbank Protocol?
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    Valora Protocol is a DeFi platform built on
-                                    Hedera Hashgraph that allows users to
-                                    maximize their returns through automated
-                                    yield farming, staking, and liquidity
-                                    provision strategies. We offer total
-                                    transparency with all operations verifiable
-                                    on-chain.
+                                    Hbank Protocol is the premier onchain asset management platform specialized in liquid yield tokens. Built on Hedera Hashgraph, we provide institutional-grade DeFi solutions that launch and manage yield-bearing tokens backed by diversified strategies deployed on blue-chip DeFi protocols. Our platform offers total transparency, composability, and real-time analytics for both qualified investors and asset managers.
                                 </p>
                             </details>
 
                             <details className='group rounded-lg border bg-card p-6'>
                                 <summary className='flex cursor-pointer items-center justify-between font-semibold'>
-                                    How does the Vault work?
+                                    How does the hUSD Vault work?
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    The Vault is our main product where you
-                                    deposit your assets and optimized strategies
-                                    are automatically applied to generate
-                                    maximum yield. We use auto-compounding,
-                                    automatic rebalancing, and diversification
-                                    across multiple protocols to maximize your
-                                    earnings.
+                                    The hUSD Vault is our flagship product for qualified investors, currently offering 13.33% APY with over $10M in TVL. When you deposit assets, our delta-neutral strategies are applied to generate maximum yield through diversification across multiple blue-chip DeFi protocols. All operations are transparent and verifiable on-chain. For more details check our docs.
                                 </p>
                             </details>
 
                             <details className='group rounded-lg border bg-card p-6'>
                                 <summary className='flex cursor-pointer items-center justify-between font-semibold'>
-                                    Is it safe to invest in Valora?
+                                    Is it safe to invest in Hbank?
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    Yes, security is our priority. All our smart
-                                    contracts are audited by recognized firms,
-                                    we use multi-sig for critical operations,
-                                    and the Hedera network provides
-                                    enterprise-grade security with aBFT
-                                    consensus. In addition, we never have direct
-                                    custody of your funds.
+                                    Absolutely. Security is our top priority with enterprise-grade protection through Hedera's aBFT consensus mechanism. Our protocol is fully audited by recognized security firms, we implement multi-signature controls and MCP wallets for critical operations, and we maintain 100% on-chain transparency.
                                 </p>
                             </details>
 
@@ -617,10 +373,7 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    We charge a 1% fee on each deposit made.
-                                    Transactions on Hedera cost less than $0.01.
-                                    There are no hidden fees; everything is
-                                    transparent and verifiable on-chain.
+                                    Our fee structure is simple and transparent: 20% performance fee only. We only charge a fee on the performance of the vault, not on the deposits. The protocol only makes money when you make money.
                                 </p>
                             </details>
 
@@ -630,50 +383,9 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    Standard withdrawals take 48 hours to
-                                    process. If you wish to withdraw your funds
-                                    before that period, a 0.5% fee will be
-                                    applied to the withdrawn amount. Some
-                                    specific vaults may have additional lock
-                                    periods to optimize yields, but this is
-                                    always clearly indicated before depositing.
+                                    We offer flexible withdrawal options to suit your needs. Standard withdrawals process within 48 hours at no additional cost. For immediate access to your funds, instant withdrawals are available with a 0.5% fee on the withdrawn amount and depends on available liquidity. All withdrawal transactions are processed on-chain and fully transparent.
                                 </p>
                             </details>
-                        </div>
-                    </div>
-                </section>
-
-                {/* CTA Section */}
-                <section className='px-4 py-20 sm:px-6 lg:px-8'>
-                    <div className='mx-auto max-w-4xl text-center'>
-                        <h2 className='mb-6 text-3xl font-bold sm:text-4xl'>
-                            Start generating yields today
-                        </h2>
-                        <p className='mb-10 text-lg text-muted-foreground'>
-                            Join thousands of users already maximizing their
-                            earnings with the transparency and security of
-                            Hedera
-                        </p>
-                        <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
-                            <Link href='/vault'>
-                                <Button
-                                    size='lg'
-                                    className='group min-w-[200px] text-base'
-                                >
-                                    Access Vault
-                                    <ArrowRight className='ml-2 h-5 w-5 transition-transform group-hover:translate-x-1' />
-                                </Button>
-                            </Link>
-                            <Link href='/transparency'>
-                                <Button
-                                    size='lg'
-                                    variant='outline'
-                                    className='min-w-[200px] text-base'
-                                >
-                                    View Strategy
-                                    <ChevronRight className='ml-2 h-5 w-5' />
-                                </Button>
-                            </Link>
                         </div>
                     </div>
                 </section>
@@ -681,15 +393,14 @@ export default function Home() {
                 {/* Footer */}
                 <footer className='border-t bg-card/50'>
                     <div className='mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8'>
-                        <div className='grid gap-8 md:grid-cols-4'>
+                        <div className='grid gap-8 md:grid-cols-4 w-full'>
                             {/* Brand */}
                             <div className='space-y-4'>
                                 <h3 className='text-lg font-bold'>
-                                    Valora Protocol
+                                    Hbank Protocol
                                 </h3>
                                 <p className='text-sm text-muted-foreground'>
-                                    The most transparent and profitable DeFi
-                                    platform on Hedera Hashgraph.
+                                    The onchain asset management platform on Hedera Hashgraph.
                                 </p>
                                 <div className='flex gap-4'>
                                     <Link
@@ -720,7 +431,7 @@ export default function Home() {
                             </div>
 
                             {/* Products */}
-                            <div className='space-y-4'>
+                            <div className='space-y-4 text-right'>
                                 <h4 className='font-semibold'>Products</h4>
                                 <ul className='space-y-2 text-sm'>
                                     <li>
@@ -759,7 +470,7 @@ export default function Home() {
                             </div>
 
                             {/* Resources */}
-                            <div className='space-y-4'>
+                            <div className='space-y-4 text-right'>
                                 <h4 className='font-semibold'>Resources</h4>
                                 <ul className='space-y-2 text-sm'>
                                     <li>
@@ -798,7 +509,7 @@ export default function Home() {
                             </div>
 
                             {/* Legal */}
-                            <div className='space-y-4'>
+                            <div className='space-y-4 text-right'>
                                 <h4 className='font-semibold'>Legal</h4>
                                 <ul className='space-y-2 text-sm'>
                                     <li>
@@ -840,7 +551,7 @@ export default function Home() {
                         <div className='mt-8 border-t pt-8'>
                             <div className='flex flex-col items-center justify-between gap-4 sm:flex-row'>
                                 <p className='text-sm text-muted-foreground'>
-                                    © 2024 Valora Protocol. All rights reserved.
+                                    © 2025 Hbank Protocol. All rights reserved.
                                 </p>
                                 <div className='flex items-center gap-2 text-sm text-muted-foreground'>
                                     <span>Powered by</span>
