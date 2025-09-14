@@ -1,4 +1,9 @@
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface TransactionDetailsProps {
   exchangeRate: number
@@ -10,7 +15,21 @@ export function TransactionDetails({
   return (
     <div className="bg-muted/50 mt-2 rounded-lg p-4 space-y-3">
       <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Exchange Rate :</span>
+        <div className="flex items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors">
+                <span className="text-xs font-medium">i</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-sm p-3 bg-neutral-900 text-white border-neutral-200 [&>svg]:bg-neutral-900 [&>svg]:fill-neutral-900" side="top">
+              <p>
+                Calculated by dividing the current amount of USDC backing hUSD by the amount of hUSD in circulation.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+          <span className="text-muted-foreground">Exchange Rate :</span>
+        </div>
         <span>1 hUSD = {exchangeRate} USDC</span>
       </div>
     </div>

@@ -10,31 +10,31 @@ import { cn } from '@/lib/utils'
 
 // Componente para el icono de USDC
 const USDCIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
-    <img 
-        alt="USDC" 
-        loading="lazy" 
-        width={size} 
-        height={size} 
-        decoding="async" 
-        data-nimg="1" 
-        className="rounded-full inline-block mx-1" 
-        src="/usdc.svg" 
-        style={{color: 'transparent'}}
+    <img
+        alt="USDC"
+        loading="lazy"
+        width={size}
+        height={size}
+        decoding="async"
+        data-nimg="1"
+        className="rounded-full inline-block mx-1"
+        src="/usdc.svg"
+        style={{ color: 'transparent' }}
     />
 )
 
 // Componente para el icono de hUSD (versión en escala de grises del USDC)
 const HUSDIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
-    <img 
-        alt="hUSD" 
-        loading="lazy" 
-        width={size} 
-        height={size} 
-        decoding="async" 
-        data-nimg="1" 
-        className="rounded-full grayscale inline-block mx-1" 
-        src="/usdc.svg" 
-        style={{color: 'transparent'}}
+    <img
+        alt="hUSD"
+        loading="lazy"
+        width={size}
+        height={size}
+        decoding="async"
+        data-nimg="1"
+        className="rounded-full grayscale inline-block mx-1"
+        src="/usdc.svg"
+        style={{ color: 'transparent' }}
     />
 )
 
@@ -145,10 +145,10 @@ const TransactionCard: React.FC<{ transaction: HistoryTransaction }> = ({ transa
     const { date, time } = formatTimestamp(transaction.timestamp)
 
     // Only show link for completed transactions with valid txId (not requestId)
-    const hasValidTxLink = transaction.status === 'completed' && 
-                          transaction.txId && 
-                          !transaction.txId.startsWith('withdraw_') && 
-                          !transaction.txId.startsWith('instant_withdraw_')
+    const hasValidTxLink = transaction.status === 'completed' &&
+        transaction.txId &&
+        !transaction.txId.startsWith('withdraw_') &&
+        !transaction.txId.startsWith('instant_withdraw_')
 
     const openInHashscan = () => {
         if (hasValidTxLink) {
@@ -178,8 +178,8 @@ const TransactionCard: React.FC<{ transaction: HistoryTransaction }> = ({ transa
                         <div>
                             <div className="flex items-center space-x-2">
                                 <Badge className={colors.badge}>
-                                    {transaction.type === 'instant_withdraw' ? 'Instant Withdraw' : 
-                                     transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                                    {transaction.type === 'instant_withdraw' ? 'Instant Withdraw' :
+                                        transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
                                 </Badge>
                                 {getStatusIcon(transaction.status)}
                             </div>
@@ -281,7 +281,7 @@ const TransactionCard: React.FC<{ transaction: HistoryTransaction }> = ({ transa
                                         {transaction.status === 'completed' ? 'Received USDC' : 'Expected USDC'}
                                     </div>
                                     <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                                        {transaction.status === 'completed' && transaction.netUSDC 
+                                        {transaction.status === 'completed' && transaction.netUSDC
                                             ? formatAmount(transaction.netUSDC)
                                             : formatAmount(transaction.amountHUSD * transaction.rate * (transaction.type === 'instant_withdraw' ? 0.99 : 1))
                                         }
@@ -361,20 +361,16 @@ export const HistoryCards: React.FC<HistoryCardsProps> = ({ userAccountId }) => 
         loadMore,
         isRefreshDisabled,
         refreshTimeRemaining
-    } = useHistory({ 
-        userAccountId, 
+    } = useHistory({
+        userAccountId,
         enabled: !!userAccountId,
-        limit: 10 
+        limit: 10
     })
 
     if (!userAccountId) {
         return (
-            <div className="flex items-center justify-center py-12">
-                <Alert className="max-w-md">
-                    <AlertDescription>
-                        Please connect your wallet to view transaction history.
-                    </AlertDescription>
-                </Alert>
+            <div className="flex items-center justify-center py-8">
+                Please connect your wallet to view transaction history.
             </div>
         )
     }
@@ -398,8 +394,8 @@ export const HistoryCards: React.FC<HistoryCardsProps> = ({ userAccountId }) => 
                 >
                     <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     <span>
-                        {isRefreshDisabled 
-                            ? `Refresh (${refreshTimeRemaining}s)` 
+                        {isRefreshDisabled
+                            ? `Refresh (${refreshTimeRemaining}s)`
                             : 'Refresh'
                         }
                     </span>

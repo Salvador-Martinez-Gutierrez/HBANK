@@ -3,11 +3,24 @@
 import { ThemeToggle } from '@/components/theme-toggle'
 import { MobileSidebar } from './mobile-sidebar'
 import { SessionActionButtons } from './session-action-buttons'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 // TODO: These values should be fetched from an API endpoint
 const METRICS_DATA = [
-    { label: 'Total TVL', value: '$11,222,333' },
-    { label: 'hUSD APY', value: '13.33%' },
+    { 
+        label: 'Total TVL', 
+        value: '$11,222,333',
+        tooltip: 'Total Value Locked represents the total amount of USDC deposited into the protocol and backing hUSD tokens.'
+    },
+    { 
+        label: 'hUSD APY', 
+        value: '13.33%',
+        tooltip: 'Annual Percentage Yield earned by hUSD holders through USDC deployments in bluechip DeFi protocols.'
+    },
 ]
 
 export function MainNav() {
@@ -18,9 +31,23 @@ export function MainNav() {
                 <div className='hidden md:flex items-center space-x-6'>
                     {METRICS_DATA.map((metric, index) => (
                         <div key={index} className='flex flex-col'>
-                            <span className='text-md font-bold text-muted-foreground'>
-                                {metric.label}
-                            </span>
+                            <div className='flex items-center gap-2'>
+                                <span className='text-md font-bold text-muted-foreground'>
+                                    {metric.label}
+                                </span>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-muted-foreground/30 text-muted-foreground hover:text-foreground hover:border-foreground transition-colors">
+                                            <span className="text-xs font-medium">i</span>
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-sm p-3 bg-neutral-900 text-white border-neutral-200 [&>svg]:bg-neutral-900 [&>svg]:fill-neutral-900" side="top">
+                                        <p>
+                                            {metric.tooltip}
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
                             <span className='font-semibold text-blue-500'>
                                 {metric.value}
                             </span>

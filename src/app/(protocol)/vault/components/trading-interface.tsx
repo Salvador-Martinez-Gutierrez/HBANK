@@ -149,9 +149,9 @@ export function TradingInterface() {
             {activeTab === 'redeem' && redeemType === 'instant' && rateData && (
                 <div className='bg-blue-50 border border-blue-200 p-3 rounded-lg'>
                     <div className='text-sm text-blue-800'>
-                        <strong>Instant Withdrawal Limit:</strong> Maximum{' '}
-                        {maxInstantWithdrawable.toFixed(6)} USDC (
-                        {(maxInstantWithdrawable / rateData.rate).toFixed(6)}{' '}
+                        <strong>Instant Withdrawal Capacity:</strong> Maximum{' '}
+                        {maxInstantWithdrawable.toFixed(2)} USDC (
+                        {(maxInstantWithdrawable / rateData.rate).toFixed(2)}{' '}
                         hUSD at current rate)
                     </div>
                     {isLoadingMaxAmount && (
