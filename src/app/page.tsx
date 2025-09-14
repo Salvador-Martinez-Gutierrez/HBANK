@@ -11,19 +11,10 @@ import {
 import Link from 'next/link'
 import {
     ArrowRight,
-    Shield,
-    TrendingUp,
     Lock,
-    Zap,
     BarChart3,
     Globe,
     Sparkles,
-    ChevronRight,
-    CheckCircle2,
-    Coins,
-    Activity,
-    Users,
-    Award,
     ChevronDown,
     Mail,
     Twitter,
@@ -363,7 +354,7 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    Absolutely. Security is our top priority with enterprise-grade protection through Hedera's aBFT consensus mechanism. Our protocol is fully audited by recognized security firms, we implement multi-signature controls and MCP wallets for critical operations, and we maintain 100% on-chain transparency.
+                                    Absolutely. Security is our top priority with enterprise-grade protection through Hedera&apos;s aBFT consensus mechanism. Our protocol is fully audited by recognized security firms, we implement multi-signature controls and MCP wallets for critical operations, and we maintain 100% on-chain transparency.
                                 </p>
                             </details>
 
