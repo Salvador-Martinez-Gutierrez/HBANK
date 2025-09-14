@@ -15,7 +15,6 @@ import { TransactionDetails } from './transaction-details'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
 import { MintActionButton } from './mint-action-button'
 import { RedeemActionButton } from './redeem-action-button'
-import { RealTimeRateDisplay } from '@/components/real-time-rate-display'
 import { HistoryCards } from '@/components/history-cards'
 import { useWallet, useAccountId } from '@buidlerlabs/hashgraph-react-wallets'
 import { useTokenBalances } from '../hooks/useTokenBalances'
@@ -186,9 +185,6 @@ export function TradingInterface() {
                 /* For history tab, show connect wallet for now */
                 <ConnectWalletButton variant='full-width' />
             )}
-
-            {/* Real-time Rate Display */}
-            <RealTimeRateDisplay showDetails={true} />
 
             {/* Transaction Details */}
             <TransactionDetails exchangeRate={rateData?.rate || 1.0} />

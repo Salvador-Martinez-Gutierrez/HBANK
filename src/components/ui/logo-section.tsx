@@ -7,18 +7,18 @@ interface LogoSectionProps {
 }
 
 export function LogoSection({
-  className = "flex flex-col items-start px-6 gap-2 mt-4"
+  className = "flex items-center px-6"
 }: LogoSectionProps) {
   const { theme } = useTheme();
   // If the theme is light, use the negative logo; otherwise, use the normal one
-  const logoSrc = theme === 'light' ? '/hbank-logo-dark.png' : '/hbabk-logo.png';
+  const logoSrc = theme === 'light' ? '/hbank-logo.png' : '/hbank-logo-dark.png';
   return (
     <div className={className}>
       <Link href="/">
         <Image
           src={logoSrc}
           alt="Hbank Protocol"
-          width={60}
+          width={164}
           height={60}
           className="object-contain cursor-pointer"
         />

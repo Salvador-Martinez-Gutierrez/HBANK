@@ -18,21 +18,13 @@ export default function TransparencyPage() {
     const withdrawalWallets = getWithdrawalWallets()
 
     return (
-        <div className='h-full p-8'>
+        <div className='h-full p-8 mb-8'>
             <h1 className='text-3xl font-bold text-foreground'>Transparency</h1>
             <p className='text-muted-foreground mt-2'>
                 View transparency data and reports for the hUSD token.
             </p>
 
             <div className='my-8'>
-                <WalletTrackingCard
-                    wallets={wallets}
-                    lastUpdated={lastUpdated}
-                    loading={loading}
-                    error={error}
-                    onRefresh={refreshWalletBalances}
-                />
-
                 <div className='mt-6 mb-8 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800'>
                     The information below displays mock data for demonstration
                     purposes only.
@@ -49,6 +41,13 @@ export default function TransparencyPage() {
                         loading={loading}
                     />
                 </div>
+                <WalletTrackingCard
+                    wallets={wallets}
+                    lastUpdated={lastUpdated}
+                    loading={loading}
+                    error={error}
+                    onRefresh={refreshWalletBalances}
+                />
             </div>
         </div>
     )

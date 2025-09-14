@@ -4,6 +4,7 @@ import { TradingInterface } from './components/trading-interface'
 import { ApyCard } from './components/apy-card'
 import { InfoCard } from './components/info-card'
 import { StatsCards } from './components/stats-cards'
+import { TestnetUsdcFaucet } from './components/testnet-usdc-faucet'
 
 export default function VaultPage() {
     // Mock data
@@ -20,6 +21,7 @@ export default function VaultPage() {
                 <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
                     {/* Main Trading Interface */}
                     <div className='md:col-span-2'>
+                        <TestnetUsdcFaucet />
                         <TradingInterface />
                     </div>
 
