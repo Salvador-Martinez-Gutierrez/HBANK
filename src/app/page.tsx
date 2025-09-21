@@ -297,7 +297,11 @@ export default function Home() {
                                             </span>
                                         </div>
                                     </div>
-                                    <Link href='/defi'>
+                                    <Link 
+                                        href='https://hbank.gitbook.io/hbank-docs/'
+                                        target='_blank'
+                                        rel='noopener noreferrer'
+                                    >
                                         <Button
                                             className='w-full'
                                             size='lg'
@@ -434,10 +438,10 @@ export default function Home() {
                                     </li>
                                     <li>
                                         <Link
-                                            href='/defi'
+                                            href='/transparency'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
-                                            DeFi Hub
+                                            Transparency
                                         </Link>
                                     </li>
                                     <li>
@@ -446,14 +450,6 @@ export default function Home() {
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
                                             Portfolio
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href='/transparency'
-                                            className='text-muted-foreground transition-colors hover:text-primary'
-                                        >
-                                            Analytics
                                         </Link>
                                     </li>
                                 </ul>
@@ -465,7 +461,9 @@ export default function Home() {
                                 <ul className='space-y-2 text-sm'>
                                     <li>
                                         <Link
-                                            href='#'
+                                            href='https://hbank.gitbook.io/hbank-docs/'
+                                            target='_blank'
+                                            rel='noopener noreferrer'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
                                             Documentation
@@ -473,26 +471,22 @@ export default function Home() {
                                     </li>
                                     <li>
                                         <Link
-                                            href='#'
+                                            href='https://hbank.gitbook.io/hbank-docs/technical-docs/sdk'
+                                            target='_blank'
+                                            rel='noopener noreferrer'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
-                                            API
+                                            SDK
                                         </Link>
                                     </li>
                                     <li>
                                         <Link
-                                            href='#'
+                                            href='https://hbank.gitbook.io/hbank-docs/resources/audits'
+                                            target='_blank'
+                                            rel='noopener noreferrer'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
                                             Audits
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href='#'
-                                            className='text-muted-foreground transition-colors hover:text-primary'
-                                        >
-                                            Blog
                                         </Link>
                                     </li>
                                 </ul>
@@ -504,34 +498,12 @@ export default function Home() {
                                 <ul className='space-y-2 text-sm'>
                                     <li>
                                         <Link
-                                            href='#'
+                                            href='https://hbank.gitbook.io/hbank-docs/resources/legal'
+                                            target='_blank'
+                                            rel='noopener noreferrer'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
-                                            Terms of Use
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href='#'
-                                            className='text-muted-foreground transition-colors hover:text-primary'
-                                        >
-                                            Privacy Policy
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href='#'
-                                            className='text-muted-foreground transition-colors hover:text-primary'
-                                        >
-                                            Risk Notice
-                                        </Link>
-                                    </li>
-                                    <li>
-                                        <Link
-                                            href='#'
-                                            className='text-muted-foreground transition-colors hover:text-primary'
-                                        >
-                                            Contact
+                                            Terms of Service
                                         </Link>
                                     </li>
                                 </ul>

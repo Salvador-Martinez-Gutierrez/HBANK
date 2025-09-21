@@ -1,7 +1,6 @@
 import {
     Eye,
     FileText,
-    GithubIcon,
     PieChart,
     CircleDollarSign,
 } from 'lucide-react'
@@ -30,6 +29,5 @@ export const socialLinks = [
 ]
 
 export const resourceLinks = [
-    { name: 'Docs', href: '#', icon: <FileText className='h-6 w-6' /> },
-    { name: 'GitHub', href: '#', icon: <GithubIcon className='h-6 w-6' /> },
+    { name: 'Docs', href: 'https://hbank.gitbook.io/hbank-docs/', icon: <FileText className='h-6 w-6' /> },
 ]
