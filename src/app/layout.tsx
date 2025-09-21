@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-    title: 'Hb Protocol',
+    title: 'Hbank Protocol',
     description:
         'Hbank Protocol streamlines the emission of Liquid Yield Tokens.',
     icons: {
