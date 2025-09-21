@@ -53,4 +53,4 @@ export const TESTNET_MIRROR_NODE_ENDPOINT =
     'https://testnet.hedera.validationcloud.io/v1'
 
 // Instant Withdrawal Configuration
-export const INSTANT_WITHDRAW_FEE = 0.01
+export const INSTANT_WITHDRAW_FEE = 0.005

@@ -69,8 +69,7 @@ export default function Home() {
                                 Maximum Returns, Total Transparency
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                                Hbank Protocol is the premier onchain asset management
-                                platform specialized in liquid yield tokens.
+                                Hbank is the premier on-chain asset management platform specializing in the issuance of liquid yield tokens on Hedera Hashgraph.
                             </p>
                             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
                                 <Button
@@ -176,7 +175,7 @@ export default function Home() {
                                         <Globe className='mr-3 mt-1 h-5 w-5 text-primary' />
                                         <div>
                                             <h3 className='font-semibold'>
-                                                Composable and liquid
+                                                Compossable and liquid
                                             </h3>
                                             <p className='text-sm text-muted-foreground'>
                                                 Use our yield bearing tokens as collateral for other DeFi protocols
@@ -291,7 +290,7 @@ export default function Home() {
                                         </div>
                                         <div className='flex items-center justify-between'>
                                             <span className='text-sm text-muted-foreground'>
-                                                Security 
+                                                Security
                                             </span>
                                             <span className='text-sm font-medium'>
                                                 Audited Platform
