@@ -367,7 +367,7 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    Our fee structure is simple and transparent: 20% performance fee only. We only charge a fee on the performance of the vault, not on the deposits. The protocol only makes money when you make money.
+                                    During our testnet alpha phase, the protocol operates with zero fees—you only pay standard network transaction costs. As we transition to mainnet, we'll introduce transparent fee structures that may include management fees, performance fees, or both. All future fees will be clearly communicated and designed to align our success with yours.
                                 </p>
                             </details>
 
