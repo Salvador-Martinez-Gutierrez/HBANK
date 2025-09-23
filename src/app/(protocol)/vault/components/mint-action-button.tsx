@@ -17,6 +17,8 @@ import { ScheduleSignTransaction, ScheduleId } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
 import { useTokenBalances } from '../hooks/useTokenBalances'
 import { RateData } from '@/hooks/useRealTimeRate'
+import { ProcessModal } from '@/components/process-modal'
+import { useProcessModal, MINT_STEPS } from '@/hooks/useProcessModal'
 
 interface MintActionButtonProps {
     fromAmount: string
@@ -41,6 +43,16 @@ export function MintActionButton({
     const { watch } = useWatchTransactionReceipt()
     const toast = useToast()
     const { refreshBalances } = useTokenBalances()
+
+    // Process modal hook
+    const processModal = useProcessModal({
+        onComplete: async () => {
+            if (onInputClear) onInputClear()
+            await refreshBalances()
+            if (onBalanceRefresh) await onBalanceRefresh()
+        },
+        onError: (error) => toast.error(`Mint failed: ${error}`),
+    })
 
     const [isCheckingAssociation, setIsCheckingAssociation] = useState(false)
     const [hasTokenAssociation, setHasTokenAssociation] = useState<
@@ -159,42 +171,59 @@ export function MintActionButton({
     }
 
     const handleMint = async () => {
+        console.log('🚀 handleMint called with:', {
+            fromAmount,
+            toAmount,
+            rateData,
+        })
+
+        // Validaciones iniciales antes de iniciar el modal de proceso
+        if (!rateData) {
+            toast.error(
+                'Exchange rate not available. Please wait for rate to load.'
+            )
+            return
+        }
+
+        const amountNum = parseFloat(fromAmount)
+        if (isNaN(amountNum) || amountNum <= 0) {
+            toast.error('Invalid amount')
+            return
+        }
+
+        const usdcBalanceNum = parseFloat(usdcBalance) || 0
+        if (amountNum > usdcBalanceNum) {
+            toast.error('Insufficient USDC balance')
+            return
+        }
+
+        if (!signer) {
+            toast.error('No signer available')
+            return
+        }
+
+        console.log('✅ All validations passed, starting process modal...')
+
+        // INICIAR EL MODAL DE PROCESO
+        processModal.startProcess('mint', MINT_STEPS, {
+            amount: `${amountNum}`,
+            fromToken: 'USDC',
+            toToken: 'hUSD',
+        })
+
+        console.log('📱 ProcessModal state after start:', {
+            isOpen: processModal.isOpen,
+            processType: processModal.processType,
+            currentStep: processModal.currentStep,
+        })
+
         setIsProcessing(true)
         try {
-            // Validate rate data is available
-            if (!rateData) {
-                throw new Error(
-                    'Exchange rate not available. Please wait for rate to load.'
-                )
-            }
-
-            // Validate amount
-            const amountNum = parseFloat(fromAmount)
-            if (isNaN(amountNum) || amountNum <= 0) {
-                throw new Error('Invalid amount')
-            }
-
-            // Validate sufficient balance
-            const usdcBalanceNum = parseFloat(usdcBalance) || 0
-            if (amountNum > usdcBalanceNum) {
-                throw new Error('Insufficient USDC balance')
-            }
-
             console.log('Starting atomic mint for:', amountNum, 'USDC')
             console.log('Using rate data:', rateData)
 
-            // Check if signer is available
-            if (!signer) {
-                throw new Error('No signer available')
-            }
-
-            // Step 1: Initialize atomic deposit (backend creates ScheduleCreateTransaction)
-            console.log('Initializing atomic mint transaction...')
-            const initToastId = toast.loading(
-                `🔄 Initializing atomic mint:\n💰 ${amountNum} USDC → ${toAmount} hUSD\n📊 Rate: ${rateData.rate.toFixed(
-                    6
-                )}`
-            )
+            // Paso 1: Inicializar depósito atómico
+            processModal.updateStep('initialize', 'active')
 
             const initResponse = await fetch('/api/deposit/init', {
                 method: 'POST',
@@ -213,11 +242,11 @@ export function MintActionButton({
             if (!initResponse.ok) {
                 const errorData = await initResponse.json()
                 console.error('Init error:', errorData)
-                toast.dismiss(initToastId)
 
                 // Handle rate conflict specifically
                 if (initResponse.status === 409 && errorData.currentRate) {
                     console.log('Rate conflict detected, showing modal')
+                    processModal.closeModal()
                     setRateConflictData({
                         currentRate: errorData.currentRate,
                         submittedRate: errorData.submittedRate,
@@ -240,15 +269,10 @@ export function MintActionButton({
 
             const { scheduleId, amountHUSDC } = initResult
 
-            // Step 2: User signs the schedule
+            // Paso 2: Usuario firma el schedule
+            processModal.nextStep()
+            processModal.updateStep('user-sign', 'active')
             console.log('Requesting schedule signature for:', scheduleId)
-            toast.dismiss(initToastId)
-            const signToastId = toast.loading(
-                `✍️ Please sign in your wallet:\n🔄 Exchange ${amountNum} USDC → ${amountHUSDC} hUSD\n📋 Schedule: ${scheduleId.slice(
-                    0,
-                    15
-                )}...`
-            )
 
             // Create ScheduleSignTransaction for user to sign
             const scheduleSignTx = new ScheduleSignTransaction()
@@ -284,7 +308,6 @@ export function MintActionButton({
                 )
             } catch (signingError: unknown) {
                 console.error('Signing error:', signingError)
-                toast.dismiss(signToastId)
 
                 // Check for user rejection with multiple approaches
                 let errorMessage = ''
@@ -334,9 +357,8 @@ export function MintActionButton({
                     fullErrorText.includes('4001') || // MetaMask-style rejection code
                     fullErrorText.includes('user_rejected')
                 ) {
-                    toast.info('ℹ️ Transaction cancelled by user', {
-                        duration: 4000,
-                    })
+                    processModal.closeModal()
+                    setIsProcessing(false)
                     return
                 }
 
@@ -361,18 +383,15 @@ export function MintActionButton({
             )
 
             if (userSignReceipt.status.toString() !== 'SUCCESS') {
-                toast.dismiss(signToastId)
                 throw new Error(
                     `User signature failed: ${userSignReceipt.status}`
                 )
             }
 
-            // Step 3: Notify backend that user has signed
+            // Paso 3: Completar transacción atómica
+            processModal.nextStep()
+            processModal.updateStep('complete', 'active')
             console.log('Notifying backend of user signature...')
-            toast.dismiss(signToastId)
-            const completeToastId = toast.loading(
-                '⚡ Completing atomic transaction...'
-            )
 
             const completeResponse = await fetch('/api/deposit/user-signed', {
                 method: 'POST',
@@ -388,7 +407,6 @@ export function MintActionButton({
             if (!completeResponse.ok) {
                 const errorData = await completeResponse.json()
                 console.error('Complete error:', errorData)
-                toast.dismiss(completeToastId)
                 throw new Error(
                     errorData.message ||
                         errorData.error ||
@@ -399,78 +417,14 @@ export function MintActionButton({
             const completeResult = await completeResponse.json()
             console.log('Complete success:', completeResult)
 
-            toast.dismiss(completeToastId)
-            toast.success(
-                `🎉 Atomic Mint Successful!\n💸 Sent: ${amountNum} USDC → 💰 Received: ${amountHUSDC} hUSD\n🔗 Transaction: ${completeResult.txId?.slice(
-                    0,
-                    20
-                )}...`,
-                {
-                    duration: 8000,
-                    style: {
-                        maxWidth: '450px',
-                    },
-                }
-            )
+            // Paso 4: Finalizar
+            processModal.nextStep()
+            processModal.updateStep('finalize', 'active')
 
-            // Clear the input field after successful mint
-            if (onInputClear) {
-                onInputClear()
-            }
-
-            // Refresh token balances after successful mint
-            console.log('🔄 Refreshing token balances after successful mint...')
-            try {
-                // Immediate refresh
-                await refreshBalances()
-                if (onBalanceRefresh) {
-                    await onBalanceRefresh()
-                }
-                console.log('✅ Immediate balance refresh completed')
-
-                // Wait a bit for the mirror node to update (Hedera network delay)
-                setTimeout(async () => {
-                    try {
-                        await refreshBalances()
-                        if (onBalanceRefresh) {
-                            await onBalanceRefresh()
-                        }
-                        console.log('✅ Delayed balance refresh completed')
-                    } catch (refreshError) {
-                        console.warn(
-                            '⚠️ Failed to refresh balances after mint (delayed):',
-                            refreshError
-                        )
-                    }
-                }, 3000) // Increased to 3 seconds for better mirror node sync
-
-                // Additional refresh after 10 seconds for safety
-                setTimeout(async () => {
-                    try {
-                        await refreshBalances()
-                        if (onBalanceRefresh) {
-                            await onBalanceRefresh()
-                        }
-                        console.log('✅ Final balance refresh completed')
-                    } catch (refreshError) {
-                        console.warn(
-                            '⚠️ Failed to refresh balances after mint (final):',
-                            refreshError
-                        )
-                    }
-                }, 10000) // 10 second final refresh
-            } catch (refreshError) {
-                console.warn(
-                    '⚠️ Failed to refresh balances after mint:',
-                    refreshError
-                )
-                // Don't show error to user as the mint was successful
-            }
+            // Completar el proceso - el callback onComplete manejará la limpieza
+            processModal.completeProcess()
         } catch (error: unknown) {
-            console.error('Atomic mint failed:', error)
-
-            // Dismiss any active toast
-            toast.dismiss()
+            console.error('❌ Atomic mint failed:', error)
 
             let errorMessage = 'Unknown error occurred'
 
@@ -486,10 +440,8 @@ export function MintActionButton({
                     message.includes('denied') ||
                     message.includes('abort')
                 ) {
-                    // User cancelled - already handled above, but in case it slips through
-                    toast.info('ℹ️ Transaction cancelled by user', {
-                        duration: 4000,
-                    })
+                    // User cancelled
+                    processModal.closeModal()
                     return
                 } else if (message.includes('insufficient')) {
                     errorMessage =
@@ -511,12 +463,7 @@ export function MintActionButton({
                 }
             }
 
-            toast.error(`❌ Atomic mint failed:\n${errorMessage}`, {
-                duration: 8000,
-                style: {
-                    maxWidth: '450px',
-                },
-            })
+            processModal.setStepError(processModal.currentStep, errorMessage)
         } finally {
             setIsProcessing(false)
         }
@@ -607,6 +554,19 @@ export function MintActionButton({
                     usdcAmount={rateConflictData.usdcAmount}
                 />
             )}
+
+            {/* Process Modal */}
+            <ProcessModal
+                isOpen={processModal.isOpen}
+                processType={processModal.processType}
+                currentStep={processModal.currentStep}
+                steps={processModal.steps}
+                onClose={processModal.closeModal}
+                amount={processModal.amount}
+                fromToken={processModal.fromToken}
+                toToken={processModal.toToken}
+                error={processModal.error}
+            />
         </>
     )
 }

@@ -18,6 +18,12 @@ import {
 } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
+import { ProcessModal } from '@/components/process-modal'
+import {
+    useProcessModal,
+    REDEEM_INSTANT_STEPS,
+    REDEEM_STANDARD_STEPS,
+} from '@/hooks/useProcessModal'
 
 function isValidSigner(signer: unknown): signer is Signer {
     return (
@@ -60,12 +66,38 @@ export function RedeemActionButton({
         maxInstantWithdrawable,
         submitInstantWithdraw,
         calculateInstantWithdrawAmounts,
-        refreshMaxAmount,
     } = useInstantWithdraw()
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const [step, setStep] = useState('')
+
+    // Process modal hooks
+    const instantProcessModal = useProcessModal({
+        onComplete: async () => {
+            if (onInputClear) onInputClear()
+            await refreshBalances()
+            if (onBalanceRefresh) await onBalanceRefresh()
+        },
+        onError: (error) => toastSuccess(`Instant redeem failed: ${error}`),
+    })
+
+    const standardProcessModal = useProcessModal({
+        onComplete: async () => {
+            console.log('Standard withdraw onComplete callback triggered')
+            if (onInputClear) {
+                console.log('Clearing input field')
+                onInputClear()
+            }
+            console.log('Refreshing balances...')
+            await refreshBalances()
+            if (onBalanceRefresh) {
+                console.log('Calling onBalanceRefresh callback')
+                await onBalanceRefresh()
+            }
+            console.log('Standard withdraw completion process finished')
+        },
+        onError: (error) => toastSuccess(`Standard redeem failed: ${error}`),
+    })
 
     // Use rateData from props or realTimeRateData as fallback
     const currentRateData = rateData || realTimeRateData
@@ -116,12 +148,24 @@ export function RedeemActionButton({
                 await handleStandardWithdraw(amount)
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error')
-            // Clear step immediately on error regardless of withdrawal type
-            setStep('')
+            const errorMessage =
+                err instanceof Error ? err.message : 'Unknown error'
+            setError(errorMessage)
+
+            // Close modals and show error
+            if (redeemType === 'instant') {
+                instantProcessModal.setStepError(
+                    instantProcessModal.currentStep,
+                    errorMessage
+                )
+            } else {
+                standardProcessModal.setStepError(
+                    standardProcessModal.currentStep,
+                    errorMessage
+                )
+            }
         } finally {
             setIsSubmitting(false)
-            // Don't clear step here for any withdrawal type - it's handled in the timeout callbacks
         }
     }
 
@@ -138,10 +182,19 @@ export function RedeemActionButton({
             return
         }
 
-        setStep('Processing instant withdrawal...')
+        // INICIAR EL MODAL DE PROCESO PARA INSTANT REDEEM
+        instantProcessModal.startProcess(
+            'redeem-instant',
+            REDEEM_INSTANT_STEPS,
+            {
+                amount: `${amount}`,
+                fromToken: 'hUSD',
+                toToken: 'USDC',
+            }
+        )
 
-        // Step 1: First transfer HUSD to treasury
-        setStep('Transferring hUSD to treasury...')
+        // Paso 1: Usuario firma transferencia de hUSD
+        instantProcessModal.updateStep('user-sign', 'active')
 
         if (!isValidSigner(signer)) {
             throw new Error('Invalid signer: wallet not properly connected')
@@ -179,8 +232,9 @@ export function RedeemActionButton({
             txResponse.transactionId?.toString()
         )
 
-        // Step 2: Call backend to process instant withdrawal
-        setStep('Processing instant withdrawal...')
+        // Paso 2: Procesar retiro instantáneo
+        instantProcessModal.nextStep()
+        instantProcessModal.updateStep('process', 'active')
 
         const result = await submitInstantWithdraw(
             accountId,
@@ -193,69 +247,28 @@ export function RedeemActionButton({
             throw new Error(result.error || 'Instant withdrawal failed')
         }
 
-        setStep('Instant withdrawal completed successfully!')
+        // Paso 3: Finalizar
+        instantProcessModal.nextStep()
+        instantProcessModal.updateStep('finalize', 'active')
 
-        toastSuccess(
-            `✅ Instant withdrawal completed! Received ${result.netUSDC?.toFixed(
-                6
-            )} USDC (fee: ${result.fee?.toFixed(6)} USDC)`
-        )
-
-        // Clear the input field
-        if (onInputClear) {
-            onInputClear()
-        }
-
-        // Refresh balances with delay to allow network propagation
-        setStep('Updating balances...')
-
-        try {
-            // Immediate refresh for hUSD (already sent)
-            await refreshBalances()
-            console.log('✅ Initial balance refresh completed')
-
-            // Wait for backend transaction to propagate through Hedera network
-            setTimeout(async () => {
-                try {
-                    setStep('Finalizing balance update...')
-                    await Promise.all([
-                        refreshBalances(),
-                        onBalanceRefresh?.(),
-                        refreshMaxAmount(),
-                    ])
-                    console.log(
-                        '✅ Final balance refresh completed after instant withdrawal'
-                    )
-                } catch (refreshError) {
-                    console.warn(
-                        '⚠️ Failed final balance refresh after instant withdrawal:',
-                        refreshError
-                    )
-                }
-            }, 3000) // 3 second delay for network propagation
-
-            // Additional refresh after longer delay to ensure USDC balance is updated
-            setTimeout(async () => {
-                try {
-                    await Promise.all([refreshBalances(), onBalanceRefresh?.()])
-                    console.log('✅ Extended balance refresh completed')
-                    setStep('') // Clear step after final refresh
-                } catch (refreshError) {
-                    console.warn(
-                        '⚠️ Failed extended balance refresh:',
-                        refreshError
-                    )
-                    setStep('') // Clear step even if refresh fails
-                }
-            }, 8000) // 8 second delay for complete network settlement
-        } catch (refreshError) {
-            console.warn('⚠️ Failed immediate balance refresh:', refreshError)
-        }
+        // Completar el proceso
+        instantProcessModal.completeProcess()
     }
 
     const handleStandardWithdraw = async (amount: number) => {
-        // Step 1: Create Schedule Transaction for HUSD transfer
-        setStep('Creating withdrawal request...')
+        // INICIAR EL MODAL DE PROCESO PARA STANDARD REDEEM
+        standardProcessModal.startProcess(
+            'redeem-standard',
+            REDEEM_STANDARD_STEPS,
+            {
+                amount: `${amount}`,
+                fromToken: 'hUSD',
+                toToken: 'USDC',
+            }
+        )
+
+        // Paso 1: Crear solicitud de retiro
+        standardProcessModal.updateStep('initialize', 'active')
 
         const result = await submitWithdrawal(
             amount,
@@ -270,14 +283,15 @@ export function RedeemActionButton({
 
         console.log('Schedule Transaction created:', result)
 
-        // Step 2: User signs the Schedule Transaction
+        // Paso 2: Usuario firma la transacción programada
+        standardProcessModal.nextStep()
+        standardProcessModal.updateStep('user-sign', 'active')
+
         await handleScheduleSignature(result.scheduleId || '')
     }
 
     const handleScheduleSignature = async (scheduleTransactionId: string) => {
         try {
-            setStep('Requesting signature from wallet...')
-
             // Validate signer before use
             if (!isValidSigner(signer)) {
                 throw new Error('Invalid signer: wallet not properly connected')
@@ -327,79 +341,23 @@ export function RedeemActionButton({
                 )
             }
 
-            setStep('hUSD transfer completed successfully!')
+            // Paso 3: Finalizar proceso
+            standardProcessModal.nextStep()
+            standardProcessModal.updateStep('finalize', 'active')
 
-            toastSuccess(
-                `Successfully submitted withdrawal for ${fromAmount} hUSD. Your USDC will be processed after the 48-hour lock period.`
-            )
-
-            // Clear the input field after successful withdrawal
-            if (onInputClear) {
-                onInputClear()
-            }
-
-            // Refresh balances with delay to allow network propagation
-            setStep('Updating balances...')
-
-            try {
-                // Immediate refresh attempt
-                await refreshBalances()
-                console.log(
-                    '✅ Initial balance refresh completed after standard withdrawal'
-                )
-
-                // Wait for Schedule Transaction to propagate through Hedera network
-                setTimeout(async () => {
-                    try {
-                        setStep('Finalizing balance update...')
-                        await Promise.all([
-                            refreshBalances(),
-                            onBalanceRefresh?.(),
-                        ])
-                        console.log(
-                            '✅ Final balance refresh completed after standard withdrawal'
-                        )
-                    } catch (refreshError) {
-                        console.warn(
-                            '⚠️ Failed final balance refresh after standard withdrawal:',
-                            refreshError
-                        )
-                    }
-                }, 3000) // 3 second delay for network propagation
-
-                // Additional refresh after longer delay to ensure hUSD balance is updated
-                setTimeout(async () => {
-                    try {
-                        await Promise.all([
-                            refreshBalances(),
-                            onBalanceRefresh?.(),
-                        ])
-                        console.log(
-                            '✅ Extended balance refresh completed for standard withdrawal'
-                        )
-                        setStep('') // Clear step after final refresh
-                    } catch (refreshError) {
-                        console.warn(
-                            '⚠️ Failed extended balance refresh for standard withdrawal:',
-                            refreshError
-                        )
-                        setStep('') // Clear step even if refresh fails
-                    }
-                }, 8000) // 8 second delay for complete network settlement
-            } catch (refreshError) {
-                console.warn(
-                    '⚠️ Failed immediate balance refresh after standard withdrawal:',
-                    refreshError
-                )
-            }
+            // Completar el proceso - el callback onComplete manejará la limpieza
+            console.log('Standard withdraw: calling completeProcess()')
+            standardProcessModal.completeProcess()
         } catch (err) {
             console.error('Error signing Schedule Transaction:', err)
-            setError(
+            const errorMessage =
                 err instanceof Error
                     ? err.message
                     : 'Failed to sign withdrawal transaction'
+            standardProcessModal.setStepError(
+                standardProcessModal.currentStep,
+                errorMessage
             )
-            setStep('') // Clear step immediately on error
         }
     }
 
@@ -475,16 +433,6 @@ export function RedeemActionButton({
                 </div>
             )}
 
-            {/* Progress indicator */}
-            {step && (
-                <div className='bg-blue-50 p-3 rounded-lg'>
-                    <div className='flex items-center space-x-2'>
-                        <Loader2 className='h-4 w-4 animate-spin text-blue-500' />
-                        <span className='text-sm text-blue-700'>{step}</span>
-                    </div>
-                </div>
-            )}
-
             {/* Lock period warning for standard withdrawals */}
             {redeemType === 'standard' && (
                 <div className='bg-yellow-50 border border-yellow-200 p-3 rounded-lg'>
@@ -515,7 +463,7 @@ export function RedeemActionButton({
                 {isSubmitting ? (
                     <>
                         <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                        {step || 'Processing...'}
+                        Processing...
                     </>
                 ) : (
                     <>
@@ -530,6 +478,31 @@ export function RedeemActionButton({
                     </>
                 )}
             </Button>
+
+            {/* Process Modals */}
+            <ProcessModal
+                isOpen={instantProcessModal.isOpen}
+                processType={instantProcessModal.processType}
+                currentStep={instantProcessModal.currentStep}
+                steps={instantProcessModal.steps}
+                onClose={instantProcessModal.closeModal}
+                amount={instantProcessModal.amount}
+                fromToken={instantProcessModal.fromToken}
+                toToken={instantProcessModal.toToken}
+                error={instantProcessModal.error}
+            />
+
+            <ProcessModal
+                isOpen={standardProcessModal.isOpen}
+                processType={standardProcessModal.processType}
+                currentStep={standardProcessModal.currentStep}
+                steps={standardProcessModal.steps}
+                onClose={standardProcessModal.closeModal}
+                amount={standardProcessModal.amount}
+                fromToken={standardProcessModal.fromToken}
+                toToken={standardProcessModal.toToken}
+                error={standardProcessModal.error}
+            />
         </div>
     )
 }
