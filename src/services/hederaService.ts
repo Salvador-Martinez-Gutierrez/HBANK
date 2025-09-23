@@ -74,37 +74,45 @@ export class HederaService {
     /**
      * Gets the appropriate wallet credentials for different operations
      */
-    private getWalletCredentials(walletType: 'deposit' | 'instant-withdraw' | 'standard-withdraw' | 'treasury' | 'emissions' | 'rate-publisher') {
+    private getWalletCredentials(
+        walletType:
+            | 'deposit'
+            | 'instant-withdraw'
+            | 'standard-withdraw'
+            | 'treasury'
+            | 'emissions'
+            | 'rate-publisher'
+    ) {
         switch (walletType) {
             case 'deposit':
                 return {
                     id: process.env.DEPOSIT_WALLET_ID!,
-                    key: process.env.DEPOSIT_WALLET_KEY!
+                    key: process.env.DEPOSIT_WALLET_KEY!,
                 }
             case 'instant-withdraw':
                 return {
                     id: process.env.INSTANT_WITHDRAW_WALLET_ID!,
-                    key: process.env.INSTANT_WITHDRAW_WALLET_KEY!
+                    key: process.env.INSTANT_WITHDRAW_WALLET_KEY!,
                 }
             case 'standard-withdraw':
                 return {
                     id: process.env.STANDARD_WITHDRAW_WALLET_ID!,
-                    key: process.env.STANDARD_WITHDRAW_WALLET_KEY!
+                    key: process.env.STANDARD_WITHDRAW_WALLET_KEY!,
                 }
             case 'treasury':
                 return {
                     id: process.env.TREASURY_ID!,
-                    key: process.env.TREASURY_KEY!
+                    key: process.env.TREASURY_KEY!,
                 }
             case 'emissions':
                 return {
                     id: process.env.EMISSIONS_ID!,
-                    key: process.env.EMISSIONS_KEY!
+                    key: process.env.EMISSIONS_KEY!,
                 }
             case 'rate-publisher':
                 return {
                     id: process.env.RATE_PUBLISHER_ID!,
-                    key: process.env.RATE_PUBLISHER_KEY!
+                    key: process.env.RATE_PUBLISHER_KEY!,
                 }
             default:
                 throw new Error(`Unknown wallet type: ${walletType}`)
@@ -400,7 +408,8 @@ export class HederaService {
         amountUSDC: number
     ): Promise<string> {
         try {
-            const standardWithdrawWallet = this.getWalletCredentials('standard-withdraw')
+            const standardWithdrawWallet =
+                this.getWalletCredentials('standard-withdraw')
             const usdcTokenId = process.env.USDC_TOKEN_ID
 
             if (!usdcTokenId) {
@@ -421,7 +430,10 @@ export class HederaService {
             })
 
             // Create client with standard withdrawal wallet credentials
-            const standardWithdrawClient = this.createClientForWallet(standardWithdrawWallet.id, standardWithdrawWallet.key)
+            const standardWithdrawClient = this.createClientForWallet(
+                standardWithdrawWallet.id,
+                standardWithdrawWallet.key
+            )
 
             // Create the transfer transaction
             const transferTx = new TransferTransaction()
@@ -436,8 +448,12 @@ export class HederaService {
                     Math.floor(amountUSDC * 1_000_000) // Positive = incoming to user
                 )
 
-            const transferResponse = await transferTx.execute(standardWithdrawClient)
-            const receipt = await transferResponse.getReceipt(standardWithdrawClient)
+            const transferResponse = await transferTx.execute(
+                standardWithdrawClient
+            )
+            const receipt = await transferResponse.getReceipt(
+                standardWithdrawClient
+            )
 
             if (receipt.status.toString() !== 'SUCCESS') {
                 throw new Error(
@@ -591,7 +607,10 @@ export class HederaService {
             })
 
             // Create client with treasury wallet credentials
-            const treasuryClient = this.createClientForWallet(treasuryWallet.id, treasuryWallet.key)
+            const treasuryClient = this.createClientForWallet(
+                treasuryWallet.id,
+                treasuryWallet.key
+            )
 
             // Create the transfer transaction to return HUSD to user
             const transferTx = new TransferTransaction()
@@ -675,6 +694,7 @@ export class HederaService {
     /**
      * Verifies that HUSD tokens were transferred from user to treasury
      * Checks recent transactions involving the user and treasury accounts
+     * Implements retry logic to account for Mirror Node synchronization delays
      */
     async verifyHUSDTransfer(
         userAccountId: string,
@@ -696,142 +716,43 @@ export class HederaService {
 
             console.log(`   HUSD Token ID: ${husdTokenId}`)
 
-            // Query Mirror Node for token transfers
-            const mirrorNodeUrl =
-                process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
-                'https://testnet.mirrornode.hedera.com'
-            const sinceTimestamp = new Date(since).getTime() / 1000 // Convert to seconds
+            // Retry logic: try multiple times with increasing delays
+            // This accounts for Mirror Node synchronization delays
+            const maxRetries = 5
+            const retryDelays = [500, 1000, 2000, 3000, 5000] // milliseconds
 
-            const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=50`
-            console.log(`🔍 Querying Mirror Node:`, queryUrl)
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                console.log(`🔄 Verification attempt ${attempt}/${maxRetries}`)
 
-            // Get transfers involving the user account since the withdrawal request
-            const response = await fetch(queryUrl)
-
-            if (!response.ok) {
-                console.log(
-                    `❌ Failed to fetch transactions for ${userAccountId}: ${response.status} ${response.statusText}`
-                )
-                return false
-            }
-
-            const data = await response.json()
-            const transactions = data.transactions || []
-
-            console.log(
-                `📋 Found ${transactions.length} transactions since ${since}`
-            )
-
-            // Look for a transaction where user sent HUSD to treasury
-            for (const tx of transactions) {
-                console.log(
-                    `🔍 Checking transaction ${tx.transaction_id} (${tx.consensus_timestamp})`
+                const verified = await this.performHUSDTransferCheck(
+                    userAccountId,
+                    treasuryId,
+                    expectedAmount,
+                    since,
+                    husdTokenId,
+                    attempt
                 )
 
-                if (tx.token_transfers) {
+                if (verified) {
                     console.log(
-                        `   Token transfers found: ${tx.token_transfers.length}`
+                        `✅ HUSD transfer verified on attempt ${attempt}`
                     )
+                    return true
+                }
 
-                    for (const tokenTransfer of tx.token_transfers) {
-                        console.log(
-                            `   Token ID: ${tokenTransfer.token_id} (looking for ${husdTokenId})`
-                        )
-
-                        if (tokenTransfer.token_id === husdTokenId) {
-                            console.log(`   ✅ Found HUSD token transfer!`)
-                            console.log(
-                                `   Transfer details:`,
-                                JSON.stringify(tokenTransfer, null, 2)
-                            )
-
-                            // Check if this is the transfer we're looking for
-                            // The Mirror Node returns token_transfers as an array where each item has account and amount
-                            const transferredAmount =
-                                Math.abs(tokenTransfer.amount) / 100_000_000 // Convert from tinybars (hUSD has 8 decimals)
-
-                            // Check if this transfer is from user to treasury or treasury to user
-                            const isUserSending =
-                                tokenTransfer.account === userAccountId &&
-                                tokenTransfer.amount < 0
-                            const isTreasuryReceiving =
-                                tokenTransfer.account === treasuryId &&
-                                tokenTransfer.amount > 0
-
-                            console.log(
-                                `   Transfer from account: ${tokenTransfer.account}`
-                            )
-                            console.log(
-                                `   Transfer amount: ${tokenTransfer.amount} (${transferredAmount} HUSD)`
-                            )
-                            console.log(`   Is user sending: ${isUserSending}`)
-                            console.log(
-                                `   Is treasury receiving: ${isTreasuryReceiving}`
-                            )
-
-                            // We need to find both the outgoing and incoming transfers in the same transaction
-                            if (
-                                isUserSending &&
-                                Math.abs(transferredAmount - expectedAmount) <
-                                    0.001
-                            ) {
-                                // Check if there's also a corresponding incoming transfer to treasury in this transaction
-                                const treasuryTransfer =
-                                    tx.token_transfers.find(
-                                        (transfer: {
-                                            token_id: string
-                                            account: string
-                                            amount: number
-                                        }) =>
-                                            transfer.token_id === husdTokenId &&
-                                            transfer.account === treasuryId &&
-                                            transfer.amount > 0
-                                    )
-
-                                if (treasuryTransfer) {
-                                    const treasuryAmount =
-                                        treasuryTransfer.amount / 100_000_000
-                                    console.log(
-                                        `📋 Found complete HUSD transfer:`,
-                                        {
-                                            from: userAccountId,
-                                            to: treasuryId,
-                                            userAmount: -transferredAmount,
-                                            treasuryAmount: treasuryAmount,
-                                            expected: expectedAmount,
-                                            transaction_id: tx.transaction_id,
-                                            timestamp: tx.consensus_timestamp,
-                                        }
-                                    )
-
-                                    if (
-                                        Math.abs(
-                                            treasuryAmount - expectedAmount
-                                        ) < 0.001
-                                    ) {
-                                        console.log(
-                                            `✅ HUSD transfer verified: ${expectedAmount} HUSD`
-                                        )
-                                        return true
-                                    } else {
-                                        console.log(
-                                            `❌ Amount mismatch: treasury received ${treasuryAmount} vs expected ${expectedAmount}`
-                                        )
-                                    }
-                                } else {
-                                    console.log(
-                                        `❌ No corresponding treasury transfer found`
-                                    )
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    console.log(`   No token_transfers in this transaction`)
+                // If not the last attempt, wait before retrying
+                if (attempt < maxRetries) {
+                    const delay = retryDelays[attempt - 1]
+                    console.log(
+                        `⏳ Waiting ${delay}ms before retry (Mirror Node may need time to sync)...`
+                    )
+                    await new Promise((resolve) => setTimeout(resolve, delay))
                 }
             }
 
-            console.log(`❌ No matching HUSD transfer found`)
+            console.log(
+                `❌ HUSD transfer verification failed after ${maxRetries} attempts`
+            )
             console.log(
                 `📋 Expected ${expectedAmount} HUSD from ${userAccountId} to ${treasuryId}`
             )
@@ -840,6 +761,154 @@ export class HederaService {
             console.error(`❌ Error verifying HUSD transfer:`, error)
             return false
         }
+    }
+
+    /**
+     * Performs a single HUSD transfer verification check
+     * Private helper method for the retry logic
+     */
+    private async performHUSDTransferCheck(
+        userAccountId: string,
+        treasuryId: string,
+        expectedAmount: number,
+        since: string,
+        husdTokenId: string,
+        attempt: number
+    ): Promise<boolean> {
+        // Query Mirror Node for token transfers
+        const mirrorNodeUrl =
+            process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+            'https://testnet.mirrornode.hedera.com'
+        const sinceTimestamp = new Date(since).getTime() / 1000 // Convert to seconds
+
+        const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=50`
+        console.log(`🔍 Attempt ${attempt} - Querying Mirror Node:`, queryUrl)
+
+        // Get transfers involving the user account since the withdrawal request
+        const response = await fetch(queryUrl)
+
+        if (!response.ok) {
+            console.log(
+                `❌ Attempt ${attempt} - Failed to fetch transactions for ${userAccountId}: ${response.status} ${response.statusText}`
+            )
+            return false
+        }
+
+        const data = await response.json()
+        const transactions = data.transactions || []
+
+        console.log(
+            `📋 Attempt ${attempt} - Found ${transactions.length} transactions since ${since}`
+        )
+
+        // Look for a transaction where user sent HUSD to treasury
+        for (const tx of transactions) {
+            console.log(
+                `🔍 Checking transaction ${tx.transaction_id} (${tx.consensus_timestamp})`
+            )
+
+            if (tx.token_transfers) {
+                console.log(
+                    `   Token transfers found: ${tx.token_transfers.length}`
+                )
+
+                for (const tokenTransfer of tx.token_transfers) {
+                    console.log(
+                        `   Token ID: ${tokenTransfer.token_id} (looking for ${husdTokenId})`
+                    )
+
+                    if (tokenTransfer.token_id === husdTokenId) {
+                        console.log(`   ✅ Found HUSD token transfer!`)
+                        console.log(
+                            `   Transfer details:`,
+                            JSON.stringify(tokenTransfer, null, 2)
+                        )
+
+                        // Check if this is the transfer we're looking for
+                        // The Mirror Node returns token_transfers as an array where each item has account and amount
+                        const transferredAmount =
+                            Math.abs(tokenTransfer.amount) / 100_000_000 // Convert from tinybars (hUSD has 8 decimals)
+
+                        // Check if this transfer is from user to treasury or treasury to user
+                        const isUserSending =
+                            tokenTransfer.account === userAccountId &&
+                            tokenTransfer.amount < 0
+                        const isTreasuryReceiving =
+                            tokenTransfer.account === treasuryId &&
+                            tokenTransfer.amount > 0
+
+                        console.log(
+                            `   Transfer from account: ${tokenTransfer.account}`
+                        )
+                        console.log(
+                            `   Transfer amount: ${tokenTransfer.amount} (${transferredAmount} HUSD)`
+                        )
+                        console.log(`   Is user sending: ${isUserSending}`)
+                        console.log(
+                            `   Is treasury receiving: ${isTreasuryReceiving}`
+                        )
+
+                        // We need to find both the outgoing and incoming transfers in the same transaction
+                        if (
+                            isUserSending &&
+                            Math.abs(transferredAmount - expectedAmount) < 0.001
+                        ) {
+                            // Check if there's also a corresponding incoming transfer to treasury in this transaction
+                            const treasuryTransfer = tx.token_transfers.find(
+                                (transfer: {
+                                    token_id: string
+                                    account: string
+                                    amount: number
+                                }) =>
+                                    transfer.token_id === husdTokenId &&
+                                    transfer.account === treasuryId &&
+                                    transfer.amount > 0
+                            )
+
+                            if (treasuryTransfer) {
+                                const treasuryAmount =
+                                    treasuryTransfer.amount / 100_000_000
+                                console.log(
+                                    `📋 Attempt ${attempt} - Found complete HUSD transfer:`,
+                                    {
+                                        from: userAccountId,
+                                        to: treasuryId,
+                                        userAmount: -transferredAmount,
+                                        treasuryAmount: treasuryAmount,
+                                        expected: expectedAmount,
+                                        transaction_id: tx.transaction_id,
+                                        timestamp: tx.consensus_timestamp,
+                                    }
+                                )
+
+                                if (
+                                    Math.abs(treasuryAmount - expectedAmount) <
+                                    0.001
+                                ) {
+                                    console.log(
+                                        `✅ Attempt ${attempt} - HUSD transfer verified: ${expectedAmount} HUSD`
+                                    )
+                                    return true
+                                } else {
+                                    console.log(
+                                        `❌ Attempt ${attempt} - Amount mismatch: treasury received ${treasuryAmount} vs expected ${expectedAmount}`
+                                    )
+                                }
+                            } else {
+                                console.log(
+                                    `❌ Attempt ${attempt} - No corresponding treasury transfer found`
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                console.log(`   No token_transfers in this transaction`)
+            }
+        }
+
+        console.log(`❌ Attempt ${attempt} - No matching HUSD transfer found`)
+        return false
     }
 
     /**

@@ -155,7 +155,7 @@ export default async function handler(
             fee: fee,
             netUSDC: netUSDC,
             actualHUSDToVerify: actualHUSDToVerify,
-            note: 'User sends the full hUSD amount, receives netUSDC after fee'
+            note: 'User sends the full hUSD amount, receives netUSDC after fee',
         })
 
         const husdTransferVerified = await hederaService.verifyHUSDTransfer(
@@ -166,12 +166,25 @@ export default async function handler(
         )
 
         if (!husdTransferVerified) {
-            console.log('❌ HUSD transfer verification failed')
-            console.log(`📋 Expected ${actualHUSDToVerify.toFixed(8)} hUSD from ${userAccountId} to ${treasuryId}`)
-            console.log(`💡 Note: User should send full hUSD amount (${actualHUSDToVerify.toFixed(8)} hUSD) to get ${netUSDC.toFixed(8)} USDC after fees`)
+            console.log(
+                '❌ HUSD transfer verification failed after multiple attempts'
+            )
+            console.log(
+                `📋 Expected ${actualHUSDToVerify.toFixed(
+                    8
+                )} hUSD from ${userAccountId} to ${treasuryId}`
+            )
+            console.log(
+                `💡 Note: User should send full hUSD amount (${actualHUSDToVerify.toFixed(
+                    8
+                )} hUSD) to get ${netUSDC.toFixed(8)} USDC after fees`
+            )
+            console.log(`⏰ Checked transactions since: ${fiveMinutesAgo}`)
             return res.status(400).json({
                 success: false,
-                error: `HUSD transfer not verified. Please ensure you have sent ${actualHUSDToVerify.toFixed(8)} hUSD to the treasury.`,
+                error: `HUSD transfer verification failed after multiple attempts. This could be due to: 1) You haven't sent the required ${actualHUSDToVerify.toFixed(
+                    8
+                )} hUSD to the treasury, 2) The transfer was sent more than 5 minutes ago, or 3) Mirror node synchronization delay. Please ensure you have sent the correct amount and try again in a few moments if the transfer was just completed.`,
             })
         }
 
@@ -181,7 +194,8 @@ export default async function handler(
         console.log('🚀 Executing instant USDC transfer...')
 
         const instantWithdrawWalletId = process.env.INSTANT_WITHDRAW_WALLET_ID!
-        const instantWithdrawWalletKey = process.env.INSTANT_WITHDRAW_WALLET_KEY!
+        const instantWithdrawWalletKey =
+            process.env.INSTANT_WITHDRAW_WALLET_KEY!
 
         // Setup Hedera client
         const client = Client.forTestnet()
