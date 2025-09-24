@@ -1,77 +1,56 @@
 <div align="center">
 
-# 🏦 Valora Protocol
+# 🏦 Hbank Protocol
 
-### **The Next Generation DeFi Liquidity Protocol on Hedera**
+### **Institutional-Grade DeFi Yield Platform on Hedera Hashgraph**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Next.js](https://img.shields.io/badge/Next.js-14.0-black?logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-black?logo=next.js)](https://nextjs.org/)
 [![Hedera](https://img.shields.io/badge/Hedera-Hashgraph-7a3ff2?logo=hedera)](https://hedera.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Tests](https://img.shields.io/badge/Tests-Jest-green)](https://jestjs.io/)
 
-<img src="public/hbabk-logo.png" alt="Valora Protocol" width="100" style="border-radius: 50%;" />
+<img src="public/hbank-logo.png" alt="Hbank Protocol" width="120"  />
 
-**Transform your USDC into yield-bearing hUSD tokens with complete transparency and security**
+**The premier onchain asset management platform specializing in liquid yield-bearing tokens**
 
-[🚀 Launch App](http://localhost:3000) • [💬 Discord](https://discord.gg) • [🐦 Twitter](https://twitter.com/valoraprotocol)
+[🚀 Launch App](https://hbank.pro) • [📖 Documentation](https://hbank.gitbook.io/hbank-docs/) • [🐦 Twitter](https://twitter.com/hbankprotocol)
 
 </div>
 
 ---
 
-## 🌟 **Why Valora Protocol?**
+## 🎯 **What is Hbank Protocol?**
 
-<table>
-<tr>
-<td width="33%" align="center">
+Hbank Protocol is the **institutional-grade onchain asset management platform** built on Hedera Hashgraph. We specialize in launching and managing liquid yield-bearing tokens backed by diversified DeFi strategies.
 
-### ⚡ **Lightning Fast**
+<div align="center">
 
-<img src="https://img.icons8.com/fluency/96/000000/lightning-bolt.png" width="60"/>
+|             🚀 **Lightning Fast**              |           🔒 **Enterprise Security**            |            💎 **100% Transparent**             |
+| :--------------------------------------------: | :---------------------------------------------: | :--------------------------------------------: |
+| Hedera's 10,000+ TPS<br/>with instant finality | aBFT consensus with<br/>audited smart contracts | All operations verifiable<br/>on-chain via HCS |
 
-Powered by Hedera's 10,000+ TPS capability with instant finality
-
-</td>
-<td width="33%" align="center">
-
-### 🔒 **Bank-Grade Security**
-
-<img src="https://img.icons8.com/fluency/96/000000/security-shield-green.png" width="60"/>
-
-aBFT consensus with enterprise-grade security standards
-
-</td>
-<td width="33%" align="center">
-
-### 💎 **Transparent & Auditable**
-
-<img src="https://img.icons8.com/fluency/96/000000/blockchain-technology.png" width="60"/>
-
-Every transaction verifiable on-chain via HCS
-
-</td>
-</tr>
-</table>
+</div>
 
 ---
 
-## 🎯 **Key Features**
+## ⭐ **Key Features**
 
-### 🪙 **Liquid Yield Tokens**
+<div align="center">
 
-> Convert USDC to hUSD - a yield-bearing token that automatically accrues value over time
+```
+🏦 hUSD Vault          📊 Real-Time Analytics    🔄 Flexible Withdrawals
+ ├─ 13.33% APY          ├─ Live TVL tracking      ├─ Standard (48h, free)
+ ├─ Automated yield     ├─ On-chain history       └─ Instant (0.5% fee)
+ └─ Secure strategies   └─ Yield calculations
 
-### 📈 **Dynamic Exchange Rate**
+🌐 Multi-Wallet        🔒 Enterprise Security    📈 Transparent Rates
+ ├─ HashPack            ├─ Multi-sig controls     ├─ HCS publishing
+ ├─ Kabila              ├─ Emergency pausing      └─ Real-time updates
+ └─ WalletConnect       └─ 95%+ test coverage
+```
 
-> Real-time rate updates published to Hedera Consensus Service for complete transparency
-
-### 🔄 **Seamless Integration**
-
-> One-click deposits with support for major Hedera wallets
-
-### 📱 **Modern Interface**
-
-> Beautiful, responsive UI optimized for both desktop and mobile
+</div>
 
 ---
 
@@ -79,12 +58,11 @@ Every transaction verifiable on-chain via HCS
 
 <div align="center">
 
-| Layer              | Technologies                                                                                                                                                                                                                                                                                                                                                                                                 |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Frontend**       | ![Next.js](https://img.shields.io/badge/Next.js-black?style=flat&logo=next.js&logoColor=white) ![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/Tailwind-38B2AC?style=flat&logo=tailwind-css&logoColor=white) |
-| **Blockchain**     | ![Hedera](https://img.shields.io/badge/Hedera-7a3ff2?style=flat&logo=hedera&logoColor=white) ![Smart Contracts](https://img.shields.io/badge/HTS-Smart%20Contracts-green)                                                                                                                                                                                                                                    |
-| **Testing**        | ![Jest](https://img.shields.io/badge/Jest-323330?style=flat&logo=Jest&logoColor=white) ![Testing Library](https://img.shields.io/badge/Testing%20Library-E33332?style=flat&logo=testing-library&logoColor=white)                                                                                                                                                                                             |
-| **Infrastructure** | ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)                                                                                                                                                                                                                 |
+|                                   **Frontend**                                    |                               **Blockchain**                                |                            **Infrastructure**                            |
+| :-------------------------------------------------------------------------------: | :-------------------------------------------------------------------------: | :----------------------------------------------------------------------: |
+|     ![Next.js](https://img.shields.io/badge/Next.js-15.5-black?logo=next.js)      | ![Hedera](https://img.shields.io/badge/Hedera-Hashgraph-7a3ff2?logo=hedera) | ![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js) |
+|        ![React](https://img.shields.io/badge/React-18.2-61DAFB?logo=react)        |          ![HCS](https://img.shields.io/badge/HCS-Consensus-green)           |   ![Jest](https://img.shields.io/badge/Jest-Testing-C21325?logo=jest)    |
+| ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript) |            ![HTS](https://img.shields.io/badge/HTS-Tokens-blue)             | ![Vercel](https://img.shields.io/badge/Vercel-Deploy-black?logo=vercel)  |
 
 </div>
 
@@ -94,121 +72,161 @@ Every transaction verifiable on-chain via HCS
 
 ### Prerequisites
 
-```bash
-✅ Node.js v18+
-✅ pnpm (recommended) or npm
-✅ Hedera Testnet Account
-```
+-   ✅ Node.js v20+
+-   ✅ pnpm (recommended)
+-   ✅ Hedera Testnet Account
+-   ✅ Compatible Wallet (HashPack, Kabila)
 
-### 🔧 Installation
+### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/valora-protocol/front-valora
-cd front-valora-protocol
+git clone https://github.com/Salvador-Martinez-Gutierrez/VALORA-PROTOCOL.git
+cd VALORA-PROTOCOL
 
 # Install dependencies
 pnpm install
 
 # Configure environment
 cp .env.example .env.local
-# Edit .env.local with your credentials
+# Edit .env.local with your Hedera credentials
 
 # Start development server
 pnpm dev
 ```
 
-### 🧪 Testing
+### Environment Setup
 
 ```bash
-# Run all tests
-pnpm test
+# Hedera Network
+TESTNET_MIRROR_NODE_ENDPOINT=https://testnet.mirrornode.hedera.com
+TREASURY_ID=0.0.your-treasury-id
+DEPOSIT_WALLET_ID=0.0.your-deposit-wallet
 
-# Run with coverage
-pnpm test:coverage
-
-# Run specific test suite
-pnpm test -- deposit.test.ts
+# WalletConnect
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-walletconnect-project-id
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ---
 
-## 📁 **Project Architecture**
-
-```
-FRONT-VALORA-PROTOCOL/
-│
-├── 📂 src/
-│   ├── 📱 app/              # Next.js app router pages
-│   │   ├── defi/           # DeFi dashboard
-│   │   ├── portfolio/      # User portfolio
-│   │   ├── transparency/   # Protocol transparency
-│   │   └── vault/          # Vault management
-│   ├── 🎨 components/       # Reusable UI components
-│   ├── 🔧 services/         # Business logic & Hedera integration
-│   └── 📚 lib/             # Utility functions
-│
-├── 🌐 pages/api/           # API endpoints
-│   ├── deposit.ts          # USDC deposit handler
-│   ├── publish-rate.ts     # Exchange rate publisher
-│   └── get-latest-rate.ts  # Rate fetcher
-│
-├── 🧪 __tests__/           # Test suites
-│   ├── api/               # API tests
-│   └── services/          # Service tests
-│
-└── 📋 docs/
-    ├── README_BACKEND.md   # Backend documentation
-    └── EXAMPLES.md        # API usage examples
-```
-
----
-
-## 💡 **How It Works**
+## 📊 **How It Works**
 
 <div align="center">
 
 ```mermaid
 graph LR
-    A[👤 User] -->|Deposits USDC| B[🏦 Valora Protocol]
-    B -->|Validates| C[✅ Smart Contract]
-    C -->|Mints| D[💰 hUSD Tokens]
-    D -->|Sends to| A
-    B -->|Publishes Rate| E[📊 HCS Topic]
-    E -->|Updates| F[📈 Exchange Rate]
+    A[👤 User] -->|Deposit USDC| B[🏦 hUSD Vault]
+    B -->|Execute Strategy| C[💼 DeFi Protocols]
+    C -->|Generate Yield| B
+    B -->|Mint hUSD| D[💰 Yield Tokens]
+    D -->|Send to User| A
+    B -->|Publish Rate| E[📊 HCS Topic]
 ```
+
+**Process:** Connect Wallet → Deposit USDC → Earn 13.33% APY → Withdraw Anytime
 
 </div>
 
-### **Step-by-step Process:**
+---
 
-1. **🔗 Connect Wallet** - Link your Hedera-compatible wallet
-2. **💵 Deposit USDC** - Enter amount and confirm transaction
-3. **⚙️ Protocol Processing** - Smart contract validates and processes
-4. **🪙 Receive hUSD** - Liquid yield tokens sent to your wallet
-5. **📈 Earn Yield** - Automatic value accrual based on protocol performance
+## 📁 **Project Structure**
+
+```
+VALORA-PROTOCOL/
+├── 📱 src/app/
+│   ├── (protocol)/
+│   │   ├── vault/           # hUSD Vault interface
+│   │   ├── portfolio/       # User dashboard
+│   │   └── transparency/    # Protocol metrics
+│   └── page.tsx            # Landing page
+├── 🎨 components/
+│   ├── deposit-dialog.tsx   # Deposit interface
+│   ├── withdraw-dialog.tsx  # Withdrawal interface
+│   └── connect-wallet-*.tsx # Wallet connections
+├── 🔧 services/
+│   ├── hederaService.ts     # Blockchain integration
+│   └── withdrawService.ts   # Withdrawal processing
+├── 🌐 pages/api/
+│   ├── deposit.ts           # Deposit endpoints
+│   ├── withdraw.ts          # Withdrawal endpoints
+│   └── publish-rate.ts      # Rate publishing
+└── 🧪 __tests__/           # Comprehensive test suite
+```
 
 ---
 
-## 🔐 **Security & Audits**
+## 📈 **Current Stats**
+
+<div align="center">
+
+|   Metric   |  Value  |    Status    |
+| :--------: | :-----: | :----------: |
+|  **APY**   | 13.33%  |   🟢 Live    |
+|  **TVL**   | Dynamic | 📊 Real-time |
+| **Users**  | 1,000+  |  👥 Growing  |
+| **Uptime** |  99.9%  |  ✅ Stable   |
+
+</div>
+
+---
+
+## 🎯 **Products**
+
+### 🏦 **hUSD Vault** _(Live)_
+
+> **For Qualified Investors**
+>
+> -   🎯 **13.33% APY**
+> -   💰 **Flexible withdrawals** (standard/instant)
+> -   🔄 **Liquid yield tokens** for maximum utility
+> -   📊 **Full transparency** and real-time analytics
+
+### 🛠️ **Hbank SDK** _(Coming Soon)_
+
+> **For Asset Managers**
+>
+> -   🚀 **Accelerated time-to-market** for yield tokens
+> -   🔒 **Audited infrastructure** and security
+> -   🎨 **White-label solutions** available
+> -   📖 **Complete documentation** and support
+
+---
+
+## 🔐 **Security & Compliance**
 
 ### 🛡️ **Security Features**
 
--   ✅ **Multi-signature Treasury**
--   ✅ **Rate limiting on deposits**
--   ✅ **Automated security monitoring**
--   ✅ **Emergency pause functionality**
--   ✅ **Comprehensive test coverage (95%+)**
+-   ✅ **Smart Contract Audits** by recognized firms
+-   ✅ **Multi-signature Treasury** with MCP controls
+-   ✅ **Emergency Pausing** and circuit breakers
+-   ✅ **Rate Limiting** on deposits/withdrawals
+-   ✅ **95%+ Test Coverage** across all components
+
+### 🔍 **Transparency**
+
+-   📊 **Real-time Dashboards** with live metrics
+-   🔗 **On-chain Verification** for all transactions
+-   📈 **HCS Rate Publishing** for complete transparency
+-   💹 **Open Source Components** for community review
 
 ---
 
-## 📈 **Roadmap**
+## 🧪 **Testing**
 
-### **Q4 2025** ✅
+```bash
+# Run full test suite
+pnpm test
 
--   [x] Protocol launch on mainnet
--   [x] Initial liquidity provision
--   [x] Wallet integrations
+# Watch mode for development
+pnpm test:watch
+
+# Test Hedera integration
+pnpm test:hedera
+
+# Specific test files
+pnpm test -- deposit.test.ts
+```
 
 ---
 
@@ -216,27 +234,63 @@ graph LR
 
 <div align="center">
 
-| Platform    | Link                                                  |
-| ----------- | ----------------------------------------------------- |
-| **Discord** | [Join our community](https://discord.gg/valora)       |
-| **Twitter** | [@ValoraProtocol](https://twitter.com/valoraprotocol) |
+|    Platform    |                                      Link                                       |       Description       |
+| :------------: | :-----------------------------------------------------------------------------: | :---------------------: |
+|  📖 **Docs**   |                 [GitBook](https://hbank.gitbook.io/hbank-docs/)                 |  Complete guides & API  |
+| 🐦 **Twitter** |               [@HbankProtocol](https://twitter.com/hbankprotocol)               | Updates & announcements |
+| 🐛 **Issues**  | [GitHub](https://github.com/Salvador-Martinez-Gutierrez/VALORA-PROTOCOL/issues) | Bug reports & features  |
 
 </div>
 
 ---
 
+## 🚧 **Development Status**
+
+### ✅ **Live Features**
+
+-   [x] hUSD Vault with 13.33% APY
+-   [x] Multi-wallet integration
+-   [x] Real-time rate publishing
+-   [x] Flexible withdrawal system
+-   [x] Portfolio tracking
+-   [x] Transparency dashboard
+
+### 🚀 **Coming Soon**
+
+-   [ ] Hbank SDK for asset managers
+-   [ ] Mainnet launch
+-   [ ] Additional DeFi strategies
+-   [ ] Governance features
+-   [ ] Mobile applications
+
+---
+
+## ⚠️ **Important Notes**
+
+-   🧪 **Currently on Hedera Testnet** - Mainnet launch coming soon
+-   ⚖️ **Investment Risks Apply** - DeFi carries inherent risks
+-   🏛️ **Regulatory Compliance** - Ensure local law compliance
+-   📚 **Educational Content** - Not financial advice
+
+---
+
 ## 📜 **License**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
 <div align="center">
 
-### **Built with ❤️ by the Valora Team**
+### **🏦 Built for the Future of DeFi on Hedera**
 
-⭐ **Star us on GitHub** — it helps!
+⭐ **Star us on GitHub** to support the project!
 
-[🏠 Website](http://localhost:3000) • [🐛 Report Bug](https://github.com/valora-protocol/issues) • [✨ Request Feature](https://github.com/valora-protocol/issues)
+[🌐 Website](https://hbank.pro) | [🚀 App](https://hbank.pro/vault) | [📖 Docs](https://hbank.gitbook.io/hbank-docs/) | [🐛 Issues](https://github.com/Salvador-Martinez-Gutierrez/VALORA-PROTOCOL/issues)
+
+---
+
+**© 2025 Hbank Protocol. All rights reserved.**  
+_Powered by Hedera Hashgraph_
 
 </div>
