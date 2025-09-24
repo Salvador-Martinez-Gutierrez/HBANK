@@ -22,14 +22,14 @@ import {
     MessageCircle,
 } from 'lucide-react'
 import Head from 'next/head'
+import { useTVL } from '@/hooks/useTVL'
 
 export default function Home() {
+    const { formattedTVL, loading: tvlLoading } = useTVL()
     return (
         <>
             <Head>
-                <title>
-                    Hbank Protocol - Tokenized Yield Solutions
-                </title>
+                <title>Hbank Protocol - Tokenized Yield Solutions</title>
                 <meta
                     name='description'
                     content="Maximize your crypto yields with Hbank Protocol's secure DeFi vault on Hedera Hashgraph. Get your APY with automated yield farming strategies and total transparency."
@@ -40,7 +40,7 @@ export default function Home() {
                 />
                 <meta
                     property='og:title'
-                    content="Hbank Protocol - Tokenized Yield Solutions"
+                    content='Hbank Protocol - Tokenized Yield Solutions'
                 />
                 <meta
                     property='og:description'
@@ -69,14 +69,20 @@ export default function Home() {
                                 Maximum Returns, Total Transparency
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                                Hbank is the premier on-chain asset management platform specializing in the issuance of liquid yield tokens on Hedera Hashgraph.
+                                Hbank is the premier on-chain asset management
+                                platform specializing in the issuance of liquid
+                                yield tokens on Hedera Hashgraph.
                             </p>
                             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
                                 <Button
                                     size='lg'
                                     className='min-w-[200px] text-base bg-white text-black hover:bg-gray-100 border-2 border-white'
                                     onClick={() => {
-                                        document.getElementById('products-section')?.scrollIntoView({ behavior: 'smooth' })
+                                        document
+                                            .getElementById('products-section')
+                                            ?.scrollIntoView({
+                                                behavior: 'smooth',
+                                            })
                                     }}
                                 >
                                     Learn More
@@ -98,11 +104,11 @@ export default function Home() {
                             <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
                                 <div className='text-center'>
                                     <div className='mb-2 text-2xl font-bold text-primary'>
-                                        +$10M
+                                        {tvlLoading
+                                            ? 'Loading...'
+                                            : formattedTVL}
                                     </div>
-                                    <p className='text-muted-foreground'>
-                                        TVL
-                                    </p>
+                                    <p className='text-muted-foreground'>TVL</p>
                                 </div>
                             </div>
                             <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
@@ -110,9 +116,7 @@ export default function Home() {
                                     <div className='mb-2 text-2xl font-bold text-primary'>
                                         13.33%
                                     </div>
-                                    <p className='text-muted-foreground'>
-                                        APY
-                                    </p>
+                                    <p className='text-muted-foreground'>APY</p>
                                 </div>
                             </div>
                             <div className='flex items-center justify-center rounded-lg border bg-card/50 p-6 transition-all hover:border-primary/50 hover:shadow-lg'>
@@ -152,8 +156,10 @@ export default function Home() {
                                     </span>
                                 </h2>
                                 <p className='mb-8 text-lg text-muted-foreground'>
-                                    Launch and invest in liquid, transparent and composable yield bearing tokens backed by
-                                    diversified DeFi strategies deployed on blue-chip DeFi protocols.
+                                    Launch and invest in liquid, transparent and
+                                    composable yield bearing tokens backed by
+                                    diversified DeFi strategies deployed on
+                                    blue-chip DeFi protocols.
                                 </p>
                             </div>
                             <div className='relative'>
@@ -178,7 +184,9 @@ export default function Home() {
                                                 Compossable and liquid
                                             </h3>
                                             <p className='text-sm text-muted-foreground'>
-                                                Use our yield bearing tokens as collateral for other DeFi protocols
+                                                Use our yield bearing tokens as
+                                                collateral for other DeFi
+                                                protocols
                                             </p>
                                         </div>
                                     </div>
@@ -189,8 +197,8 @@ export default function Home() {
                                                 Real-Time Analytics
                                             </h3>
                                             <p className='text-sm text-muted-foreground'>
-                                                Dashboards with auditable and up-to-date
-                                                metrics
+                                                Dashboards with auditable and
+                                                up-to-date metrics
                                             </p>
                                         </div>
                                     </div>
@@ -201,14 +209,18 @@ export default function Home() {
                 </section>
 
                 {/* Products Section */}
-                <section id='products-section' className='px-4 py-20 sm:px-6 lg:px-8'>
+                <section
+                    id='products-section'
+                    className='px-4 py-20 sm:px-6 lg:px-8'
+                >
                     <div className='mx-auto max-w-7xl'>
                         <div className='text-center'>
                             <h2 className='mb-4 text-3xl font-bold sm:text-4xl'>
                                 Our Products
                             </h2>
                             <p className='mx-auto mb-12 max-w-2xl text-lg text-muted-foreground'>
-                                Complete solutions for investors and asset managers
+                                Complete solutions for investors and asset
+                                managers
                             </p>
                         </div>
 
@@ -229,7 +241,8 @@ export default function Home() {
                                     </CardTitle>
                                     <CardDescription className='text-base'>
                                         Deposit your assets and generate yields
-                                        automatically with optimized delta neutral strategies
+                                        automatically with optimized delta
+                                        neutral strategies
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -247,7 +260,9 @@ export default function Home() {
                                                 TVL
                                             </span>
                                             <span className='text-sm font-medium'>
-                                                $10M+
+                                                {tvlLoading
+                                                    ? 'Loading...'
+                                                    : formattedTVL}
                                             </span>
                                         </div>
                                     </div>
@@ -268,14 +283,18 @@ export default function Home() {
                                             <Lock className='h-7 w-7' />
                                         </div>
                                         <span className='text-2xl font-semibold'>
-                                            Hbank SDK <span className='text-sm text-muted-foreground'>(Coming Soon)</span>
+                                            Hbank SDK{' '}
+                                            <span className='text-sm text-muted-foreground'>
+                                                (Coming Soon)
+                                            </span>
                                         </span>
                                     </div>
                                     <CardTitle className='text-2xl'>
                                         For Asset Managers
                                     </CardTitle>
                                     <CardDescription className='text-base'>
-                                        Launch and manage your own yield bearing tokens optimizing operational processes
+                                        Launch and manage your own yield bearing
+                                        tokens optimizing operational processes
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -297,7 +316,7 @@ export default function Home() {
                                             </span>
                                         </div>
                                     </div>
-                                    <Link 
+                                    <Link
                                         href='https://hbank.gitbook.io/hbank-docs/'
                                         target='_blank'
                                         rel='noopener noreferrer'
@@ -337,7 +356,16 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    Hbank Protocol is the premier onchain asset management platform specialized in liquid yield tokens. Built on Hedera Hashgraph, we provide institutional-grade DeFi solutions that launch and manage yield-bearing tokens backed by diversified strategies deployed on blue-chip DeFi protocols. Our platform offers total transparency, composability, and real-time analytics for both qualified investors and asset managers.
+                                    Hbank Protocol is the premier onchain asset
+                                    management platform specialized in liquid
+                                    yield tokens. Built on Hedera Hashgraph, we
+                                    provide institutional-grade DeFi solutions
+                                    that launch and manage yield-bearing tokens
+                                    backed by diversified strategies deployed on
+                                    blue-chip DeFi protocols. Our platform
+                                    offers total transparency, composability,
+                                    and real-time analytics for both qualified
+                                    investors and asset managers.
                                 </p>
                             </details>
 
@@ -347,7 +375,19 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    The hUSD Vault is our flagship product for qualified investors, currently offering 13.33% APY with over $10M in TVL. When you deposit assets, our delta-neutral strategies are applied to generate maximum yield through diversification across multiple blue-chip DeFi protocols. All operations are transparent and verifiable on-chain. For more details check our docs.
+                                    The hUSD Vault is our flagship product for
+                                    qualified investors, currently offering
+                                    13.33% APY with{' '}
+                                    {tvlLoading
+                                        ? 'substantial'
+                                        : `over ${formattedTVL}`}{' '}
+                                    in TVL. When you deposit assets, our
+                                    delta-neutral strategies are applied to
+                                    generate maximum yield through
+                                    diversification across multiple blue-chip
+                                    DeFi protocols. All operations are
+                                    transparent and verifiable on-chain. For
+                                    more details check our docs.
                                 </p>
                             </details>
 
@@ -357,7 +397,14 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    Absolutely. Security is our top priority with enterprise-grade protection through Hedera&apos;s aBFT consensus mechanism. Our protocol is fully audited by recognized security firms, we implement multi-signature controls and MCP wallets for critical operations, and we maintain 100% on-chain transparency.
+                                    Absolutely. Security is our top priority
+                                    with enterprise-grade protection through
+                                    Hedera&apos;s aBFT consensus mechanism. Our
+                                    protocol is fully audited by recognized
+                                    security firms, we implement multi-signature
+                                    controls and MCP wallets for critical
+                                    operations, and we maintain 100% on-chain
+                                    transparency.
                                 </p>
                             </details>
 
@@ -367,7 +414,15 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    During our testnet alpha phase, the protocol operates with zero fees—you only pay standard network transaction costs. As we transition to mainnet, we&apos;ll introduce transparent fee structures that may include management fees, performance fees, or both. All future fees will be clearly communicated and designed to align our success with yours.
+                                    During our testnet alpha phase, the protocol
+                                    operates with zero fees—you only pay
+                                    standard network transaction costs. As we
+                                    transition to mainnet, we&apos;ll introduce
+                                    transparent fee structures that may include
+                                    management fees, performance fees, or both.
+                                    All future fees will be clearly communicated
+                                    and designed to align our success with
+                                    yours.
                                 </p>
                             </details>
 
@@ -377,7 +432,15 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    We offer flexible withdrawal options to suit your needs. Standard withdrawals process within 48 hours at no additional cost. For immediate access to your funds, instant withdrawals are available with a 0.5% fee on the withdrawn amount and depends on available liquidity. All withdrawal transactions are processed on-chain and fully transparent.
+                                    We offer flexible withdrawal options to suit
+                                    your needs. Standard withdrawals process
+                                    within 48 hours at no additional cost. For
+                                    immediate access to your funds, instant
+                                    withdrawals are available with a 0.5% fee on
+                                    the withdrawn amount and depends on
+                                    available liquidity. All withdrawal
+                                    transactions are processed on-chain and
+                                    fully transparent.
                                 </p>
                             </details>
                         </div>
@@ -394,7 +457,8 @@ export default function Home() {
                                     Hbank Protocol
                                 </h3>
                                 <p className='text-sm text-muted-foreground'>
-                                    The onchain asset management platform on Hedera Hashgraph.
+                                    The onchain asset management platform on
+                                    Hedera Hashgraph.
                                 </p>
                                 <div className='flex gap-4'>
                                     <Link
