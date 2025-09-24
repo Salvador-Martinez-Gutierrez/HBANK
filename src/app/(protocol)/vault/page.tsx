@@ -31,6 +31,12 @@ export default function VaultPage() {
                         <InfoCard />
                     </div>
                 </div>
+
+                {/* ApyCard and InfoCard - Only visible on small screens, displayed below trading interface */}
+                <div className='md:hidden mt-6 space-y-6'>
+                    <ApyCard apy={apy} />
+                    <InfoCard />
+                </div>
             </div>
         </div>
     )
