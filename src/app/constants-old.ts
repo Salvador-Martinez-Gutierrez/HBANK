@@ -1,5 +1,5 @@
 // ===================================
-// VALORA PROTOCOL - CONSOLIDATED CONSTANTS  
+// VALORA PROTOCOL - CONSOLIDATED CONSTANTS
 // Todas las constantes del proyecto centralizadas
 // ===================================
 
@@ -48,6 +48,10 @@ export const ACCOUNTS = {
     standardWithdrawWallet: process.env.STANDARD_WITHDRAW_WALLET_ID || '0.0.6510977',
     ratePublisher: process.env.RATE_PUBLISHER_ID || '0.0.6510977',
 } as const
+
+// Legacy exports
+export const TREASURY_ID = ACCOUNTS.treasury
+export const EMISSIONS_ID = ACCOUNTS.emissions
 
 // ===================================
 // BUSINESS LOGIC CONSTANTS
@@ -115,11 +119,20 @@ export const SUPPORTED_WALLETS = [
         connector: HWCConnector,
         mobileSupported: true,
     },
-] as const
+]
 
-// ===================================
-// LEGACY EXPORTS (para compatibilidad)
-// ===================================
+// Token IDs for Hedera Testnet
+export const TOKEN_IDS = {
+    hUSD: '0.0.6624255',
+    USDC: '0.0.429274',
+} as const
 
-// Mirror node endpoint
-export const TESTNET_MIRROR_NODE_ENDPOINT = HEDERA_CONFIG.validationCloudEndpoint
+//TOPIC_IDs
+export const TOPIC_ID = '0.0.6626120'
+export const WITHDRAW_TOPIC_ID = '0.0.6750041'
+
+export const TESTNET_MIRROR_NODE_ENDPOINT =
+    'https://testnet.hedera.validationcloud.io/v1'
+
+// Instant Withdrawal Configuration
+export const INSTANT_WITHDRAW_FEE = 0.005

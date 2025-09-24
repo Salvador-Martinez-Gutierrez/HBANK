@@ -1,6 +1,6 @@
 'use client'
 
-import { TOKEN_IDS } from '@/app/constants'
+import { TOKENS } from '@/app/constants'
 
 interface TokenRelationship {
     automatic_association: boolean
@@ -28,8 +28,7 @@ export async function checkTokenAssociation(
 ): Promise<boolean> {
     try {
         // Use the standard Hedera mirror node endpoint (same as useTokenBalances)
-        const url = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/tokens?token.id=${TOKEN_IDS.hUSD}`
-        console.log('📡 Making API request to:', url)
+        const url = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/tokens?token.id=${TOKENS.HUSD}`
 
         const response = await fetch(url, {
             method: 'GET',
@@ -47,11 +46,9 @@ export async function checkTokenAssociation(
 
         const data: TokenRelationshipsResponse = await response.json()
 
-        console.log('token relationships', data)
-
         // Check if hUSD token is in the relationships
         const hasTokenAssociation = data.tokens.some(
-            (token) => token.token_id === TOKEN_IDS.hUSD
+            (token) => token.token_id === TOKENS.HUSD
         )
 
         return hasTokenAssociation
@@ -89,7 +86,6 @@ export async function fetchAccountBalances(
         const url = `/api/account-balances?accountId=${encodeURIComponent(
             accountId
         )}`
-        console.log('📡 Requesting balances via:', url)
         const res = await fetch(url)
         if (!res.ok) {
             return {
@@ -101,7 +97,6 @@ export async function fetchAccountBalances(
             }
         }
         const data = await res.json()
-        console.log('🔎 API balances response:', data)
         return data as NormalizedBalances
     } catch {
         return {

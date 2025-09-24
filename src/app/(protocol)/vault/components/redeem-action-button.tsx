@@ -17,7 +17,7 @@ import {
     AccountId,
 } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
-import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
+import { INSTANT_WITHDRAW_FEE, TOKENS, ACCOUNTS } from '@/app/constants'
 import { ProcessModal } from '@/components/process-modal'
 import {
     useProcessModal,
@@ -83,18 +83,13 @@ export function RedeemActionButton({
 
     const standardProcessModal = useProcessModal({
         onComplete: async () => {
-            console.log('Standard withdraw onComplete callback triggered')
             if (onInputClear) {
-                console.log('Clearing input field')
                 onInputClear()
             }
-            console.log('Refreshing balances...')
             await refreshBalances()
             if (onBalanceRefresh) {
-                console.log('Calling onBalanceRefresh callback')
                 await onBalanceRefresh()
             }
-            console.log('Standard withdraw completion process finished')
         },
         onError: (error) => toastSuccess(`Standard redeem failed: ${error}`),
     })
@@ -200,9 +195,9 @@ export function RedeemActionButton({
             throw new Error('Invalid signer: wallet not properly connected')
         }
 
-        // Create HUSD transfer transaction
-        const husdTokenId = '0.0.6624255' // TODO: Get from constants
-        const treasuryId = '0.0.6510977' // TODO: Get from constants
+        // Create HUSD transfer transaction  
+        const husdTokenId = TOKENS.HUSD // ✅ Fixed: Using constants instead of hardcoded
+        const treasuryId = ACCOUNTS.treasury // ✅ Fixed: Using constants instead of hardcoded
 
         const transferTx = new TransferTransaction()
             .addTokenTransfer(
@@ -226,11 +221,6 @@ export function RedeemActionButton({
         if (receipt.status.toString() !== 'SUCCESS') {
             throw new Error(`HUSD transfer failed: ${receipt.status}`)
         }
-
-        console.log(
-            '✅ HUSD transfer completed:',
-            txResponse.transactionId?.toString()
-        )
 
         // Paso 2: Procesar retiro instantáneo
         instantProcessModal.nextStep()
@@ -281,8 +271,6 @@ export function RedeemActionButton({
             return
         }
 
-        console.log('Schedule Transaction created:', result)
-
         // Paso 2: Usuario firma la transacción programada
         standardProcessModal.nextStep()
         standardProcessModal.updateStep('user-sign', 'active')
@@ -296,11 +284,6 @@ export function RedeemActionButton({
             if (!isValidSigner(signer)) {
                 throw new Error('Invalid signer: wallet not properly connected')
             }
-
-            console.log(
-                'Requesting schedule signature for:',
-                scheduleTransactionId
-            )
 
             // Create ScheduleSignTransaction for user to sign
             const scheduleSignTx = new ScheduleSignTransaction().setScheduleId(
@@ -321,18 +304,9 @@ export function RedeemActionButton({
             const userSignResponse = await signedScheduleTx.executeWithSigner(
                 signer
             )
-            console.log(
-                'User signature executed:',
-                userSignResponse.transactionId?.toString()
-            )
-
             // Get receipt to confirm user signature
             const userSignReceipt = await userSignResponse.getReceiptWithSigner(
                 signer
-            )
-            console.log(
-                'User signature receipt:',
-                userSignReceipt.status.toString()
             )
 
             if (userSignReceipt.status.toString() !== 'SUCCESS') {
@@ -346,7 +320,6 @@ export function RedeemActionButton({
             standardProcessModal.updateStep('finalize', 'active')
 
             // Completar el proceso - el callback onComplete manejará la limpieza
-            console.log('Standard withdraw: calling completeProcess()')
             standardProcessModal.completeProcess()
         } catch (err) {
             console.error('Error signing Schedule Transaction:', err)

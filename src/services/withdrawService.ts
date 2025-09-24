@@ -7,7 +7,7 @@ import {
 import {
     WITHDRAW_TOPIC_ID,
     TESTNET_MIRROR_NODE_ENDPOINT,
-} from '@/app/server-constants'
+} from '@/app/constants'
 
 export class WithdrawService {
     public rateService: HederaRateService
@@ -32,10 +32,6 @@ export class WithdrawService {
 
             // Check if sequence number matches
             if (latestRate.sequenceNumber !== rateSequenceNumber) {
-                console.log('Rate sequence number mismatch:', {
-                    expected: rateSequenceNumber,
-                    actual: latestRate.sequenceNumber,
-                })
                 return false
             }
 
@@ -44,11 +40,6 @@ export class WithdrawService {
             const rateDifference = Math.abs(latestRate.rate - expectedRate)
 
             if (rateDifference > tolerance) {
-                console.log('Rate value mismatch:', {
-                    expected: expectedRate,
-                    actual: latestRate.rate,
-                    difference: rateDifference,
-                })
                 return false
             }
 

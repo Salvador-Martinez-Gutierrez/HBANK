@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { HederaService } from '@/services/hederaService'
 import { WithdrawService } from '@/services/withdrawService'
-import { INSTANT_WITHDRAW_FEE } from '@/app/server-constants'
+import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import {
     Client,
     AccountId,
