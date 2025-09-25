@@ -21,6 +21,7 @@ import { useTokenBalances } from '../hooks/useTokenBalances'
 import { useRealTimeRate } from '@/hooks/useRealTimeRate'
 import { useInstantWithdraw } from '@/hooks/useInstantWithdraw'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
+import { calculateInstantWithdrawal } from '@/lib/calculations'
 
 export function TradingInterface() {
     // State management
@@ -100,9 +101,50 @@ export function TradingInterface() {
         setIsPopoverOpen(false) // Close the popover after selection
     }
 
-    // TODO: This should be fetched from an API endpoint
-    const getUsdValue = (amount: string) => {
-        return amount ? `$${(parseFloat(amount) * 1.0).toFixed(4)}` : '$0.0000'
+    // Calculate USD value based on context and token type
+    const getUsdValue = (amount: string, isFromToken: boolean = false) => {
+        if (!amount || !rateData) {
+            return '$0.0000'
+        }
+
+        const numericAmount = parseFloat(amount)
+        if (isNaN(numericAmount)) {
+            return '$0.0000'
+        }
+
+        let usdcValue = 0
+
+        if (activeTab === 'mint') {
+            // For mint: always show USDC value
+            if (isFromToken) {
+                // "You Pay" input - this is USDC
+                usdcValue = numericAmount
+            } else {
+                // "You Get" input - this is hUSD, convert to USDC equivalent
+                usdcValue = numericAmount * rateData.rate
+            }
+        } else if (activeTab === 'redeem') {
+            // For redeem: show USDC value, but for instant redeem subtract fee
+            if (isFromToken) {
+                // "You Pay" input - this is hUSD, convert to USDC
+                if (redeemType === 'instant') {
+                    // For instant redeem, calculate net USDC after fee
+                    const instantAmounts = calculateInstantWithdrawal(
+                        numericAmount,
+                        rateData.rate
+                    )
+                    usdcValue = instantAmounts.netUSDC
+                } else {
+                    // For standard redeem, show gross USDC
+                    usdcValue = numericAmount * rateData.rate
+                }
+            } else {
+                // "You Get" input - this is already USDC
+                usdcValue = numericAmount
+            }
+        }
+
+        return `$${usdcValue.toFixed(4)}`
     }
 
     const renderTabContent = () => (
@@ -117,7 +159,7 @@ export function TradingInterface() {
                         onChange={handleFromAmountChange}
                         tokenSymbol={fromToken}
                         tokenIcon={fromIcon}
-                        usdValue={getUsdValue(fromAmount)}
+                        usdValue={getUsdValue(fromAmount, true)}
                         balance={balances[fromToken as keyof typeof balances]}
                         showBalance={isConnected}
                         isLoadingBalance={balancesLoading}
@@ -137,7 +179,7 @@ export function TradingInterface() {
                         readOnly
                         tokenSymbol={toToken}
                         tokenIcon={toIcon}
-                        usdValue={getUsdValue(toAmount)}
+                        usdValue={getUsdValue(toAmount, false)}
                         balance={balances[toToken as keyof typeof balances]}
                         showBalance={isConnected}
                         isLoadingBalance={balancesLoading}
@@ -372,8 +414,7 @@ export function TradingInterface() {
                                                                 Standard
                                                             </span>
                                                             <span className='text-sm opacity-75'>
-                                                                (7 business
-                                                                days)
+                                                                (max 48h)
                                                             </span>
                                                         </div>
                                                     </div>
