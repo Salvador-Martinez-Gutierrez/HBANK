@@ -372,7 +372,7 @@ export function TradingInterface() {
                                                                 Standard
                                                             </span>
                                                             <span className='text-sm opacity-75'>
-                                                                (7 business
+                                                                (2 business
                                                                 days)
                                                             </span>
                                                         </div>
