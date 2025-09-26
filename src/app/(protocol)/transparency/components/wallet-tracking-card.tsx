@@ -57,10 +57,12 @@ export default function WalletTrackingCard({
     lastUpdated: propLastUpdated,
     loading: propLoading,
     error: propError,
-    onRefresh
+    onRefresh,
 }: WalletTrackingCardProps) {
     const [wallets, setWallets] = useState<WalletInfo[]>(propWallets || [])
-    const [lastUpdated, setLastUpdated] = useState<string>(propLastUpdated || '')
+    const [lastUpdated, setLastUpdated] = useState<string>(
+        propLastUpdated || ''
+    )
     const [loading, setLoading] = useState(propLoading ?? true)
     const [error, setError] = useState<string | null>(propError ?? null)
     const [refreshing, setRefreshing] = useState(false)
@@ -194,10 +196,11 @@ export default function WalletTrackingCard({
                 }
                 break
 
-            case 'Treasury':
             case 'Emissions':
                 if (balances.husd === 0) {
-                    issues.push('Warning: hUSD balance is 0 - cannot process operations')
+                    issues.push(
+                        'Warning: hUSD balance is 0 - cannot process operations'
+                    )
                 }
                 break
         }
@@ -349,11 +352,15 @@ export default function WalletTrackingCard({
                                                     className='h-auto p-1'
                                                 >
                                                     <Badge
-                                                        variant={getHealthBadgeVariant(wallet.health)}
+                                                        variant={getHealthBadgeVariant(
+                                                            wallet.health
+                                                        )}
                                                         className='cursor-pointer'
                                                     >
                                                         <div className='flex items-center gap-1'>
-                                                            {getHealthIcon(wallet.health)}
+                                                            {getHealthIcon(
+                                                                wallet.health
+                                                            )}
                                                             {wallet.health}
                                                             <Info className='h-3 w-3 ml-1' />
                                                         </div>
@@ -375,7 +382,9 @@ export default function WalletTrackingCard({
                                         </Popover>
                                     ) : (
                                         <Badge
-                                            variant={getHealthBadgeVariant(wallet.health)}
+                                            variant={getHealthBadgeVariant(
+                                                wallet.health
+                                            )}
                                         >
                                             <div className='flex items-center gap-1'>
                                                 {getHealthIcon(wallet.health)}

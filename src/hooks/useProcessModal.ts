@@ -31,9 +31,16 @@ export function useProcessModal({
                 toToken?: string
             }
         ) => {
+            console.log('🚀 Starting process:', type, 'with steps:', initialSteps.length)
             setProcessType(type)
-            setSteps(initialSteps)
+            // Mark the first step as active when starting the process
+            const stepsWithFirstActive = initialSteps.map((step, index) => 
+                index === 0 ? { ...step, status: 'active' as const } : step
+            )
+            console.log('📝 Steps with first active:', stepsWithFirstActive)
+            setSteps(stepsWithFirstActive)
             setCurrentStep(initialSteps[0]?.id || '')
+            console.log('✅ Current step set to:', initialSteps[0]?.id)
             setAmount(options?.amount)
             setFromToken(options?.fromToken)
             setToToken(options?.toToken)
@@ -63,27 +70,51 @@ export function useProcessModal({
     )
 
     const nextStep = useCallback(() => {
+        console.log('⏭️ nextStep called, currentStep:', currentStep)
         setSteps((prev) => {
+            console.log('📊 Current steps before nextStep:', prev.map(s => ({ id: s.id, status: s.status })))
+            
+            // Find the currently active step instead of relying on currentStep state
             const currentIndex = prev.findIndex(
-                (step) => step.id === currentStep
+                (step) => step.status === 'active'
             )
+            
+            // If no active step found, find by currentStep as fallback
+            const fallbackIndex = currentIndex === -1 
+                ? prev.findIndex((step) => step.id === currentStep)
+                : currentIndex
+
+            const indexToUse = currentIndex !== -1 ? currentIndex : fallbackIndex
+
+            console.log('🔍 Active step index:', currentIndex, 'fallback index:', fallbackIndex, 'using:', indexToUse)
+
+            if (indexToUse === -1) {
+                console.warn('⚠️ No active step found to advance from')
+                return prev
+            }
+
             const updatedSteps = prev.map((step, index) => {
-                if (index === currentIndex) {
+                if (index === indexToUse) {
                     return { ...step, status: 'completed' as const }
                 }
                 return step
             })
 
             // Move to next step
-            const nextIndex = currentIndex + 1
+            const nextIndex = indexToUse + 1
             if (nextIndex < prev.length) {
-                setCurrentStep(prev[nextIndex].id)
                 updatedSteps[nextIndex] = {
                     ...updatedSteps[nextIndex],
                     status: 'active',
                 }
+                console.log('✅ Moving to next step:', prev[nextIndex].id, 'at index:', nextIndex)
+                // Update currentStep state after updating steps
+                setTimeout(() => setCurrentStep(prev[nextIndex].id), 0)
+            } else {
+                console.log('🏁 No more steps to advance to')
             }
 
+            console.log('📊 Updated steps after nextStep:', updatedSteps.map(s => ({ id: s.id, status: s.status })))
             return updatedSteps
         })
     }, [currentStep])

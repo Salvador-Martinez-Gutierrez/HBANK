@@ -101,14 +101,14 @@ export function MintActionButton({
         try {
             console.log(
                 '🔗 Starting token association for hUSD:',
-                TOKEN_IDS.hUSD
+                TOKEN_IDS.HUSD
             )
             toast.loading('🔗 Associating hUSD token to your account...', {
                 id: 'associate-token',
             })
 
             // Execute the TokenAssociateTransaction using the hashgraph-react-wallets hook
-            const transactionResult = await associateTokens([TOKEN_IDS.hUSD])
+            const transactionResult = await associateTokens([TOKEN_IDS.HUSD])
 
             if (!transactionResult) {
                 toast.dismiss('associate-token')
@@ -222,9 +222,7 @@ export function MintActionButton({
             console.log('Starting atomic mint for:', amountNum, 'USDC')
             console.log('Using rate data:', rateData)
 
-            // Paso 1: Inicializar depósito atómico
-            processModal.updateStep('initialize', 'active')
-
+            // Paso 1: Inicializar depósito atómico (ya está activo por startProcess)
             const initResponse = await fetch('/api/deposit/init', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -271,7 +269,6 @@ export function MintActionButton({
 
             // Paso 2: Usuario firma el schedule
             processModal.nextStep()
-            processModal.updateStep('user-sign', 'active')
             console.log('Requesting schedule signature for:', scheduleId)
 
             // Create ScheduleSignTransaction for user to sign
@@ -390,7 +387,6 @@ export function MintActionButton({
 
             // Paso 3: Completar transacción atómica
             processModal.nextStep()
-            processModal.updateStep('complete', 'active')
             console.log('Notifying backend of user signature...')
 
             const completeResponse = await fetch('/api/deposit/user-signed', {
@@ -419,7 +415,6 @@ export function MintActionButton({
 
             // Paso 4: Finalizar
             processModal.nextStep()
-            processModal.updateStep('finalize', 'active')
 
             // Completar el proceso - el callback onComplete manejará la limpieza
             processModal.completeProcess()

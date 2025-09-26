@@ -227,7 +227,6 @@ export function RedeemActionButton({
 
         // Paso 2: Procesar retiro instantáneo
         instantProcessModal.nextStep()
-        instantProcessModal.updateStep('process', 'active')
 
         const result = await submitInstantWithdraw(
             accountId,
@@ -242,7 +241,6 @@ export function RedeemActionButton({
 
         // Paso 3: Finalizar
         instantProcessModal.nextStep()
-        instantProcessModal.updateStep('finalize', 'active')
 
         // Completar el proceso
         instantProcessModal.completeProcess()
@@ -261,9 +259,7 @@ export function RedeemActionButton({
         )
 
         try {
-            // Paso 1: Crear solicitud de retiro (initialize) - activar inmediatamente
-            standardProcessModal.updateStep('initialize', 'active')
-            
+            // Paso 1: Crear solicitud de retiro (initialize) - ya está activo por startProcess
             console.log('🔄 [STANDARD WITHDRAW] Step 1: Initialize active')
 
             if (!isValidSigner(signer)) {
@@ -297,8 +293,7 @@ export function RedeemActionButton({
 
             // Paso 2: Usuario debe firmar la transferencia (user-sign)
             console.log('🔄 [STANDARD WITHDRAW] Moving to Step 2: User sign')
-            standardProcessModal.updateStep('initialize', 'completed')
-            standardProcessModal.updateStep('user-sign', 'active')
+            standardProcessModal.nextStep()
 
             // Execute transaction (este es el momento donde el usuario firma)
             const frozenTx = await transferTx.freezeWithSigner(signer)
@@ -314,8 +309,7 @@ export function RedeemActionButton({
 
             // Paso 3: Registrar solicitud de retiro (finalize)
             console.log('🔄 [STANDARD WITHDRAW] Moving to Step 3: Finalize')
-            standardProcessModal.updateStep('user-sign', 'completed')
-            standardProcessModal.updateStep('finalize', 'active')
+            standardProcessModal.nextStep()
 
             const result = await submitWithdrawal(
                 amount,
@@ -329,13 +323,8 @@ export function RedeemActionButton({
 
             console.log('✅ [STANDARD WITHDRAW] Withdrawal request submitted')
 
-            // Completar el último paso
-            standardProcessModal.updateStep('finalize', 'completed')
-            
-            // Completar el proceso (esto ejecuta el onComplete callback y cierra el modal)
-            setTimeout(() => {
-                standardProcessModal.completeProcess()
-            }, 1000) // Un poco menos de tiempo para que se vea el step completado
+            // Completar el proceso
+            standardProcessModal.completeProcess()
             
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
@@ -384,7 +373,6 @@ export function RedeemActionButton({
 
             // Paso 3: Finalizar proceso
             standardProcessModal.nextStep()
-            standardProcessModal.updateStep('finalize', 'active')
 
             // Completar el proceso - el callback onComplete manejará la limpieza
             standardProcessModal.completeProcess()

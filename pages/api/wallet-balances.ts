@@ -221,14 +221,14 @@ function determineWalletHealth(
             }
             break
 
-        case 'Treasury':
         case 'Emissions':
-            // These wallets should have hUSD
+            // Emissions wallet should have hUSD
             if (husdBalance === 0) {
                 return 'warning' // Main token (hUSD) is 0
             }
             break
 
+        case 'Treasury':
         case 'Rate Publisher':
         case 'Deposit Wallet':
             // These wallets mainly need HBAR for operations
