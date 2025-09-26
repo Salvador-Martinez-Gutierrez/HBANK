@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { HederaService } from '@/services/hederaService'
 import { WithdrawService } from '@/services/withdrawService'
+import { ACCOUNTS } from '@/app/backend-constants'
 
 export default async function handler(
     req: NextApiRequest,
@@ -59,21 +60,49 @@ export default async function handler(
             })
         }
 
-        // Step 2: Execute HUSD transfer from user to treasury
-        let transferTxId: string
-        try {
-            transferTxId = await hederaService.transferHUSDToTreasury(
-                userAccountId,
-                amountHUSD
-            )
-        } catch (transferError) {
-            console.error('Failed to transfer HUSD to treasury:', transferError)
-            return res.status(500).json({
-                error: 'Failed to transfer HUSD to treasury',
+        // Step 2: Verify HUSD transfer from user to emissions wallet
+        // (User should have already executed this transfer in frontend, like instant withdraw)
+        console.log('🔍 Verifying HUSD transfer to emissions wallet...')
+
+        const emissionsWalletId = ACCOUNTS.emissions
+        console.log('📋 Using emissions wallet:', emissionsWalletId)
+
+        // Check for transfers in the last 10 minutes
+        const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+
+        console.log('🔍 [STANDARD WITHDRAW] HUSD transfer search parameters:', {
+            from: userAccountId,
+            to: emissionsWalletId,
+            expectedAmount: amountHUSD,
+            since: since,
+        })
+
+        const husdTransferVerified = await hederaService.verifyHUSDTransfer(
+            userAccountId,
+            emissionsWalletId,
+            amountHUSD,
+            since
+        )
+
+        console.log(
+            '🔍 [STANDARD WITHDRAW] HUSD transfer verification result:',
+            {
+                from: userAccountId,
+                to: emissionsWalletId,
+                expectedAmount: amountHUSD,
+                verified: husdTransferVerified,
+            }
+        )
+
+        if (!husdTransferVerified) {
+            return res.status(400).json({
+                error: `HUSD transfer not found. Expected transfer of ${amountHUSD} HUSD from ${userAccountId} to emissions wallet ${emissionsWalletId}`,
             })
         }
 
-        // Step 3: Publish withdrawal request to HCS
+        console.log('✅ HUSD transfer verified for standard withdrawal')
+
+        // Step 3: Publish withdrawal request to HCS as "pending"
         let withdrawRequestTxId
         let requestId
         try {
@@ -82,33 +111,23 @@ export default async function handler(
                 .toString(36)
                 .substr(2, 9)}`
 
+            // Create withdrawal record for HCS (no transferTxId since it's already verified)
             withdrawRequestTxId = await hederaService.publishWithdrawRequest(
                 requestId,
                 userAccountId,
                 amountHUSD,
                 rate,
                 rateSequenceNumber,
-                transferTxId // This is the Schedule ID that user needs to sign
+                'verified' // Indicates HUSD already transferred and verified
             )
         } catch (publishError) {
             console.error('Failed to publish withdrawal request:', publishError)
 
-            // Try to rollback the transfer
-            try {
-                await hederaService.rollbackHUSDToUser(
-                    userAccountId,
-                    amountHUSD
-                )
-                console.log('Successfully rolled back HUSD transfer')
-            } catch (rollbackError) {
-                console.error(
-                    'Failed to rollback HUSD transfer:',
-                    rollbackError
-                )
-            }
+            // Note: HUSD transfer already completed and verified, cannot rollback
+            // Manual intervention may be required if HCS publishing fails
 
             return res.status(500).json({
-                error: 'Failed to publish withdrawal request',
+                error: 'Failed to publish withdrawal request. HUSD transfer was successful but record not saved.',
             })
         }
 
@@ -119,7 +138,7 @@ export default async function handler(
 
         console.log('✅ Withdrawal request processed successfully:', {
             requestId,
-            transferTxId,
+            withdrawRequestTxId,
             unlockAt,
         })
 
@@ -127,10 +146,9 @@ export default async function handler(
             success: true,
             requestId,
             withdrawRequestTxId,
-            transferTxId,
             unlockAt,
             message:
-                'Withdrawal request submitted. Funds will be processed after 48h lock period.',
+                'Withdrawal request submitted. HUSD received and funds will be processed after 48h lock period.',
         })
     } catch (error) {
         console.error('❌ Error processing withdrawal request:', error)

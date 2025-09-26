@@ -1,9 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { TOPICS, TOKENS } from '@/app/constants'
 
 // Function to get the latest rate from the topic
 async function getLatestRate(): Promise<number> {
     try {
-        const topicId = process.env.TOPIC_ID || '0.0.6626120'
+        const topicId = process.env.TOPIC_ID || TOPICS.RATE
         const mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
         const url = `${mirrorNodeUrl}/api/v1/topics/${topicId}/messages?limit=1&order=desc`
 
@@ -139,19 +140,25 @@ export default async function handler(
         console.log(`📊 [account-balances] Using data source: ${dataSource}`)
 
         const tinybar = data?.balance?.balance ?? 0
-        const hbar = (tinybar / 100000000).toFixed(2)
+        const HBAR_MULTIPLIER = Math.pow(
+            10,
+            parseInt(process.env.HBAR_DECIMALS || '8')
+        )
+        // Use higher precision for HBAR as well for consistency
+        const hbarBalance = tinybar / HBAR_MULTIPLIER
+        const hbar = hbarBalance.toFixed(6).replace(/\.?0+$/, '')
 
         let usdc = '0.00'
         let husd = '0.00'
 
         const TOKEN_IDS = {
-            USDC: process.env.USDC_TOKEN_ID || '0.0.429274',
-            hUSD: process.env.HUSD_TOKEN_ID || '0.0.6624255',
+            USDC: process.env.USDC_TOKEN_ID || TOKENS.USDC,
+            hUSD: process.env.HUSD_TOKEN_ID || TOKENS.HUSD,
         } as const
 
         const DECIMALS_BY_TOKEN_ID: Record<string, number> = {
             [TOKEN_IDS.USDC]: 6,
-            [TOKEN_IDS.hUSD]: 8,
+            [TOKEN_IDS.hUSD]: 3, // Updated to 3 decimals
         }
 
         console.log('🔍 [account-balances] Using token IDs:', TOKEN_IDS)
@@ -207,7 +214,9 @@ export default async function handler(
                     typeof t.decimals === 'number'
                         ? t.decimals
                         : DECIMALS_BY_TOKEN_ID[TOKEN_IDS.USDC]
-                usdc = (t.balance / Math.pow(10, decimals)).toFixed(2)
+                // Use higher precision to avoid rounding issues
+                const balance = t.balance / Math.pow(10, decimals)
+                usdc = balance.toFixed(6).replace(/\.?0+$/, '')
                 console.log('💰 [account-balances] USDC found:', usdc)
             }
             if (t.token_id === TOKEN_IDS.hUSD) {
@@ -215,7 +224,9 @@ export default async function handler(
                     typeof t.decimals === 'number'
                         ? t.decimals
                         : DECIMALS_BY_TOKEN_ID[TOKEN_IDS.hUSD]
-                husd = (t.balance / Math.pow(10, decimals)).toFixed(2)
+                // Use higher precision to avoid rounding issues
+                const balance = t.balance / Math.pow(10, decimals)
+                husd = balance.toFixed(6).replace(/\.?0+$/, '')
                 console.log('💰 [account-balances] hUSD found:', husd)
             }
         }
@@ -224,7 +235,9 @@ export default async function handler(
             hbar,
             usdc,
             husd,
-            husdValueUsd: (parseFloat(husd) * latestRate).toFixed(2),
+            husdValueUsd: (parseFloat(husd) * latestRate)
+                .toFixed(6)
+                .replace(/\.?0+$/, ''),
             rate: latestRate.toString(),
         }
         console.log('✅ [account-balances] Final result:', result)

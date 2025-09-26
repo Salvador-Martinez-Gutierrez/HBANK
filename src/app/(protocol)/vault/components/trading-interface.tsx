@@ -22,6 +22,7 @@ import { useRealTimeRate } from '@/hooks/useRealTimeRate'
 import { useInstantWithdraw } from '@/hooks/useInstantWithdraw'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { calculateInstantWithdrawal } from '@/lib/calculations'
+import { formatCurrency } from '@/lib/formatters'
 
 export function TradingInterface() {
     // State management
@@ -124,27 +125,20 @@ export function TradingInterface() {
                 usdcValue = numericAmount * rateData.rate
             }
         } else if (activeTab === 'redeem') {
-            // For redeem: show USDC value, but for instant redeem subtract fee
+            // For redeem: show gross USDC value (before fees)
             if (isFromToken) {
-                // "You Pay" input - this is hUSD, convert to USDC
-                if (redeemType === 'instant') {
-                    // For instant redeem, calculate net USDC after fee
-                    const instantAmounts = calculateInstantWithdrawal(
-                        numericAmount,
-                        rateData.rate
-                    )
-                    usdcValue = instantAmounts.netUSDC
-                } else {
-                    // For standard redeem, show gross USDC
-                    usdcValue = numericAmount * rateData.rate
-                }
+                // "You Pay" input - this is hUSD, convert to gross USDC (before fees)
+                usdcValue = numericAmount * rateData.rate
             } else {
                 // "You Get" input - this is already USDC
                 usdcValue = numericAmount
             }
         }
 
-        return `$${usdcValue.toFixed(4)}`
+        // Use formatCurrency with sufficient precision to avoid rounding issues
+        // Show at least 4 decimal places, but remove trailing zeros
+        const formatted = formatCurrency(usdcValue, 6)
+        return `$${formatted}`
     }
 
     const renderTabContent = () => (
@@ -192,8 +186,11 @@ export function TradingInterface() {
                 <div className='bg-blue-50 border border-blue-200 p-3 rounded-lg'>
                     <div className='text-sm text-blue-800'>
                         <strong>Instant Withdrawal Capacity:</strong> Maximum{' '}
-                        {maxInstantWithdrawable.toFixed(2)} USDC (
-                        {(maxInstantWithdrawable / rateData.rate).toFixed(2)}{' '}
+                        {formatCurrency(maxInstantWithdrawable, 6)} USDC (
+                        {formatCurrency(
+                            maxInstantWithdrawable / rateData.rate,
+                            6
+                        )}{' '}
                         hUSD at current rate)
                     </div>
                     {isLoadingMaxAmount && (

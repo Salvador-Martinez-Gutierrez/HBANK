@@ -7,7 +7,7 @@ import {
 import {
     WITHDRAW_TOPIC_ID,
     TESTNET_MIRROR_NODE_ENDPOINT,
-} from '@/app/constants'
+} from '@/app/backend-constants'
 
 export class WithdrawService {
     public rateService: HederaRateService
@@ -98,7 +98,9 @@ export class WithdrawService {
                 try {
                     // Check if message exists and is not empty
                     if (!msg.message) {
-                        console.log('⚠️ Skipping message without message content')
+                        console.log(
+                            '⚠️ Skipping message without message content'
+                        )
                         continue
                     }
 
@@ -113,23 +115,31 @@ export class WithdrawService {
                         requestId: parsedMessage.requestId,
                         user: parsedMessage.user,
                         status: parsedMessage.status,
-                        payload: parsedMessage.payload ? 'has payload' : 'no payload'
+                        payload: parsedMessage.payload
+                            ? 'has payload'
+                            : 'no payload',
                     })
 
                     // Handle different message formats
                     let processedMessage = parsedMessage
-                    
+
                     // Check if it's the old format with payload
                     if (parsedMessage.payload) {
                         if (parsedMessage.type === 'withdraw_result') {
                             // Convert old format to new format
                             processedMessage = {
                                 type: 'withdraw_result',
-                                requestId: parsedMessage.payload.requestId || parsedMessage.requestId,
-                                status: parsedMessage.payload.success ? 'completed' : 'failed',
+                                requestId:
+                                    parsedMessage.payload.requestId ||
+                                    parsedMessage.requestId,
+                                status: parsedMessage.payload.success
+                                    ? 'completed'
+                                    : 'failed',
                                 txId: parsedMessage.payload.txId,
-                                failureReason: parsedMessage.payload.success ? undefined : parsedMessage.payload.reason,
-                                processedAt: new Date().toISOString()
+                                failureReason: parsedMessage.payload.success
+                                    ? undefined
+                                    : parsedMessage.payload.reason,
+                                processedAt: new Date().toISOString(),
                             }
                         }
                     }
@@ -270,7 +280,10 @@ export class WithdrawService {
 
             // Second pass: add withdraw_result messages for user's requests
             for (const message of messages) {
-                if (message.type === 'withdraw_result' && userRequestIds.has(message.requestId)) {
+                if (
+                    message.type === 'withdraw_result' &&
+                    userRequestIds.has(message.requestId)
+                ) {
                     const existing = userRequestMap.get(message.requestId) || {}
                     userRequestMap.set(message.requestId, {
                         ...existing,

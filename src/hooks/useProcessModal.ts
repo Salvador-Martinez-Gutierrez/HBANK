@@ -46,15 +46,10 @@ export function useProcessModal({
     const updateStep = useCallback(
         (stepId: string, status: ProcessStep['status']) => {
             setSteps((prev) => {
-                const targetIndex = prev.findIndex((step) => step.id === stepId)
-
-                return prev.map((step, index) => {
+                return prev.map((step) => {
                     if (step.id === stepId) {
                         // Update the target step
                         return { ...step, status }
-                    } else if (status === 'active' && index < targetIndex) {
-                        // Mark all previous steps as completed when setting a step as active
-                        return { ...step, status: 'completed' }
                     }
                     return step
                 })
@@ -107,16 +102,7 @@ export function useProcessModal({
     )
 
     const completeProcess = useCallback(() => {
-        // Mark current step as completed
-        setSteps((prev) =>
-            prev.map((step) =>
-                step.id === currentStep
-                    ? { ...step, status: 'completed' }
-                    : step
-            )
-        )
-
-        // Close modal after a delay
+        // Close modal after a delay and execute callback
         setTimeout(async () => {
             console.log(
                 'ProcessModal completing process with callback:',
@@ -132,7 +118,7 @@ export function useProcessModal({
                 }
             }
         }, 2000)
-    }, [currentStep, onComplete])
+    }, [onComplete])
 
     const closeModal = useCallback(() => {
         setIsOpen(false)

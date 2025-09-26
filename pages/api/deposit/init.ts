@@ -242,11 +242,15 @@ export default async function handler(
         )
         const emissionsBalance = await emissionsBalanceQuery.execute(client)
         const emissionsHusdcBalance = emissionsBalance.tokens?.get(husdTokenId)
+        const HUSD_MULTIPLIER = Math.pow(
+            10,
+            parseInt(process.env.HUSD_DECIMALS || '3')
+        )
         const emissionsHusdcBalanceNum = emissionsHusdcBalance
-            ? Number(emissionsHusdcBalance.toString()) / 100_000_000
-            : 0 // HUSDC has 8 decimals
+            ? Number(emissionsHusdcBalance.toString()) / HUSD_MULTIPLIER
+            : 0 // hUSD has 3 decimals
 
-        console.log('Emissions wallet HUSDC balance:', emissionsHusdcBalanceNum)
+        console.log('Emissions wallet hUSD balance:', emissionsHusdcBalanceNum)
 
         if (emissionsHusdcBalanceNum < amountHUSDC) {
             return res.status(400).json({
@@ -263,12 +267,14 @@ export default async function handler(
         const timestamp = Date.now()
         const randomSuffix = Math.floor(Math.random() * 100000)
         const userSuffix = userAccountId.slice(-6) // Last 6 chars of account ID
-        const uniqueMemo = `D-${timestamp}-${randomSuffix}-${userSuffix}: ${amountHUSDC.toFixed(2)} hUSD`
-        
+        const uniqueMemo = `D-${timestamp}-${randomSuffix}-${userSuffix}: ${amountHUSDC.toFixed(
+            2
+        )} hUSD`
+
         console.log('Generated unique memo:', uniqueMemo)
 
         const usdcDecimals = 6
-        const husdcDecimals = 8
+        const husdcDecimals = 3
 
         const usdcAmountTinybar = Math.floor(
             amountNum * Math.pow(10, usdcDecimals)
@@ -284,7 +290,11 @@ export default async function handler(
                 AccountId.fromString(userAccountId),
                 -usdcAmountTinybar
             )
-            .addTokenTransfer(usdcTokenId, depositWalletAccountId, usdcAmountTinybar)
+            .addTokenTransfer(
+                usdcTokenId,
+                depositWalletAccountId,
+                usdcAmountTinybar
+            )
             // HUSDC: emissions → user
             .addTokenTransfer(
                 husdTokenId,

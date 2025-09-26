@@ -6,6 +6,9 @@ import {
     ScheduleId,
     AccountId,
     PrivateKey,
+    TransferTransaction,
+    TokenId,
+    Hbar,
 } from '@hashgraph/sdk'
 
 /**
@@ -59,14 +62,14 @@ export default async function handler(
             clientRequestId,
         })
 
-        // Validate environment variables
-        const depositWalletId = process.env.DEPOSIT_WALLET_ID
-        const depositWalletKey = process.env.DEPOSIT_WALLET_KEY
+        // Validate environment variables - we need EMISSIONS wallet (not deposit)
+        const emissionsWalletId = process.env.EMISSIONS_ID
+        const emissionsWalletKey = process.env.EMISSIONS_KEY
 
-        if (!depositWalletId || !depositWalletKey) {
+        if (!emissionsWalletId || !emissionsWalletKey) {
             console.error('Missing environment variables:', {
-                DEPOSIT_WALLET_ID: !!depositWalletId,
-                DEPOSIT_WALLET_KEY: !!depositWalletKey,
+                EMISSIONS_ID: !!emissionsWalletId,
+                EMISSIONS_KEY: !!emissionsWalletKey,
             })
             return res.status(500).json({
                 error: 'Server configuration error',
@@ -74,23 +77,23 @@ export default async function handler(
             })
         }
 
-        // Configure Hedera client
+        // Configure Hedera client with EMISSIONS wallet (the one that needs to sign)
         const client = Client.forTestnet()
-        const depositWalletAccountId = AccountId.fromString(depositWalletId)
-        const depositWalletPrivateKey = PrivateKey.fromString(depositWalletKey)
+        const emissionsAccountId = AccountId.fromString(emissionsWalletId)
+        const emissionsPrivateKey = PrivateKey.fromString(emissionsWalletKey)
 
-        client.setOperator(depositWalletAccountId, depositWalletPrivateKey)
+        client.setOperator(emissionsAccountId, emissionsPrivateKey)
         console.log(
-            'Client configured for deposit wallet:',
-            depositWalletAccountId.toString()
+            'Client configured for emissions wallet:',
+            emissionsAccountId.toString()
         )
 
         // Query the schedule to verify user signature
         console.log('Querying schedule information...')
 
-        const scheduleQuery = new ScheduleInfoQuery().setScheduleId(
-            ScheduleId.fromString(scheduleId)
-        )
+        const scheduleQuery = new ScheduleInfoQuery()
+            .setScheduleId(ScheduleId.fromString(scheduleId))
+            .setMaxQueryPayment(Hbar.fromTinybars(100_000_000)) // 1 HBAR for query fee
 
         const scheduleInfo = await scheduleQuery.execute(client)
 
@@ -126,39 +129,46 @@ export default async function handler(
         // In ScheduleCreateTransaction, when we have all required signatures,
         // the schedule will be ready for execution
         console.log(
-            'Schedule requires user signature before treasury can complete it'
+            'Schedule requires user signature before emissions wallet can complete it'
         )
 
         // For now, we'll assume the user has signed if they're calling this endpoint
         // In production, you might want additional verification
 
-        // Execute treasury signature to complete the transaction
-        console.log('Executing treasury signature...')
+        // Execute emissions wallet signature to complete the transaction
+        console.log('Executing emissions wallet signature...')
 
-        const scheduleSign = new ScheduleSignTransaction().setScheduleId(
-            ScheduleId.fromString(scheduleId)
-        )
+        const scheduleSign = new ScheduleSignTransaction()
+            .setScheduleId(ScheduleId.fromString(scheduleId))
+            .setMaxTransactionFee(Hbar.fromTinybars(1_000_000_000)) // Set explicit fee of 10 HBAR
 
         const signResponse = await scheduleSign.execute(client)
         const signReceipt = await signResponse.getReceipt(client)
 
-        console.log('Treasury signature executed:', {
+        console.log('Emissions wallet signature executed:', {
             txId: signResponse.transactionId?.toString(),
             status: signReceipt.status.toString(),
         })
 
         if (signReceipt.status.toString() !== 'SUCCESS') {
             throw new Error(
-                `Treasury signature failed with status: ${signReceipt.status}`
+                `Emissions wallet signature failed with status: ${signReceipt.status}`
             )
         }
 
         // Query the schedule again to check if it's now executed
-        const finalScheduleInfo = await scheduleQuery.execute(client)
+        const finalScheduleQuery = new ScheduleInfoQuery()
+            .setScheduleId(ScheduleId.fromString(scheduleId))
+            .setMaxQueryPayment(Hbar.fromTinybars(100_000_000)) // 1 HBAR for query fee
+
+        const finalScheduleInfo = await finalScheduleQuery.execute(client)
 
         console.log('Final schedule status:', {
             executed: finalScheduleInfo.executed,
         })
+
+        // The scheduled transaction already includes both USDC and hUSD transfers
+        // No need to send hUSD separately - it's already handled by the schedule
 
         const result = {
             success: true,

@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { WithdrawService } from '@/services/withdrawService'
+import { TOPICS, TOKENS } from '@/app/constants'
 
 interface HistoryTransaction {
     timestamp: string
@@ -59,16 +60,20 @@ export default async function handler(
         // 1. Get withdrawals from the service
         try {
             const withdrawals = await withdrawService.getUserWithdrawals(user)
-            console.log(`📊 Found ${withdrawals.length} withdrawals from WithdrawService`)
-            
+            console.log(
+                `📊 Found ${withdrawals.length} withdrawals from WithdrawService`
+            )
+
             // Convert withdrawals to history items
             for (const withdrawal of withdrawals) {
-                console.log(`🔄 Processing withdrawal: ${withdrawal.requestId}, status: ${withdrawal.status}, txId: ${withdrawal.txId}`)
-                
+                console.log(
+                    `🔄 Processing withdrawal: ${withdrawal.requestId}, status: ${withdrawal.status}, txId: ${withdrawal.txId}`
+                )
+
                 // Determine type based on unlockAt - instant withdrawals have unlockAt = requestedAt (no wait time)
                 const requestTime = new Date(withdrawal.requestedAt).getTime()
                 const unlockTime = new Date(withdrawal.unlockAt).getTime()
-                const isInstant = (unlockTime - requestTime) < 60000 // Less than 1 minute difference
+                const isInstant = unlockTime - requestTime < 60000 // Less than 1 minute difference
 
                 const historyItem: HistoryTransaction = {
                     timestamp: withdrawal.requestedAt,
@@ -77,21 +82,23 @@ export default async function handler(
                     rate: withdrawal.rate,
                     status: withdrawal.status,
                     txId: withdrawal.txId || withdrawal.requestId,
-                    failureReason: withdrawal.failureReason
+                    failureReason: withdrawal.failureReason,
                 }
 
                 // For completed withdrawals, calculate USDC amounts
                 if (withdrawal.status === 'completed') {
                     if (isInstant) {
                         // For instant withdrawals, we have fee information
-                        const grossUSDC = withdrawal.amountHUSD * withdrawal.rate
+                        const grossUSDC =
+                            withdrawal.amountHUSD * withdrawal.rate
                         const fee = grossUSDC * 0.01 // 1% fee for instant withdrawals
                         historyItem.grossUSDC = grossUSDC
                         historyItem.fee = fee
                         historyItem.netUSDC = grossUSDC - fee
                     } else {
                         // For standard withdrawals, no fee
-                        const usdcAmount = withdrawal.amountHUSD * withdrawal.rate
+                        const usdcAmount =
+                            withdrawal.amountHUSD * withdrawal.rate
                         historyItem.grossUSDC = usdcAmount
                         historyItem.netUSDC = usdcAmount
                         historyItem.fee = 0
@@ -100,7 +107,6 @@ export default async function handler(
 
                 historyItems.push(historyItem)
             }
-            
         } catch (withdrawError) {
             console.warn('Failed to fetch withdrawals:', withdrawError)
             // Continue without withdrawals rather than failing entirely
@@ -112,19 +118,24 @@ export default async function handler(
             console.log(`📊 Adding ${deposits.length} deposits to history`)
             historyItems.push(...deposits)
         } catch (depositError) {
-            console.warn('Failed to fetch deposits from Mirror Node:', depositError)
+            console.warn(
+                'Failed to fetch deposits from Mirror Node:',
+                depositError
+            )
             // Continue without deposits rather than failing entirely
         }
 
         // 3. Sort by timestamp (newest first)
-        historyItems.sort((a: HistoryTransaction, b: HistoryTransaction) => 
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        historyItems.sort(
+            (a: HistoryTransaction, b: HistoryTransaction) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime()
         )
 
         // Log first few items to debug sorting
         console.log(`🕐 First 5 items after sorting:`)
         historyItems.slice(0, 5).forEach((item, i) => {
-            console.log(`   ${i+1}. ${item.type} - ${item.timestamp}`)
+            console.log(`   ${i + 1}. ${item.type} - ${item.timestamp}`)
         })
 
         // 4. Apply pagination
@@ -138,8 +149,10 @@ export default async function handler(
             acc[item.type] = (acc[item.type] || 0) + 1
             return acc
         }, {} as Record<string, number>)
-        
-        console.log(`✅ Found ${historyItems.length} total history items, returning ${paginatedHistory.length}`)
+
+        console.log(
+            `✅ Found ${historyItems.length} total history items, returning ${paginatedHistory.length}`
+        )
         console.log(`📈 Transaction types: ${JSON.stringify(typeCount)}`)
 
         return res.status(200).json({
@@ -160,63 +173,91 @@ export default async function handler(
 /**
  * Fetches user deposits from Hedera Mirror Node
  */
-async function fetchUserDeposits(userAccountId: string, limit: number): Promise<HistoryTransaction[]> {
-    const HUSD_TOKEN_ID = '0.0.6624255' // hUSD token ID
-    const TREASURY_ID = '0.0.6510977' // Treasury account ID
+async function fetchUserDeposits(
+    userAccountId: string,
+    limit: number
+): Promise<HistoryTransaction[]> {
+    const HUSD_TOKEN_ID = TOKENS.HUSD // hUSD token ID
+    const TREASURY_ID = process.env.TREASURY_ID || '0.0.6887438' // Treasury account ID
     const mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
-    
+
     // Get token transfers where user received hUSD from treasury (deposits)
-    const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&transactiontype=cryptotransfer&order=desc&limit=${limit * 2}` // Get more to filter
-    
+    const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&transactiontype=cryptotransfer&order=desc&limit=${
+        limit * 2
+    }` // Get more to filter
+
     console.log(`🔍 Fetching deposits from Mirror Node: ${queryUrl}`)
-    
+
     const response = await fetch(queryUrl)
     if (!response.ok) {
         throw new Error(`Mirror Node API error: ${response.status}`)
     }
-    
+
     const data = await response.json()
     const transactions = data.transactions || []
-    
+
     const deposits: HistoryTransaction[] = []
-    
-    console.log(`🔍 Processing ${transactions.length} transactions from Mirror Node`)
-    
+
+    console.log(
+        `🔍 Processing ${transactions.length} transactions from Mirror Node`
+    )
+
     for (const tx of transactions) {
         if (!tx.token_transfers || !Array.isArray(tx.token_transfers)) continue
-        
+
         // Look for hUSD transfers from treasury to user (indicating a deposit)
         let userReceivedHUSD = 0
         let treasurySentHUSD = 0
-        
+
+        // Get decimals from environment
+        const HUSD_MULTIPLIER = Math.pow(
+            10,
+            parseInt(process.env.HUSD_DECIMALS || '3')
+        )
+
         for (const transfer of tx.token_transfers) {
             if (transfer.token_id === HUSD_TOKEN_ID) {
                 if (transfer.account === userAccountId && transfer.amount > 0) {
-                    userReceivedHUSD = transfer.amount / 100_000_000 // Convert from tinybars (8 decimals)
-                } else if (transfer.account === TREASURY_ID && transfer.amount < 0) {
-                    treasurySentHUSD = Math.abs(transfer.amount) / 100_000_000
+                    userReceivedHUSD = transfer.amount / HUSD_MULTIPLIER // hUSD has 3 decimals
+                } else if (
+                    transfer.account === TREASURY_ID &&
+                    transfer.amount < 0
+                ) {
+                    treasurySentHUSD =
+                        Math.abs(transfer.amount) / HUSD_MULTIPLIER // hUSD has 3 decimals
                 }
             }
         }
-        
+
         // If user received hUSD from treasury, this is a deposit
-        if (userReceivedHUSD > 0 && treasurySentHUSD > 0 && Math.abs(userReceivedHUSD - treasurySentHUSD) < 0.001) {
-            console.log(`💰 Found deposit: user received ${userReceivedHUSD} hUSD, treasury sent ${treasurySentHUSD} hUSD`)
-            
+        if (
+            userReceivedHUSD > 0 &&
+            treasurySentHUSD > 0 &&
+            Math.abs(userReceivedHUSD - treasurySentHUSD) < 0.001
+        ) {
+            console.log(
+                `💰 Found deposit: user received ${userReceivedHUSD} hUSD, treasury sent ${treasurySentHUSD} hUSD`
+            )
+
             // Try to find the corresponding USDC transfer to calculate the rate
             let userSentUSDC = 0
-            const USDC_TOKEN_ID = '0.0.429274' // USDC token ID
-            
+            const USDC_TOKEN_ID = TOKENS.USDC // USDC token ID
+
             for (const transfer of tx.token_transfers) {
-                if (transfer.token_id === USDC_TOKEN_ID && transfer.account === userAccountId && transfer.amount < 0) {
+                if (
+                    transfer.token_id === USDC_TOKEN_ID &&
+                    transfer.account === userAccountId &&
+                    transfer.amount < 0
+                ) {
                     userSentUSDC = Math.abs(transfer.amount) / 1_000_000 // Convert from USDC decimals (6 decimals)
                     break
                 }
             }
-            
+
             // Calculate rate (USDC per hUSD)
-            const rate = userSentUSDC > 0 ? userSentUSDC / userReceivedHUSD : 1.0
-            
+            const rate =
+                userSentUSDC > 0 ? userSentUSDC / userReceivedHUSD : 1.0
+
             // Convert consensus_timestamp to proper ISO format
             // Hedera consensus_timestamp format: "2024-01-15T10:30:45.123456789Z"
             let timestamp = tx.consensus_timestamp
@@ -224,9 +265,11 @@ async function fetchUserDeposits(userAccountId: string, limit: number): Promise<
                 // If it's just a number (seconds), convert to ISO
                 timestamp = new Date(parseFloat(timestamp) * 1000).toISOString()
             }
-            
-            console.log(`📅 Deposit timestamp: ${timestamp} (original: ${tx.consensus_timestamp})`)
-            
+
+            console.log(
+                `📅 Deposit timestamp: ${timestamp} (original: ${tx.consensus_timestamp})`
+            )
+
             const deposit: HistoryTransaction = {
                 timestamp: timestamp,
                 type: 'deposit',
@@ -238,12 +281,14 @@ async function fetchUserDeposits(userAccountId: string, limit: number): Promise<
                 status: 'completed', // If it's on Mirror Node, it's completed
                 txId: tx.transaction_id,
             }
-            
+
             deposits.push(deposit)
         }
     }
-    
-    console.log(`✅ Found ${deposits.length} deposits for user ${userAccountId}`)
+
+    console.log(
+        `✅ Found ${deposits.length} deposits for user ${userAccountId}`
+    )
     return deposits
 }
 
@@ -253,7 +298,7 @@ async function fetchUserDeposits(userAccountId: string, limit: number): Promise<
 /* 
 async function getInstantWithdrawals(userAccountId: string): Promise<HistoryTransaction[]> {
     const TESTNET_MIRROR_NODE_ENDPOINT = 'https://testnet.mirrornode.hedera.com'
-    const WITHDRAW_TOPIC_ID = '0.0.6750041' // Topic para withdrawals
+    const WITHDRAW_TOPIC_ID = TOPICS.WITHDRAW // Topic para withdrawals
     
     try {
         // Get messages from the last 30 days

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { TOPICS } from '@/app/constants'
 
 export interface RateData {
     rate: number
@@ -16,7 +17,7 @@ export interface UseRealTimeRateReturn {
 }
 
 const MIRROR_NODE_REST_API = 'https://testnet.mirrornode.hedera.com/api/v1'
-const TOPIC_ID = '0.0.6626120'
+const TOPIC_ID = TOPICS.RATE
 // Values for mainnet (100 req/min = ~1.67 req/s)
 const DEFAULT_POLLING_INTERVAL = 10000 // 10 seconds (6 req/min)
 const MIN_INTERVAL = 8000 // 8 seconds (7.5 req/min)

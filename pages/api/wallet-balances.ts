@@ -152,8 +152,12 @@ async function getHbarBalance(accountId: string): Promise<number> {
 
         const data = await response.json()
 
-        // Convert tinybars to HBAR (1 HBAR = 100,000,000 tinybars)
-        return data.balance ? data.balance.balance / 100_000_000 : 0
+        // Convert tinybars to HBAR using environment decimal setting
+        const HBAR_MULTIPLIER = Math.pow(
+            10,
+            parseInt(process.env.HBAR_DECIMALS || '8')
+        )
+        return data.balance ? data.balance.balance / HBAR_MULTIPLIER : 0
     } catch (error) {
         console.error('Error fetching HBAR balance:', error)
         return 0
@@ -185,7 +189,7 @@ async function getHusdBalance(
             )
             if (husdToken) {
                 // Use the actual decimals from the token info, fallback to 8 for hUSD
-                const decimals = husdToken.decimals || 8
+                const decimals = husdToken.decimals || 3
                 return husdToken.balance / Math.pow(10, decimals)
             }
         }

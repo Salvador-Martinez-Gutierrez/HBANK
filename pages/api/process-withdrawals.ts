@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { WithdrawService } from '@/services/withdrawService'
 import { HederaService } from '@/services/hederaService'
+import { ACCOUNTS } from '@/app/backend-constants'
 
 interface WithdrawProcessingResult {
     success: boolean
@@ -59,11 +60,29 @@ export default async function handler(
                 console.log(`   User: ${withdrawal.user}`)
                 console.log(`   Amount: ${withdrawal.amountHUSD} HUSD`)
 
-                // Step 1: Verify the Schedule Transaction was executed
-                const scheduleExecuted =
-                    await hederaService.verifyScheduleTransactionExecuted(
-                        withdrawal.scheduleId
+                // Check if this is a new-style withdrawal (HUSD already transferred)
+                const isNewStyleWithdrawal =
+                    withdrawal.scheduleId === 'verified'
+
+                if (isNewStyleWithdrawal) {
+                    console.log(
+                        '🔍 New-style withdrawal: HUSD already transferred, skipping schedule verification'
                     )
+                } else {
+                    console.log(
+                        '🔍 Legacy withdrawal: Verifying scheduled transaction...'
+                    )
+                }
+
+                // Step 1: Verify the Schedule Transaction was executed (only for legacy withdrawals)
+                let scheduleExecuted = true // Default to true for new-style withdrawals
+
+                if (!isNewStyleWithdrawal) {
+                    scheduleExecuted =
+                        await hederaService.verifyScheduleTransactionExecuted(
+                            withdrawal.scheduleId
+                        )
+                }
 
                 if (!scheduleExecuted) {
                     console.log(
@@ -91,12 +110,13 @@ export default async function handler(
                     `✅ Schedule Transaction ${withdrawal.scheduleId} was executed`
                 )
 
-                // Step 2: Verify HUSD was actually transferred to treasury
-                const treasuryId = process.env.TREASURY_ID!
+                // Step 2: Verify HUSD was actually transferred to emissions wallet
+                // (Both standard and instant withdrawals now go to emissions wallet)
+                const emissionsWalletId = ACCOUNTS.emissions
                 const husdTransferVerified =
                     await hederaService.verifyHUSDTransfer(
                         withdrawal.user,
-                        treasuryId,
+                        emissionsWalletId,
                         withdrawal.amountHUSD,
                         withdrawal.requestedAt
                     )
@@ -104,7 +124,7 @@ export default async function handler(
                 if (!husdTransferVerified) {
                     console.log(`❌ HUSD transfer verification failed`)
                     console.log(
-                        `📋 Expected ${withdrawal.amountHUSD} HUSD from ${withdrawal.user} to ${treasuryId}`
+                        `📋 Expected ${withdrawal.amountHUSD} HUSD from ${withdrawal.user} to ${emissionsWalletId}`
                     )
 
                     await hederaService.publishWithdrawResult(
@@ -133,9 +153,10 @@ export default async function handler(
                 const usdcAmount = withdrawal.amountHUSD * withdrawal.rate
                 const usdcTokenId = process.env.USDC_TOKEN_ID!
 
-                // Check treasury USDC balance
+                // Check treasury USDC balance (USDC payments come from treasury)
+                const treasuryWalletId = ACCOUNTS.treasury
                 const treasuryBalance = await hederaService.checkBalance(
-                    treasuryId,
+                    treasuryWalletId,
                     usdcTokenId
                 )
                 console.log(

@@ -93,6 +93,11 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
         rate: number,
         rateSequenceNumber: string
     ): Promise<InstantWithdrawResponse> => {
+        console.log('🚀 Making instant withdraw request:', {
+            userAccountId,
+            amountHUSD,
+        })
+
         try {
             const response = await fetch('/api/withdraw/instant', {
                 method: 'POST',
@@ -111,17 +116,20 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
             const data: InstantWithdrawResponse = await response.json()
 
             if (!response.ok) {
+                console.error('❌ Instant withdraw failed:', data)
                 return {
                     success: false,
                     error: data.error || 'Instant withdrawal failed',
                 }
             }
 
+            console.log('✅ Instant withdraw successful!')
             // Refresh max amount after successful withdrawal
             await fetchMaxInstantWithdrawable()
 
             return data
         } catch (err) {
+            console.error('❌ Instant withdraw exception:', err)
             const errorMessage =
                 err instanceof Error ? err.message : 'Unknown error'
             return {

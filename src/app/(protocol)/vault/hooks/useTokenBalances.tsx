@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { useAccountId } from './useAccountID'
+import { TOKENS } from '@/app/constants'
+import { formatCurrency } from '@/lib/formatters'
 
 interface TokenBalance {
     USDC: string
@@ -10,8 +12,8 @@ interface TokenBalance {
 // Token IDs for USDC and hUSD on Hedera testnet
 // These should be configured in environment variables in production
 const TOKEN_IDS = {
-    USDC: '0.0.429274', // USDC token ID on testnet (6 decimals)
-    hUSD: '0.0.6624255', // hUSD token ID on testnet (8 decimals)
+    USDC: TOKENS.USDC, // USDC token ID on testnet (6 decimals)
+    hUSD: TOKENS.HUSD, // hUSD token ID on testnet (3 decimals)
 }
 
 export function useTokenBalances() {
@@ -90,7 +92,10 @@ export function useTokenBalances() {
                         if (token.token_id === TOKEN_IDS.USDC) {
                             const decimals = token.decimals
                             const divisor = Math.pow(10, decimals)
-                            const balance = (token.balance / divisor).toFixed(2)
+                            const balance = formatCurrency(
+                                token.balance / divisor,
+                                6
+                            )
                             console.log(
                                 `✅ [useTokenBalances] Found USDC: ${balance} (balance: ${token.balance}, decimals: ${decimals})`
                             )
@@ -100,7 +105,10 @@ export function useTokenBalances() {
                         else if (token.token_id === TOKEN_IDS.hUSD) {
                             const decimals = token.decimals
                             const divisor = Math.pow(10, decimals)
-                            const balance = (token.balance / divisor).toFixed(2)
+                            const balance = formatCurrency(
+                                token.balance / divisor,
+                                6
+                            )
                             console.log(
                                 `✅ [useTokenBalances] Found hUSD: ${balance} (balance: ${token.balance}, decimals: ${decimals})`
                             )

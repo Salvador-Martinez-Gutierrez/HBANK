@@ -207,7 +207,7 @@ export default async function handler(
         }
 
         const usdcDecimals = 6
-        const husdDecimals = 8
+        const husdDecimals = 3
 
         // amount received in minimum USDC units
         const amountInUSDC = Number(amount)

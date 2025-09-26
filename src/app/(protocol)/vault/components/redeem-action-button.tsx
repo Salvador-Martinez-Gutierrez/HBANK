@@ -17,7 +17,7 @@ import {
     AccountId,
 } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
-import { INSTANT_WITHDRAW_FEE, TOKENS, ACCOUNTS } from '@/app/constants'
+import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { ProcessModal } from '@/components/process-modal'
 import {
     useProcessModal,
@@ -138,27 +138,22 @@ export function RedeemActionButton({
         try {
             if (redeemType === 'instant') {
                 await handleInstantWithdraw(amount)
-                // Don't clear step here for instant withdrawals - it's handled in the timeout
             } else {
                 await handleStandardWithdraw(amount)
             }
         } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : 'Unknown error'
-            setError(errorMessage)
-
-            // Close modals and show error
+            // Para instant withdraw, manejamos el error aquí
+            // Para standard withdraw, el error ya se maneja internamente
             if (redeemType === 'instant') {
+                const errorMessage =
+                    err instanceof Error ? err.message : 'Unknown error'
+                setError(errorMessage)
                 instantProcessModal.setStepError(
                     instantProcessModal.currentStep,
                     errorMessage
                 )
-            } else {
-                standardProcessModal.setStepError(
-                    standardProcessModal.currentStep,
-                    errorMessage
-                )
             }
+            // Para standard withdraw, no hacemos nada adicional aquí
         } finally {
             setIsSubmitting(false)
         }
@@ -195,20 +190,28 @@ export function RedeemActionButton({
             throw new Error('Invalid signer: wallet not properly connected')
         }
 
-        // Create HUSD transfer transaction  
-        const husdTokenId = TOKENS.HUSD // ✅ Fixed: Using constants instead of hardcoded
-        const treasuryId = ACCOUNTS.treasury // ✅ Fixed: Using constants instead of hardcoded
+        // Create HUSD transfer transaction
+        const husdTokenId = '0.0.6889338' // HUSD Token ID
+        const emissionsId = '0.0.6887460' // Emissions Wallet ID (hardcoded for frontend)
+
+        // DEBUG: Log the amount being processed
+        console.log('🔍 [FRONTEND] Creating HUSD transfer:', {
+            amount: amount,
+            amountType: typeof amount,
+            convertedUnits: Math.floor(amount * 1_000),
+            expectedFor1HUSD: 1000,
+        })
 
         const transferTx = new TransferTransaction()
             .addTokenTransfer(
                 TokenId.fromString(husdTokenId),
                 AccountId.fromString(accountId),
-                -Math.floor(amount * 100_000_000) // Convert to hUSD minimum units (8 decimals)
+                -Math.floor(amount * 1_000) // Convert to hUSD minimum units (3 decimals)
             )
             .addTokenTransfer(
                 TokenId.fromString(husdTokenId),
-                AccountId.fromString(treasuryId),
-                Math.floor(amount * 100_000_000) // Convert to hUSD minimum units (8 decimals)
+                AccountId.fromString(emissionsId), // Send to emissions wallet for instant withdrawals
+                Math.floor(amount * 1_000) // Convert to hUSD minimum units (3 decimals)
             )
             .setTransactionMemo(`Instant withdrawal: ${amount} hUSD`)
 
@@ -257,25 +260,89 @@ export function RedeemActionButton({
             }
         )
 
-        // Paso 1: Crear solicitud de retiro
-        standardProcessModal.updateStep('initialize', 'active')
+        try {
+            // Paso 1: Crear solicitud de retiro (initialize) - activar inmediatamente
+            standardProcessModal.updateStep('initialize', 'active')
+            
+            console.log('🔄 [STANDARD WITHDRAW] Step 1: Initialize active')
 
-        const result = await submitWithdrawal(
-            amount,
-            currentRateData!.rate,
-            currentRateData!.sequenceNumber
-        )
+            if (!isValidSigner(signer)) {
+                throw new Error('Invalid signer: wallet not properly connected')
+            }
 
-        if (!result.success) {
-            setError(result.error || 'Failed to create withdrawal request')
-            return
+            // Create HUSD transfer transaction (same as instant withdraw)
+            const husdTokenId = '0.0.6889338' // HUSD Token ID
+            const emissionsId = '0.0.6887460' // Emissions Wallet ID (hardcoded for frontend)
+
+            // DEBUG: Log the amount being processed
+            console.log('🔍 [STANDARD WITHDRAW] Creating HUSD transfer:', {
+                amount: amount,
+                amountType: typeof amount,
+                convertedUnits: Math.floor(amount * 1_000),
+                expectedFor1HUSD: 1000,
+            })
+
+            const transferTx = new TransferTransaction()
+                .addTokenTransfer(
+                    TokenId.fromString(husdTokenId),
+                    AccountId.fromString(accountId),
+                    -Math.floor(amount * 1_000) // Convert to hUSD minimum units (3 decimals)
+                )
+                .addTokenTransfer(
+                    TokenId.fromString(husdTokenId),
+                    AccountId.fromString(emissionsId), // Send to emissions wallet
+                    Math.floor(amount * 1_000) // Convert to hUSD minimum units (3 decimals)
+                )
+                .setTransactionMemo(`Standard withdrawal: ${amount} hUSD`)
+
+            // Paso 2: Usuario debe firmar la transferencia (user-sign)
+            console.log('🔄 [STANDARD WITHDRAW] Moving to Step 2: User sign')
+            standardProcessModal.updateStep('initialize', 'completed')
+            standardProcessModal.updateStep('user-sign', 'active')
+
+            // Execute transaction (este es el momento donde el usuario firma)
+            const frozenTx = await transferTx.freezeWithSigner(signer)
+            const signedTx = await frozenTx.signWithSigner(signer)
+            const txResponse = await signedTx.executeWithSigner(signer)
+            const receipt = await txResponse.getReceiptWithSigner(signer)
+
+            if (receipt.status.toString() !== 'SUCCESS') {
+                throw new Error(`HUSD transfer failed: ${receipt.status}`)
+            }
+
+            console.log('✅ [STANDARD WITHDRAW] HUSD transfer completed')
+
+            // Paso 3: Registrar solicitud de retiro (finalize)
+            console.log('🔄 [STANDARD WITHDRAW] Moving to Step 3: Finalize')
+            standardProcessModal.updateStep('user-sign', 'completed')
+            standardProcessModal.updateStep('finalize', 'active')
+
+            const result = await submitWithdrawal(
+                amount,
+                currentRateData!.rate,
+                currentRateData!.sequenceNumber
+            )
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to create withdrawal request')
+            }
+
+            console.log('✅ [STANDARD WITHDRAW] Withdrawal request submitted')
+
+            // Completar el último paso
+            standardProcessModal.updateStep('finalize', 'completed')
+            
+            // Completar el proceso (esto ejecuta el onComplete callback y cierra el modal)
+            setTimeout(() => {
+                standardProcessModal.completeProcess()
+            }, 1000) // Un poco menos de tiempo para que se vea el step completado
+            
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+            console.error('❌ [STANDARD WITHDRAW] Error:', errorMessage)
+            standardProcessModal.setStepError(standardProcessModal.currentStep, errorMessage)
+            // No lanzar el error para evitar doble manejo
         }
-
-        // Paso 2: Usuario firma la transacción programada
-        standardProcessModal.nextStep()
-        standardProcessModal.updateStep('user-sign', 'active')
-
-        await handleScheduleSignature(result.scheduleId || '')
     }
 
     const handleScheduleSignature = async (scheduleTransactionId: string) => {
@@ -338,12 +405,12 @@ export function RedeemActionButton({
     const inputAmount = parseFloat(fromAmount || '0')
     const canSubmit = Boolean(
         isConnected &&
-        accountId &&
-        currentRateData &&
-        inputAmount > 0 &&
-        hUSDBalance &&
-        inputAmount <= hUSDBalance &&
-        !isSubmitting
+            accountId &&
+            currentRateData &&
+            inputAmount > 0 &&
+            hUSDBalance &&
+            inputAmount <= hUSDBalance &&
+            !isSubmitting
     )
 
     // For instant withdrawals, also check max limit
@@ -410,7 +477,8 @@ export function RedeemActionButton({
             {redeemType === 'standard' && (
                 <div className='bg-yellow-50 border border-yellow-200 p-3 rounded-lg'>
                     <div className='text-xs text-yellow-700'>
-                        <strong>48-Hour Period:</strong> Your USDC will take up to 48 hours to arrive to your wallet.
+                        <strong>48-Hour Period:</strong> Your USDC will take up
+                        to 48 hours to arrive to your wallet.
                     </div>
                 </div>
             )}

@@ -1,6 +1,14 @@
 // ===================================
 // VALORA PROTOCOL - CONSOLIDATED CONSTANTS
-// Todas las constantes del proyecto centralizadas
+// Todas las constantes del proyecto c// Token IDs for Hedera Testnet (Legacy duplicated section)
+export const TOKEN_IDS_DUPLICATE = {
+    hUSD: '0.0.6889338',
+    USDC: '0.0.429274',
+} as const
+
+//TOPIC_IDs (Legacy duplicated section)
+export const TOPIC_ID_DUPLICATE = '0.0.6908395'
+export const WITHDRAW_TOPIC_ID_DUPLICATE = '0.0.6908400'das
 // ===================================
 
 import {
@@ -22,7 +30,7 @@ export const HEDERA_CONFIG = {
 
 // Token IDs for Hedera Testnet
 export const TOKENS = {
-    HUSD: '0.0.6624255',
+    HUSD: '0.0.6889338',
     USDC: '0.0.429274',
 } as const
 
@@ -31,8 +39,8 @@ export const TOKEN_IDS = TOKENS
 
 // Topic IDs
 export const TOPICS = {
-    RATE: '0.0.6626120',
-    WITHDRAW: '0.0.6750041',
+    RATE: '0.0.6908395',
+    WITHDRAW: '0.0.6908400',
 } as const
 
 // Legacy exports
@@ -41,12 +49,12 @@ export const WITHDRAW_TOPIC_ID = TOPICS.WITHDRAW
 
 // Account IDs
 export const ACCOUNTS = {
-    treasury: process.env.TREASURY_ID || '0.0.6510977',
-    emissions: process.env.EMISSIONS_ID || '0.0.6624253',
-    depositWallet: process.env.DEPOSIT_WALLET_ID || '0.0.6510977',
-    instantWithdrawWallet: process.env.INSTANT_WITHDRAW_WALLET_ID || '0.0.6510977',
-    standardWithdrawWallet: process.env.STANDARD_WITHDRAW_WALLET_ID || '0.0.6510977',
-    ratePublisher: process.env.RATE_PUBLISHER_ID || '0.0.6510977',
+    treasury: process.env.TREASURY_ID || '0.0.6887438',
+    emissions: process.env.EMISSIONS_ID || '0.0.6887460',
+    depositWallet: process.env.DEPOSIT_WALLET_ID || '0.0.6887448',
+    instantWithdrawWallet: process.env.INSTANT_WITHDRAW_WALLET_ID || '0.0.6887450',
+    standardWithdrawWallet: process.env.STANDARD_WITHDRAW_WALLET_ID || '0.0.6887453',
+    ratePublisher: process.env.RATE_PUBLISHER_ID || '0.0.6887432',
 } as const
 
 // Legacy exports
@@ -60,7 +68,7 @@ export const EMISSIONS_ID = ACCOUNTS.emissions
 // Token decimals
 export const DECIMALS = {
     USDC: 6,
-    HUSD: 8,
+    HUSD: 3,
 } as const
 
 // Fees

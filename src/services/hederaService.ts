@@ -18,6 +18,20 @@ export class HederaService {
     private operatorKey: PrivateKey
     private topicId: TopicId
 
+    // Decimal constants from environment
+    private readonly HBAR_MULTIPLIER = Math.pow(
+        10,
+        parseInt(process.env.HBAR_DECIMALS || '8')
+    )
+    private readonly USDC_MULTIPLIER = Math.pow(
+        10,
+        parseInt(process.env.USDC_DECIMALS || '6')
+    )
+    private readonly HUSD_MULTIPLIER = Math.pow(
+        10,
+        parseInt(process.env.HUSD_DECIMALS || '3')
+    )
+
     constructor() {
         // Check if we are using real testnet
         const useRealTestnet = process.env.USE_REAL_TESTNET === 'true'
@@ -221,8 +235,8 @@ export class HederaService {
                 return 0
             }
 
-            // Convert to number (assuming 6 decimals for USDC)
-            return Number(tokenBalance.toString()) / 1_000_000
+            // Convert to number using USDC decimals from environment
+            return Number(tokenBalance.toString()) / this.USDC_MULTIPLIER
         } catch (error) {
             console.error('Error checking balance:', error)
             // If there's an error, assume no balance
@@ -262,22 +276,22 @@ export class HederaService {
                 .addTokenTransfer(
                     TokenId.fromString(usdcTokenId),
                     AccountId.fromString(userId),
-                    -amountUsdc * 1_000_000 // Negative = outgoing
+                    -amountUsdc * this.USDC_MULTIPLIER // Negative = outgoing (USDC has 6 decimals)
                 )
                 .addTokenTransfer(
                     TokenId.fromString(usdcTokenId),
                     AccountId.fromString(depositWallet.id),
-                    amountUsdc * 1_000_000 // Positive = incoming to deposit wallet
+                    amountUsdc * this.USDC_MULTIPLIER // Positive = incoming to deposit wallet (USDC has 6 decimals)
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(emissionsWallet.id),
-                    -Math.floor(husdAmount * 100_000_000) // Outgoing from emissions (hUSD has 8 decimals)
+                    -Math.floor(husdAmount * this.HUSD_MULTIPLIER) // Outgoing from emissions (hUSD has 3 decimals)
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(userId),
-                    Math.floor(husdAmount * 100_000_000) // Incoming to user (hUSD has 8 decimals)
+                    Math.floor(husdAmount * this.HUSD_MULTIPLIER) // Incoming to user (hUSD has 3 decimals)
                 )
 
             // Create the scheduled transaction
@@ -350,12 +364,12 @@ export class HederaService {
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(user),
-                    -Math.floor(amountHUSD * 100_000_000) // Negative = outgoing from user (hUSD has 8 decimals)
+                    -Math.floor(amountHUSD * this.HUSD_MULTIPLIER) // Negative = outgoing from user (hUSD has 3 decimals)
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(treasuryWallet.id),
-                    Math.floor(amountHUSD * 100_000_000) // Positive = incoming to treasury (hUSD has 8 decimals)
+                    Math.floor(amountHUSD * this.HUSD_MULTIPLIER) // Positive = incoming to treasury (hUSD has 3 decimals)
                 )
 
             // Create the schedule transaction with unique memo
@@ -617,12 +631,12 @@ export class HederaService {
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(treasuryWallet.id),
-                    -Math.floor(amountHUSD * 100_000_000) // Negative = outgoing from treasury (hUSD has 8 decimals)
+                    -Math.floor(amountHUSD * this.HUSD_MULTIPLIER) // Negative = outgoing from treasury (hUSD has 3 decimals)
                 )
                 .addTokenTransfer(
                     TokenId.fromString(husdTokenId),
                     AccountId.fromString(user),
-                    Math.floor(amountHUSD * 100_000_000) // Positive = incoming to user (hUSD has 8 decimals)
+                    Math.floor(amountHUSD * this.HUSD_MULTIPLIER) // Positive = incoming to user (hUSD has 3 decimals)
                 )
 
             const transferResponse = await transferTx.execute(treasuryClient)
@@ -827,7 +841,8 @@ export class HederaService {
                         // Check if this is the transfer we're looking for
                         // The Mirror Node returns token_transfers as an array where each item has account and amount
                         const transferredAmount =
-                            Math.abs(tokenTransfer.amount) / 100_000_000 // Convert from tinybars (hUSD has 8 decimals)
+                            Math.abs(tokenTransfer.amount) /
+                            this.HUSD_MULTIPLIER // Convert from tinybars (hUSD has 3 decimals)
 
                         // Check if this transfer is from user to treasury or treasury to user
                         const isUserSending =
@@ -867,7 +882,7 @@ export class HederaService {
 
                             if (treasuryTransfer) {
                                 const treasuryAmount =
-                                    treasuryTransfer.amount / 100_000_000
+                                    treasuryTransfer.amount / 1_000 // FIXED: HUSD uses 3 decimals, not 8
                                 console.log(
                                     `📋 Attempt ${attempt} - Found complete HUSD transfer:`,
                                     {

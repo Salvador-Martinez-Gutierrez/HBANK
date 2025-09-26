@@ -69,15 +69,6 @@ export default async function handler(
             requestType,
         })
 
-        // DEBUG: Log the HUSD amount conversion
-        console.log('💰 [INSTANT WITHDRAW] HUSD amount analysis:', {
-            amountHUSD: amountHUSD,
-            amountType: typeof amountHUSD,
-            expectedUnitsFor1HUSD: 1000,
-            calculatedUnits: amountHUSD * NUMERIC.HUSD_MULTIPLIER,
-            HUSD_MULTIPLIER: NUMERIC.HUSD_MULTIPLIER,
-        })
-
         // Basic validation first
         if (requestType !== 'instant') {
             console.log(
@@ -212,18 +203,9 @@ export default async function handler(
             '🔍 [INSTANT WITHDRAW] Verifying HUSD transfer to emissions wallet...'
         )
 
-        // Check for transfers in the last 10 minutes (increased window)
-        const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+        // Check for transfers in the last 5 minutes
+        const since = new Date(Date.now() - 5 * 60 * 1000).toISOString()
 
-        console.log('🔍 [INSTANT WITHDRAW] HUSD transfer search parameters:', {
-            from: userAccountId,
-            to: emissionsWalletId,
-            expectedAmount: amountHUSD,
-            since: since,
-            token: TOKENS.husd,
-        })
-
-        // Try with corrected decimals (3 for HUSD, not 8)
         const husdTransferVerified = await hederaService.verifyHUSDTransfer(
             userAccountId,
             emissionsWalletId,

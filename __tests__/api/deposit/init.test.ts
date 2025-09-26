@@ -69,7 +69,7 @@ describe('/api/deposit/init', () => {
         process.env.DEPOSIT_WALLET_ID = '0.0.6510977'
         process.env.DEPOSIT_WALLET_KEY = 'mock-deposit-key'
         process.env.USDC_TOKEN_ID = '0.0.429274'
-        process.env.HUSD_TOKEN_ID = '0.0.429275'
+        process.env.HUSD_TOKEN_ID = '0.0.6889338' // Updated token ID
 
         // Setup successful responses
         mockExecute.mockResolvedValue({
@@ -85,7 +85,7 @@ describe('/api/deposit/init', () => {
         mockAccountBalanceQueryExecute.mockResolvedValue({
             tokens: new Map([
                 ['0.0.429274', BigInt(1000_000_000)], // 1000 USDC (6 decimals)
-                ['0.0.429275', BigInt(1000_00_000_000)], // 1000 HUSDC (8 decimals)
+                ['0.0.6889338', BigInt(1000_000)], // 1000 hUSD (3 decimals)
             ]),
         })
     })
@@ -204,7 +204,7 @@ describe('/api/deposit/init', () => {
         // Mock insufficient treasury balance (second call)
         mockAccountBalanceQueryExecute.mockResolvedValueOnce({
             tokens: new Map([
-                ['0.0.429275', BigInt(50_00_000_000)], // Only 50 HUSDC (8 decimals)
+                ['0.0.6889338', BigInt(50_000)], // Only 50 hUSD (3 decimals)
             ]),
         })
 
