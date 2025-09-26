@@ -539,7 +539,7 @@ export function MintActionButton({
                         ? 'Processing Atomic Mint...'
                         : hasInsufficientBalance
                         ? 'Insufficient Balance'
-                        : `Mint (Atomic)`}
+                        : `Mint`}
                 </span>
             </Button>
 

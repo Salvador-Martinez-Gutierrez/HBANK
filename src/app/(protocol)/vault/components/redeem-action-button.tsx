@@ -338,12 +338,12 @@ export function RedeemActionButton({
     const inputAmount = parseFloat(fromAmount || '0')
     const canSubmit = Boolean(
         isConnected &&
-            accountId &&
-            currentRateData &&
-            inputAmount > 0 &&
-            hUSDBalance &&
-            inputAmount <= hUSDBalance &&
-            !isSubmitting
+        accountId &&
+        currentRateData &&
+        inputAmount > 0 &&
+        hUSDBalance &&
+        inputAmount <= hUSDBalance &&
+        !isSubmitting
     )
 
     // For instant withdrawals, also check max limit
@@ -370,20 +370,20 @@ export function RedeemActionButton({
                     </div>
                     <div className='text-xs space-y-1 text-blue-700'>
                         <div className='flex justify-between'>
-                            <span>Monto solicitado (hUSD):</span>
+                            <span>hUSD Redeemed:</span>
                             <span className='font-mono'>
                                 {amountValue.toFixed(6)} hUSD
                             </span>
                         </div>
                         <div className='flex justify-between'>
-                            <span>Monto bruto en USDC:</span>
+                            <span>Gross USDC:</span>
                             <span className='font-mono'>
                                 {instantAmounts.grossUSDC.toFixed(6)} USDC
                             </span>
                         </div>
                         <div className='flex justify-between'>
                             <span>
-                                Comisión aplicada (
+                                Applied Fee (
                                 {(INSTANT_WITHDRAW_FEE * 100).toFixed(1)}%):
                             </span>
                             <span className='font-mono text-red-600'>
@@ -391,7 +391,7 @@ export function RedeemActionButton({
                             </span>
                         </div>
                         <div className='flex justify-between font-semibold border-t pt-1'>
-                            <span>Monto neto recibido:</span>
+                            <span>Net USDC received:</span>
                             <span className='font-mono text-green-600'>
                                 {instantAmounts.netUSDC.toFixed(6)} USDC
                             </span>
@@ -410,9 +410,7 @@ export function RedeemActionButton({
             {redeemType === 'standard' && (
                 <div className='bg-yellow-50 border border-yellow-200 p-3 rounded-lg'>
                     <div className='text-xs text-yellow-700'>
-                        <strong>48-Hour Lock Period:</strong> Your hUSD will be
-                        locked for 48 hours before USDC is released for
-                        security.
+                        <strong>48-Hour Period:</strong> Your USDC will take up to 48 hours to arrive to your wallet.
                     </div>
                 </div>
             )}

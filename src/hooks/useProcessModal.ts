@@ -170,7 +170,7 @@ export const MINT_STEPS: ProcessStep[] = [
     {
         id: 'initialize',
         label: 'Initializing Transaction',
-        description: 'Creating atomic deposit schedule...',
+        description: 'Creating deposit scheduled transaction...',
         status: 'pending',
     },
     {
@@ -181,14 +181,14 @@ export const MINT_STEPS: ProcessStep[] = [
     },
     {
         id: 'complete',
-        label: 'Completing Atomic Transaction',
+        label: 'Completing Scheduled Transaction',
         description: 'Treasury signing and executing the transaction...',
         status: 'pending',
     },
     {
         id: 'finalize',
         label: 'Finalizing',
-        description: 'Updating balances and confirming transaction...',
+        description: 'Confirming transaction...',
         status: 'pending',
     },
 ]
@@ -209,7 +209,7 @@ export const REDEEM_INSTANT_STEPS: ProcessStep[] = [
     {
         id: 'finalize',
         label: 'Transfer Complete',
-        description: 'USDC transferred to your wallet...',
+        description: 'USDC transferred to your wallet.',
         status: 'pending',
     },
 ]
@@ -218,7 +218,7 @@ export const REDEEM_STANDARD_STEPS: ProcessStep[] = [
     {
         id: 'initialize',
         label: 'Creating Withdrawal Request',
-        description: 'Setting up scheduled hUSD transfer...',
+        description: 'Setting hUSD withdrawal request...',
         status: 'pending',
     },
     {
@@ -230,7 +230,7 @@ export const REDEEM_STANDARD_STEPS: ProcessStep[] = [
     {
         id: 'finalize',
         label: 'Request Submitted',
-        description: 'Your hUSD is now locked for 48 hours',
+        description: 'Your withdrawal request has been created.',
         status: 'pending',
     },
 ]

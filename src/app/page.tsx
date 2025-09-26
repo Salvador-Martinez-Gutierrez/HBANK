@@ -66,7 +66,7 @@ export default function Home() {
                                     Tokenized Yield Solutions
                                 </span>
                                 <br />
-                                Maximum Returns, Total Transparency
+                                On Hedera Hashgraph
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
                                 Hbank is the premier on-chain asset management
@@ -466,24 +466,6 @@ export default function Home() {
                                         className='text-muted-foreground transition-colors hover:text-primary'
                                     >
                                         <Twitter className='h-5 w-5' />
-                                    </Link>
-                                    <Link
-                                        href='#'
-                                        className='text-muted-foreground transition-colors hover:text-primary'
-                                    >
-                                        <Github className='h-5 w-5' />
-                                    </Link>
-                                    <Link
-                                        href='#'
-                                        className='text-muted-foreground transition-colors hover:text-primary'
-                                    >
-                                        <MessageCircle className='h-5 w-5' />
-                                    </Link>
-                                    <Link
-                                        href='#'
-                                        className='text-muted-foreground transition-colors hover:text-primary'
-                                    >
-                                        <Mail className='h-5 w-5' />
                                     </Link>
                                 </div>
                             </div>
