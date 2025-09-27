@@ -17,7 +17,6 @@ import {
     Sparkles,
     ChevronDown,
     Mail,
-    Twitter,
     Github,
     MessageCircle,
 } from 'lucide-react'
@@ -450,9 +449,9 @@ export default function Home() {
                 {/* Footer */}
                 <footer className='border-t bg-card/50'>
                     <div className='mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8'>
-                        <div className='grid gap-8 md:grid-cols-4 w-full'>
+                        <div className='grid gap-8 grid-cols-2 md:grid-cols-4 w-full'>
                             {/* Brand */}
-                            <div className='space-y-4'>
+                            <div className='space-y-4 col-span-2 md:col-span-1 ml-4 md:ml-0'>
                                 <h3 className='text-lg font-bold'>
                                     Hbank Protocol
                                 </h3>
@@ -465,13 +464,24 @@ export default function Home() {
                                         href='#'
                                         className='text-muted-foreground transition-colors hover:text-primary'
                                     >
-                                        <Twitter className='h-5 w-5' />
+                                        <svg
+                                            viewBox='0 0 24 24'
+                                            aria-hidden='true'
+                                            className='h-5 w-5'
+                                        >
+                                            <g>
+                                                <path
+                                                    fill='currentColor'
+                                                    d='M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'
+                                                />
+                                            </g>
+                                        </svg>
                                     </Link>
                                 </div>
                             </div>
 
                             {/* Products */}
-                            <div className='space-y-4 text-right'>
+                            <div className='space-y-4 text-left md:text-right ml-4 md:ml-0'>
                                 <h4 className='font-semibold'>Products</h4>
                                 <ul className='space-y-2 text-sm'>
                                     <li>
@@ -502,7 +512,7 @@ export default function Home() {
                             </div>
 
                             {/* Resources */}
-                            <div className='space-y-4 text-right'>
+                            <div className='space-y-4 text-left md:text-right ml-4 md:ml-0'>
                                 <h4 className='font-semibold'>Resources</h4>
                                 <ul className='space-y-2 text-sm'>
                                     <li>
@@ -539,7 +549,7 @@ export default function Home() {
                             </div>
 
                             {/* Legal */}
-                            <div className='space-y-4 text-right'>
+                            <div className='space-y-4 text-left md:text-right ml-4 md:ml-0'>
                                 <h4 className='font-semibold'>Legal</h4>
                                 <ul className='space-y-2 text-sm'>
                                     <li>
