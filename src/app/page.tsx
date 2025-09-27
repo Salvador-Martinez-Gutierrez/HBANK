@@ -16,9 +16,6 @@ import {
     Globe,
     Sparkles,
     ChevronDown,
-    Mail,
-    Github,
-    MessageCircle,
 } from 'lucide-react'
 import Head from 'next/head'
 import { useTVL } from '@/hooks/useTVL'

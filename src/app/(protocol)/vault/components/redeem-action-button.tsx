@@ -8,14 +8,7 @@ import { useRealTimeRate } from '@/hooks/useRealTimeRate'
 import { useWithdrawSubmit } from '@/hooks/useWithdrawSubmit'
 import { useInstantWithdraw } from '@/hooks/useInstantWithdraw'
 import { useTokenBalances } from '../hooks/useTokenBalances'
-import {
-    ScheduleSignTransaction,
-    ScheduleId,
-    Signer,
-    TransferTransaction,
-    TokenId,
-    AccountId,
-} from '@hashgraph/sdk'
+import { Signer, TransferTransaction, TokenId, AccountId } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { ProcessModal } from '@/components/process-modal'
@@ -318,76 +311,83 @@ export function RedeemActionButton({
             )
 
             if (!result.success) {
-                throw new Error(result.error || 'Failed to create withdrawal request')
+                throw new Error(
+                    result.error || 'Failed to create withdrawal request'
+                )
             }
 
             console.log('✅ [STANDARD WITHDRAW] Withdrawal request submitted')
 
             // Completar el proceso
             standardProcessModal.completeProcess()
-            
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-            console.error('❌ [STANDARD WITHDRAW] Error:', errorMessage)
-            standardProcessModal.setStepError(standardProcessModal.currentStep, errorMessage)
-            // No lanzar el error para evitar doble manejo
-        }
-    }
-
-    const handleScheduleSignature = async (scheduleTransactionId: string) => {
-        try {
-            // Validate signer before use
-            if (!isValidSigner(signer)) {
-                throw new Error('Invalid signer: wallet not properly connected')
-            }
-
-            // Create ScheduleSignTransaction for user to sign
-            const scheduleSignTx = new ScheduleSignTransaction().setScheduleId(
-                ScheduleId.fromString(scheduleTransactionId)
-            )
-
-            // Freeze with signer
-            const frozenScheduleTx = await scheduleSignTx.freezeWithSigner(
-                signer
-            )
-
-            // User signs the schedule
-            const signedScheduleTx = await frozenScheduleTx.signWithSigner(
-                signer
-            )
-
-            // Execute the user's signature
-            const userSignResponse = await signedScheduleTx.executeWithSigner(
-                signer
-            )
-            // Get receipt to confirm user signature
-            const userSignReceipt = await userSignResponse.getReceiptWithSigner(
-                signer
-            )
-
-            if (userSignReceipt.status.toString() !== 'SUCCESS') {
-                throw new Error(
-                    `User signature failed: ${userSignReceipt.status}`
-                )
-            }
-
-            // Paso 3: Finalizar proceso
-            standardProcessModal.nextStep()
-
-            // Completar el proceso - el callback onComplete manejará la limpieza
-            standardProcessModal.completeProcess()
-        } catch (err) {
-            console.error('Error signing Schedule Transaction:', err)
             const errorMessage =
-                err instanceof Error
-                    ? err.message
-                    : 'Failed to sign withdrawal transaction'
+                error instanceof Error
+                    ? error.message
+                    : 'Unknown error occurred'
+            console.error('❌ [STANDARD WITHDRAW] Error:', errorMessage)
             standardProcessModal.setStepError(
                 standardProcessModal.currentStep,
                 errorMessage
             )
+            // No lanzar el error para evitar doble manejo
         }
     }
+
+    // const handleScheduleSignature = async (scheduleTransactionId: string) => {
+    //     try {
+    //         // Validate signer before use
+    //         if (!isValidSigner(signer)) {
+    //             throw new Error('Invalid signer: wallet not properly connected')
+    //         }
+
+    //         // Create ScheduleSignTransaction for user to sign
+    //         const scheduleSignTx = new ScheduleSignTransaction().setScheduleId(
+    //             ScheduleId.fromString(scheduleTransactionId)
+    //         )
+
+    //         // Freeze with signer
+    //         const frozenScheduleTx = await scheduleSignTx.freezeWithSigner(
+    //             signer
+    //         )
+
+    //         // User signs the schedule
+    //         const signedScheduleTx = await frozenScheduleTx.signWithSigner(
+    //             signer
+    //         )
+
+    //         // Execute the user's signature
+    //         const userSignResponse = await signedScheduleTx.executeWithSigner(
+    //             signer
+    //         )
+    //         // Get receipt to confirm user signature
+    //         const userSignReceipt = await userSignResponse.getReceiptWithSigner(
+    //             signer
+    //         )
+
+    //         if (userSignReceipt.status.toString() !== 'SUCCESS') {
+    //             throw new Error(
+    //                 `User signature failed: ${userSignReceipt.status}`
+    //             )
+    //         }
+
+    //         // Paso 3: Finalizar proceso
+    //         standardProcessModal.nextStep()
+
+    //         // Completar el proceso - el callback onComplete manejará la limpieza
+    //         standardProcessModal.completeProcess()
+    //     } catch (err) {
+    //         console.error('Error signing Schedule Transaction:', err)
+    //         const errorMessage =
+    //             err instanceof Error
+    //                 ? err.message
+    //                 : 'Failed to sign withdrawal transaction'
+    //         standardProcessModal.setStepError(
+    //             standardProcessModal.currentStep,
+    //             errorMessage
+    //         )
+    //     }
+    // }
 
     // Determine if we can submit
     const inputAmount = parseFloat(fromAmount || '0')

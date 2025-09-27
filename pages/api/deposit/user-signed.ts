@@ -6,8 +6,6 @@ import {
     ScheduleId,
     AccountId,
     PrivateKey,
-    TransferTransaction,
-    TokenId,
     Hbar,
 } from '@hashgraph/sdk'
 

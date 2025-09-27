@@ -43,10 +43,12 @@ export function useRateHistory(
                     )
                 }
 
-                const formattedData = (result.data || []).map((point: any) => ({
-                    ...point,
-                    time: new Date(point.timestamp).getTime(),
-                }))
+                const formattedData = (result.data || []).map(
+                    (point: Omit<RateHistoryPoint, 'time'>) => ({
+                        ...point,
+                        time: new Date(point.timestamp).getTime(),
+                    })
+                )
 
                 setData(formattedData)
                 setLastUpdated(new Date())

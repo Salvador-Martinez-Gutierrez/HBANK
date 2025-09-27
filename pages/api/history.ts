@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { WithdrawService } from '@/services/withdrawService'
-import { TOKENS, WITHDRAW_TOPIC_ID, ACCOUNTS } from '@/app/backend-constants'
+import { TOKENS, ACCOUNTS } from '@/app/backend-constants'
 
 interface HistoryTransaction {
     timestamp: string

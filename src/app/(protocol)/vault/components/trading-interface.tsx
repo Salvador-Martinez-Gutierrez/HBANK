@@ -21,7 +21,6 @@ import { useTokenBalances } from '../hooks/useTokenBalances'
 import { useRealTimeRate } from '@/hooks/useRealTimeRate'
 import { useInstantWithdraw } from '@/hooks/useInstantWithdraw'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
-import { calculateInstantWithdrawal } from '@/lib/calculations'
 import { formatCurrency } from '@/lib/formatters'
 
 export function TradingInterface() {

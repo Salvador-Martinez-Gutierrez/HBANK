@@ -23,6 +23,17 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+// interface TooltipProps {
+//     active?: boolean
+//     payload?: Array<{
+//         payload: {
+//             rate: number
+//             displayDate: string
+//         }
+//     }>
+//     label?: string | number
+// }
+
 export default function PerformancePage() {
     const [timeRange, setTimeRange] = useState<'1h' | '4h' | '1d' | '7d'>('1d')
     const [limit, setLimit] = useState(100)
@@ -43,20 +54,59 @@ export default function PerformancePage() {
     }
 
     const formatTime = (timestamp: string) => {
-        return new Date(timestamp).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-        })
+        try {
+            // Handle Hedera timestamp format (seconds.nanoseconds)
+            let dateObj
+            if (timestamp.includes('.')) {
+                // Hedera format: "1640995200.123456789"
+                const [seconds] = timestamp.split('.')
+                dateObj = new Date(parseInt(seconds) * 1000)
+            } else {
+                // Standard ISO string or milliseconds
+                dateObj = new Date(timestamp)
+            }
+
+            if (isNaN(dateObj.getTime())) {
+                return 'Invalid time'
+            }
+
+            return dateObj.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            })
+        } catch {
+            return 'Invalid time'
+        }
     }
 
     const formatDate = (timestamp: string) => {
-        return new Date(timestamp).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-        })
+        try {
+            let dateObj
+            if (timestamp.includes('.')) {
+                // Hedera format: "1640995200.123456789"
+                const [seconds] = timestamp.split('.')
+                dateObj = new Date(parseInt(seconds) * 1000)
+            } else {
+                // Standard ISO string or milliseconds
+                dateObj = new Date(timestamp)
+            }
+
+            if (isNaN(dateObj.getTime())) {
+                return 'Invalid date'
+            }
+
+            return dateObj.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+            })
+        } catch {
+            return 'Invalid date'
+        }
     }
 
     // Prepare chart data with time formatting
@@ -78,22 +128,22 @@ export default function PerformancePage() {
     const isPositive = priceChange >= 0
     const isTotalPositive = totalChange >= 0
 
-    const CustomTooltip = ({ active, payload, label }: any) => {
-        if (active && payload && payload.length) {
-            const data = payload[0].payload
-            return (
-                <div className='bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3 text-sm'>
-                    <p className='font-semibold text-foreground'>
-                        {formatPrice(data.rate)}
-                    </p>
-                    <p className='text-muted-foreground text-xs'>
-                        {data.displayDate}
-                    </p>
-                </div>
-            )
-        }
-        return null
-    }
+    // const CustomTooltip = ({ active, payload }: TooltipProps) => {
+    //     if (active && payload && payload.length) {
+    //         const data = payload[0].payload
+    //         return (
+    //             <div className='bg-background/95 backdrop-blur-sm border border-border rounded-lg shadow-lg p-3 text-sm'>
+    //                 <p className='font-semibold text-foreground'>
+    //                     {formatPrice(data.rate)}
+    //                 </p>
+    //                 <p className='text-muted-foreground text-xs'>
+    //                     {data.displayDate}
+    //                 </p>
+    //             </div>
+    //         )
+    //     }
+    //     return null
+    // }
 
     return (
         <div className='h-full bg-background'>
@@ -109,7 +159,7 @@ export default function PerformancePage() {
                                 </Badge>
                             </h1>
                             <p className='text-sm text-muted-foreground mt-1'>
-                                Real-time rate data from Hedera Topic
+                                Real Time On-Chain Enforced Exchange Rate
                             </p>
                         </div>
                         <Button
@@ -312,7 +362,10 @@ export default function PerformancePage() {
                                             dataKey='index'
                                             axisLine={false}
                                             tickLine={false}
-                                            tick={false}
+                                            tick={{
+                                                fontSize: 11,
+                                                fill: 'hsl(var(--foreground))',
+                                            }}
                                             height={0}
                                         />
                                         <YAxis
@@ -324,7 +377,7 @@ export default function PerformancePage() {
                                             tickLine={false}
                                             tick={{
                                                 fontSize: 11,
-                                                fill: 'hsl(var(--muted-foreground))',
+                                                fill: '#ffffff',
                                             }}
                                             tickFormatter={formatPrice}
                                             width={65}
@@ -333,9 +386,9 @@ export default function PerformancePage() {
                                         {/* Reference line for opening price */}
                                         <ReferenceLine
                                             y={firstPrice}
-                                            stroke='hsl(var(--muted-foreground))'
+                                            stroke='#ffffff'
                                             strokeDasharray='2 2'
-                                            strokeOpacity={0.5}
+                                            strokeOpacity={0.4}
                                         />
 
                                         <Line
@@ -411,7 +464,7 @@ export default function PerformancePage() {
                                                             )}
                                                         </div>
                                                         <div className='text-xs text-muted-foreground'>
-                                                            {formatTime(
+                                                            {formatDate(
                                                                 point.timestamp
                                                             )}
                                                         </div>
