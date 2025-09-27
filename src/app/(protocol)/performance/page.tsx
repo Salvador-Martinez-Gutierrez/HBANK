@@ -341,20 +341,14 @@ export default function PerformancePage() {
                                         <Line
                                             type='linear'
                                             dataKey='rate'
-                                            stroke={
-                                                isPositive
-                                                    ? 'hsl(142, 76%, 36%)'
-                                                    : 'hsl(0, 84%, 60%)'
-                                            }
-                                            strokeWidth={2}
+                                            stroke='#3b82f6'
+                                            strokeWidth={3}
                                             dot={false}
                                             activeDot={{
                                                 r: 4,
-                                                stroke: isPositive
-                                                    ? 'hsl(142, 76%, 36%)'
-                                                    : 'hsl(0, 84%, 60%)',
+                                                stroke: '#3b82f6',
                                                 strokeWidth: 2,
-                                                fill: 'hsl(var(--background))',
+                                                fill: '#ffffff',
                                                 style: {
                                                     filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.2))',
                                                 },
