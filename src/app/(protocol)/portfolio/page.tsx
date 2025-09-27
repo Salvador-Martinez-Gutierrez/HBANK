@@ -106,7 +106,7 @@ export default function PortfolioPage() {
                         <span className='font-semibold'>
                             Current Exchange Rate:
                         </span>{' '}
-                        1 hUSD = ${parseFloat(balances.rate).toFixed(4)} USD
+                        1 hUSD = ${parseFloat(balances.rate).toFixed(4)}
                     </p>
                 </div>
             )}
