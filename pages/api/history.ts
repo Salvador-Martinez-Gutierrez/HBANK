@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { WithdrawService } from '@/services/withdrawService'
-import { TOPICS, TOKENS } from '@/app/constants'
+import { TOKENS, WITHDRAW_TOPIC_ID, ACCOUNTS } from '@/app/backend-constants'
 
 interface HistoryTransaction {
     timestamp: string
@@ -177,16 +177,20 @@ async function fetchUserDeposits(
     userAccountId: string,
     limit: number
 ): Promise<HistoryTransaction[]> {
-    const HUSD_TOKEN_ID = TOKENS.HUSD // hUSD token ID
-    const TREASURY_ID = process.env.TREASURY_ID || '0.0.6887438' // Treasury account ID
+    const HUSD_TOKEN_ID = TOKENS.husd // hUSD token ID
+    const USDC_TOKEN_ID = TOKENS.usdc // USDC token ID
+    const DEPOSIT_WALLET_ID = ACCOUNTS.deposit // Wallet de depósitos
     const mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
 
-    // Get token transfers where user received hUSD from treasury (deposits)
+    // Get token transfers where user sent USDC to deposit wallet (deposits)
     const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&transactiontype=cryptotransfer&order=desc&limit=${
         limit * 2
     }` // Get more to filter
 
     console.log(`🔍 Fetching deposits from Mirror Node: ${queryUrl}`)
+    console.log(`🔍 Using HUSD_TOKEN_ID: ${HUSD_TOKEN_ID}`)
+    console.log(`🔍 Using USDC_TOKEN_ID: ${USDC_TOKEN_ID}`)
+    console.log(`🔍 Using DEPOSIT_WALLET_ID: ${DEPOSIT_WALLET_ID}`)
 
     const response = await fetch(queryUrl)
     if (!response.ok) {
@@ -203,63 +207,75 @@ async function fetchUserDeposits(
     )
 
     for (const tx of transactions) {
-        if (!tx.token_transfers || !Array.isArray(tx.token_transfers)) continue
+        if (!tx.token_transfers || !Array.isArray(tx.token_transfers)) {
+            console.log(
+                `⚠️ Skipping tx ${tx.transaction_id} - no token transfers`
+            )
+            continue
+        }
 
-        // Look for hUSD transfers from treasury to user (indicating a deposit)
+        // Look for USDC transfers from user to deposit wallet (indicating a deposit)
+        let userSentUSDC = 0
+        let depositWalletReceivedUSDC = 0
         let userReceivedHUSD = 0
-        let treasurySentHUSD = 0
 
-        // Get decimals from environment
+        // Get decimals multipliers
         const HUSD_MULTIPLIER = Math.pow(
             10,
             parseInt(process.env.HUSD_DECIMALS || '3')
         )
+        const USDC_MULTIPLIER = 1_000_000 // USDC has 6 decimals
+
+        console.log(
+            `🔍 Processing tx ${tx.transaction_id} with ${tx.token_transfers.length} token transfers`
+        )
 
         for (const transfer of tx.token_transfers) {
+            console.log(
+                `  Token: ${transfer.token_id}, Account: ${transfer.account}, Amount: ${transfer.amount}`
+            )
+
+            // Check for USDC transfers
+            if (transfer.token_id === USDC_TOKEN_ID) {
+                if (transfer.account === userAccountId && transfer.amount < 0) {
+                    userSentUSDC = Math.abs(transfer.amount) / USDC_MULTIPLIER
+                    console.log(`    💵 User sent ${userSentUSDC} USDC`)
+                } else if (
+                    transfer.account === DEPOSIT_WALLET_ID &&
+                    transfer.amount > 0
+                ) {
+                    depositWalletReceivedUSDC =
+                        transfer.amount / USDC_MULTIPLIER
+                    console.log(
+                        `    ✅ Deposit wallet received ${depositWalletReceivedUSDC} USDC`
+                    )
+                }
+            }
+
+            // Check for hUSD transfers (user should receive hUSD in the same transaction)
             if (transfer.token_id === HUSD_TOKEN_ID) {
                 if (transfer.account === userAccountId && transfer.amount > 0) {
-                    userReceivedHUSD = transfer.amount / HUSD_MULTIPLIER // hUSD has 3 decimals
-                } else if (
-                    transfer.account === TREASURY_ID &&
-                    transfer.amount < 0
-                ) {
-                    treasurySentHUSD =
-                        Math.abs(transfer.amount) / HUSD_MULTIPLIER // hUSD has 3 decimals
+                    userReceivedHUSD = transfer.amount / HUSD_MULTIPLIER
+                    console.log(`    ✅ User received ${userReceivedHUSD} hUSD`)
                 }
             }
         }
 
-        // If user received hUSD from treasury, this is a deposit
+        // If user sent USDC to deposit wallet and received hUSD, this is a deposit
         if (
+            userSentUSDC > 0 &&
+            depositWalletReceivedUSDC > 0 &&
             userReceivedHUSD > 0 &&
-            treasurySentHUSD > 0 &&
-            Math.abs(userReceivedHUSD - treasurySentHUSD) < 0.001
+            Math.abs(userSentUSDC - depositWalletReceivedUSDC) < 0.001 // USDC amounts should match
         ) {
             console.log(
-                `💰 Found deposit: user received ${userReceivedHUSD} hUSD, treasury sent ${treasurySentHUSD} hUSD`
+                `💰 Found deposit: user sent ${userSentUSDC} USDC, deposit wallet received ${depositWalletReceivedUSDC} USDC, user received ${userReceivedHUSD} hUSD`
             )
 
-            // Try to find the corresponding USDC transfer to calculate the rate
-            let userSentUSDC = 0
-            const USDC_TOKEN_ID = TOKENS.USDC // USDC token ID
-
-            for (const transfer of tx.token_transfers) {
-                if (
-                    transfer.token_id === USDC_TOKEN_ID &&
-                    transfer.account === userAccountId &&
-                    transfer.amount < 0
-                ) {
-                    userSentUSDC = Math.abs(transfer.amount) / 1_000_000 // Convert from USDC decimals (6 decimals)
-                    break
-                }
-            }
-
             // Calculate rate (USDC per hUSD)
-            const rate =
-                userSentUSDC > 0 ? userSentUSDC / userReceivedHUSD : 1.0
+            const rate = userSentUSDC / userReceivedHUSD
 
             // Convert consensus_timestamp to proper ISO format
-            // Hedera consensus_timestamp format: "2024-01-15T10:30:45.123456789Z"
             let timestamp = tx.consensus_timestamp
             if (timestamp && !timestamp.includes('T')) {
                 // If it's just a number (seconds), convert to ISO
@@ -283,6 +299,15 @@ async function fetchUserDeposits(
             }
 
             deposits.push(deposit)
+            console.log(
+                `✅ Added deposit to history: ${JSON.stringify(deposit)}`
+            )
+        } else {
+            if (userSentUSDC > 0 || userReceivedHUSD > 0) {
+                console.log(
+                    `❌ Not a valid deposit: userSentUSDC=${userSentUSDC}, depositWalletReceived=${depositWalletReceivedUSDC}, userReceivedHUSD=${userReceivedHUSD}`
+                )
+            }
         }
     }
 

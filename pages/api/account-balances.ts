@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { TOPICS, TOKENS } from '@/app/constants'
+import { TOKENS, RATES_TOPIC_ID } from '@/app/backend-constants'
 
 // Function to get the latest rate from the topic
 async function getLatestRate(): Promise<number> {
     try {
-        const topicId = process.env.TOPIC_ID || TOPICS.RATE
+        const topicId = process.env.TOPIC_ID || RATES_TOPIC_ID
         const mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
         const url = `${mirrorNodeUrl}/api/v1/topics/${topicId}/messages?limit=1&order=desc`
 
@@ -152,8 +152,8 @@ export default async function handler(
         let husd = '0.00'
 
         const TOKEN_IDS = {
-            USDC: process.env.USDC_TOKEN_ID || TOKENS.USDC,
-            hUSD: process.env.HUSD_TOKEN_ID || TOKENS.HUSD,
+            USDC: process.env.USDC_TOKEN_ID || TOKENS.usdc,
+            hUSD: process.env.HUSD_TOKEN_ID || TOKENS.husd,
         } as const
 
         const DECIMALS_BY_TOKEN_ID: Record<string, number> = {

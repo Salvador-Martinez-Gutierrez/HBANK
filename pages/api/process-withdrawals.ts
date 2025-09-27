@@ -113,13 +113,25 @@ export default async function handler(
                 // Step 2: Verify HUSD was actually transferred to emissions wallet
                 // (Both standard and instant withdrawals now go to emissions wallet)
                 const emissionsWalletId = ACCOUNTS.emissions
-                const husdTransferVerified =
-                    await hederaService.verifyHUSDTransfer(
-                        withdrawal.user,
-                        emissionsWalletId,
-                        withdrawal.amountHUSD,
-                        withdrawal.requestedAt
+
+                // For new-style withdrawals, we don't need to verify HUSD again
+                // because it was already verified when the withdrawal was requested
+                let husdTransferVerified = true
+
+                if (!isNewStyleWithdrawal) {
+                    // Only verify for legacy withdrawals
+                    husdTransferVerified =
+                        await hederaService.verifyHUSDTransfer(
+                            withdrawal.user,
+                            emissionsWalletId,
+                            withdrawal.amountHUSD,
+                            withdrawal.requestedAt
+                        )
+                } else {
+                    console.log(
+                        '✅ New-style withdrawal: HUSD already verified during request, skipping verification'
                     )
+                }
 
                 if (!husdTransferVerified) {
                     console.log(`❌ HUSD transfer verification failed`)

@@ -730,10 +730,18 @@ export class HederaService {
 
             console.log(`   HUSD Token ID: ${husdTokenId}`)
 
+            // Add some buffer time to the 'since' parameter to account for clock differences
+            const sinceWithBuffer = new Date(
+                new Date(since).getTime() - 60000
+            ).toISOString() // 1 minute buffer
+            console.log(`   Since with buffer: ${sinceWithBuffer}`)
+
             // Retry logic: try multiple times with increasing delays
             // This accounts for Mirror Node synchronization delays
-            const maxRetries = 5
-            const retryDelays = [500, 1000, 2000, 3000, 5000] // milliseconds
+            const maxRetries = 8 // Increased from 5 to 8 attempts
+            const retryDelays = [
+                500, 1000, 2000, 3000, 5000, 8000, 12000, 15000,
+            ] // Added more delays
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 console.log(`🔄 Verification attempt ${attempt}/${maxRetries}`)
@@ -742,7 +750,7 @@ export class HederaService {
                     userAccountId,
                     treasuryId,
                     expectedAmount,
-                    since,
+                    sinceWithBuffer, // Use buffered timestamp
                     husdTokenId,
                     attempt
                 )
@@ -770,6 +778,12 @@ export class HederaService {
             console.log(
                 `📋 Expected ${expectedAmount} HUSD from ${userAccountId} to ${treasuryId}`
             )
+            console.log(
+                `⚠️ This might indicate a Mirror Node delay or the transaction was not executed properly`
+            )
+            console.log(
+                `💡 Check the Hedera Explorer for recent transactions involving account ${userAccountId}`
+            )
             return false
         } catch (error) {
             console.error(`❌ Error verifying HUSD transfer:`, error)
@@ -795,7 +809,7 @@ export class HederaService {
             'https://testnet.mirrornode.hedera.com'
         const sinceTimestamp = new Date(since).getTime() / 1000 // Convert to seconds
 
-        const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=50`
+        const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=100` // Increased limit to 100
         console.log(`🔍 Attempt ${attempt} - Querying Mirror Node:`, queryUrl)
 
         // Get transfers involving the user account since the withdrawal request
@@ -882,7 +896,8 @@ export class HederaService {
 
                             if (treasuryTransfer) {
                                 const treasuryAmount =
-                                    treasuryTransfer.amount / 1_000 // FIXED: HUSD uses 3 decimals, not 8
+                                    treasuryTransfer.amount /
+                                    this.HUSD_MULTIPLIER // Use consistent multiplier
                                 console.log(
                                     `📋 Attempt ${attempt} - Found complete HUSD transfer:`,
                                     {
@@ -924,6 +939,38 @@ export class HederaService {
 
         console.log(`❌ Attempt ${attempt} - No matching HUSD transfer found`)
         return false
+    }
+
+    /**
+     * Debug function to check if a specific transaction exists in Mirror Node
+     */
+    async checkTransactionInMirrorNode(txId: string): Promise<boolean> {
+        try {
+            const mirrorNodeUrl =
+                process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+                'https://testnet.mirrornode.hedera.com'
+            const response = await fetch(
+                `${mirrorNodeUrl}/api/v1/transactions/${txId}`
+            )
+
+            if (response.ok) {
+                const txData = await response.json()
+                console.log(`🔍 Transaction ${txId} found in Mirror Node:`, {
+                    status: txData.result,
+                    timestamp: txData.consensus_timestamp,
+                    transfers: txData.token_transfers?.length || 0,
+                })
+                return true
+            } else {
+                console.log(
+                    `❌ Transaction ${txId} not found in Mirror Node: ${response.status}`
+                )
+                return false
+            }
+        } catch (error) {
+            console.error(`❌ Error checking transaction ${txId}:`, error)
+            return false
+        }
     }
 
     /**

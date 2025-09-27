@@ -25,7 +25,7 @@ export const TESTNET_MIRROR_NODE_ENDPOINT =
 // TOPIC IDS
 // ===================================
 
-export const WITHDRAW_TOPIC_ID = process.env.WITHDRAW_TOPIC_ID || '0.0.6908395'
+export const WITHDRAW_TOPIC_ID = process.env.WITHDRAW_TOPIC_ID || '0.0.6908400'
 export const RATES_TOPIC_ID = process.env.RATES_TOPIC_ID || '0.0.6908395'
 
 // ===================================
@@ -37,6 +37,7 @@ export const ACCOUNTS = {
     emissions: process.env.EMISSIONS_WALLET_ID || '0.0.6887460',
     instantWithdraw: process.env.INSTANT_WITHDRAW_WALLET_ID || '0.0.6887450',
     operator: process.env.HEDERA_OPERATOR_ID || '0.0.6887438',
+    deposit: process.env.DEPOSIT_WALLET_ID || '0.0.6887448', // Wallet de depósitos
 }
 
 // ===================================
