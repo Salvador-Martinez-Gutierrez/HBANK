@@ -26,8 +26,8 @@ export default function TransparencyPage() {
 
             <div className='my-8'>
                 <div className='mt-6 mb-8 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800'>
-                    The information below displays mock data for demonstration
-                    purposes only.
+                    The Capital Allocation information currently displays mock data for demonstration
+                    purposes only. Milestone 1 will integrate real DeFi strategies using the Hackathon price to back hUSD tokens.
                 </div>
 
                 <div className='mt-8'>

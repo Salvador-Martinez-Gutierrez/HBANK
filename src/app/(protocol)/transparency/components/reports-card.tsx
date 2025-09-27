@@ -16,7 +16,7 @@ export default function ReportsCard() {
       <CardHeader>
         <CardTitle className="text-2xl">Independent Verifications and Attestations</CardTitle>
         <CardDescription>
-          Midas partnered with Ankura Trust to independently verify Collateral Assets and propagate
+          Hbank partnered with independent auditors to verify Collateral Assets and propagate
           pricing on-chain.
         </CardDescription>
       </CardHeader>
