@@ -213,7 +213,7 @@ export default function PerformancePage() {
             </div>
 
             {/* Chart Section */}
-            <div className='p-6'>
+            <div className='p-4'>
                 <Card className='border-0 shadow-none bg-background'>
                     <CardContent className='p-0'>
                         {/* Time Range Selector */}
@@ -257,14 +257,14 @@ export default function PerformancePage() {
 
                         {/* Price Chart */}
                         {loading ? (
-                            <div className='h-96 flex items-center justify-center bg-muted/10 rounded-lg'>
+                            <div className='h-64 flex items-center justify-center bg-muted/10 rounded-lg'>
                                 <div className='flex items-center gap-2 text-muted-foreground'>
                                     <RefreshCw className='h-5 w-5 animate-spin' />
                                     Loading price data...
                                 </div>
                             </div>
                         ) : error ? (
-                            <div className='h-96 flex items-center justify-center bg-muted/10 rounded-lg'>
+                            <div className='h-64 flex items-center justify-center bg-muted/10 rounded-lg'>
                                 <div className='text-center'>
                                     <p className='text-destructive font-medium'>
                                         Failed to load price data
@@ -282,7 +282,7 @@ export default function PerformancePage() {
                                 </div>
                             </div>
                         ) : data.length === 0 ? (
-                            <div className='h-96 flex items-center justify-center bg-muted/10 rounded-lg'>
+                            <div className='h-64 flex items-center justify-center bg-muted/10 rounded-lg'>
                                 <div className='text-center'>
                                     <p className='text-muted-foreground'>
                                         No price data available
@@ -297,15 +297,15 @@ export default function PerformancePage() {
                                 </div>
                             </div>
                         ) : (
-                            <div className='h-96 w-full bg-muted/5 rounded-lg p-4'>
+                            <div className='h-64 w-full bg-muted/5 rounded-lg p-3'>
                                 <ResponsiveContainer width='100%' height='100%'>
                                     <LineChart
                                         data={chartData}
                                         margin={{
-                                            top: 20,
-                                            right: 20,
-                                            left: 20,
-                                            bottom: 20,
+                                            top: 10,
+                                            right: 15,
+                                            left: 15,
+                                            bottom: 10,
                                         }}
                                     >
                                         <XAxis
@@ -327,7 +327,7 @@ export default function PerformancePage() {
                                                 fill: 'hsl(var(--muted-foreground))',
                                             }}
                                             tickFormatter={formatPrice}
-                                            width={80}
+                                            width={65}
                                         />
 
                                         {/* Reference line for opening price */}
