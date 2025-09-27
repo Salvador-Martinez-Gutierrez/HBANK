@@ -3,11 +3,13 @@ import {
     FileText,
     PieChart,
     CircleDollarSign,
+    TrendingUp,
 } from 'lucide-react'
 
 export const navigation = [
     { name: 'hUSD', href: '/vault', icon: CircleDollarSign },
     { name: 'Portfolio', href: '/portfolio', icon: PieChart },
+    { name: 'Performance', href: '/performance', icon: TrendingUp },
     { name: 'Transparency', href: '/transparency', icon: Eye },
 ]
 
@@ -29,5 +31,9 @@ export const socialLinks = [
 ]
 
 export const resourceLinks = [
-    { name: 'Docs', href: 'https://hbank.gitbook.io/hbank-docs/', icon: <FileText className='h-6 w-6' /> },
+    {
+        name: 'Docs',
+        href: 'https://hbank.gitbook.io/hbank-docs/',
+        icon: <FileText className='h-6 w-6' />,
+    },
 ]
