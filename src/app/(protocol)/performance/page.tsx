@@ -20,8 +20,11 @@ import {
     Activity,
     ArrowUp,
     ArrowDown,
+    ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { RATES_TOPIC_ID } from '@/app/backend-constants'
+import { useTheme } from '@/components/theme-provider'
 
 // interface TooltipProps {
 //     active?: boolean
@@ -37,6 +40,10 @@ import { cn } from '@/lib/utils'
 export default function PerformancePage() {
     const [timeRange, setTimeRange] = useState<'1h' | '4h' | '1d' | '7d'>('1d')
     const [limit, setLimit] = useState(100)
+    const { theme } = useTheme()
+
+    // Determine tick color based on theme
+    const tickColor = theme === 'dark' ? '#ffffff' : '#000000'
 
     const {
         data,
@@ -183,16 +190,18 @@ export default function PerformancePage() {
                     <div className='flex items-baseline gap-4 mb-4'>
                         <div className='flex items-baseline gap-2'>
                             <span className='text-3xl font-bold text-foreground'>
-                                {loading ? '...' : formatPrice(currentRate)}
+                                {loading
+                                    ? '...'
+                                    : `$${formatPrice(currentRate)}`}
                             </span>
                             <span className='text-sm text-muted-foreground'>
-                                hUSD
+                                1 hUSD
                             </span>
                         </div>
 
                         <div
                             className={cn(
-                                'flex items-center gap-1 px-2 py-1 rounded text-sm font-medium',
+                                'lg:hidden flex items-center gap-1 px-2 py-1 rounded text-sm font-medium',
                                 isPositive
                                     ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
                                     : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
@@ -215,8 +224,8 @@ export default function PerformancePage() {
                     </div>
 
                     {/* Stats Row */}
-                    <div className='grid grid-cols-4 gap-6 text-sm'>
-                        <div>
+                    <div className='hidden xl:grid grid-cols-4 gap-4 text-sm'>
+                        <div className='text-right'>
                             <span className='text-muted-foreground block'>
                                 24h Change
                             </span>
@@ -234,7 +243,7 @@ export default function PerformancePage() {
                                 {totalChangePercent.toFixed(2)}%)
                             </span>
                         </div>
-                        <div>
+                        <div className='text-right'>
                             <span className='text-muted-foreground block'>
                                 24h High
                             </span>
@@ -242,7 +251,7 @@ export default function PerformancePage() {
                                 {formatPrice(highPrice)}
                             </span>
                         </div>
-                        <div>
+                        <div className='text-right'>
                             <span className='text-muted-foreground block'>
                                 24h Low
                             </span>
@@ -250,7 +259,7 @@ export default function PerformancePage() {
                                 {formatPrice(lowPrice)}
                             </span>
                         </div>
-                        <div>
+                        <div className='text-right'>
                             <span className='text-muted-foreground block'>
                                 Data Points
                             </span>
@@ -263,7 +272,7 @@ export default function PerformancePage() {
             </div>
 
             {/* Chart Section */}
-            <div className='p-4'>
+            <div>
                 <Card className='border-0 shadow-none bg-background'>
                     <CardContent className='p-0'>
                         {/* Time Range Selector */}
@@ -298,10 +307,6 @@ export default function PerformancePage() {
                                         </Button>
                                     )
                                 )}
-                            </div>
-                            <div className='text-xs text-muted-foreground'>
-                                {lastUpdated &&
-                                    `Last updated: ${lastUpdated.toLocaleTimeString()}`}
                             </div>
                         </div>
 
@@ -381,6 +386,7 @@ export default function PerformancePage() {
                                             }}
                                             tickFormatter={formatPrice}
                                             width={65}
+                                            tickCount={4}
                                         />
 
                                         {/* Reference line for opening price */}
@@ -417,11 +423,27 @@ export default function PerformancePage() {
                 {/* Recent Transactions Table */}
                 {data.length > 0 && (
                     <Card className='mt-6'>
-                        <CardContent className='p-4'>
-                            <h3 className='font-semibold text-lg mb-4 flex items-center gap-2'>
-                                <Activity className='h-5 w-5' />
-                                Recent Price Updates
-                            </h3>
+                        <CardContent className='px-4'>
+                            <div className='flex items-center justify-between mb-4'>
+                                <h3 className='font-semibold text-lg flex items-center gap-2'>
+                                    <Activity className='h-5 w-5' />
+                                    Recent hUSD Rate Updates
+                                </h3>
+                                <Button
+                                    variant='outline'
+                                    size='sm'
+                                    className='gap-2'
+                                    onClick={() =>
+                                        window.open(
+                                            `https://hashscan.io/testnet/topic/${RATES_TOPIC_ID}/messages`,
+                                            '_blank'
+                                        )
+                                    }
+                                >
+                                    <ExternalLink className='h-4 w-4' />
+                                    View on Hashscan
+                                </Button>
+                            </div>
                             <div className='space-y-2 max-h-60 overflow-y-auto'>
                                 {data
                                     .slice(-10)

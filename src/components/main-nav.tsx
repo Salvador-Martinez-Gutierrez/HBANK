@@ -25,7 +25,7 @@ export function MainNav() {
             label: 'hUSD APY',
             value: '13.33%',
             tooltip:
-                'Annual Percentage Yield earned by hUSD holders through USDC deployments in bluechip DeFi protocols.',
+                'Annual Percentage Yield earned by hUSD holders through USDC deployments in bluechip DeFi protocols. Currently hardcoded at 13.33%.',
         },
     ]
 
