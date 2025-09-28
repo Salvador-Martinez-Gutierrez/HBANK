@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardHeader } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -19,7 +19,10 @@ import { HistoryCards } from '@/components/history-cards'
 import { useWallet, useAccountId } from '@buidlerlabs/hashgraph-react-wallets'
 import { useTokenBalances } from '../hooks/useTokenBalances'
 import { useRealTimeRate } from '@/hooks/useRealTimeRate'
-import { useInstantWithdraw } from '@/hooks/useInstantWithdraw'
+import {
+    useInstantWithdraw,
+    refreshInstantWithdrawMax,
+} from '@/hooks/useInstantWithdraw'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { formatCurrency } from '@/lib/formatters'
 
@@ -46,8 +49,29 @@ export function TradingInterface() {
     const { rateData } = useRealTimeRate()
 
     // Instant withdrawal hook for checking limits
-    const { maxInstantWithdrawable, isLoading: isLoadingMaxAmount } =
-        useInstantWithdraw()
+    const {
+        maxInstantWithdrawable,
+        isLoading: isLoadingMaxAmount,
+        refreshMaxAmount,
+    } = useInstantWithdraw()
+
+    // Enhanced refresh function that also updates instant withdraw max
+    const enhancedRefreshBalances = async () => {
+        await Promise.all([
+            refreshBalances(),
+            refreshMaxAmount(),
+            // Also trigger global refresh for other components
+            (() => refreshInstantWithdrawMax())(),
+        ])
+    }
+
+    // Debug effect to track maxInstantWithdrawable changes
+    useEffect(() => {
+        console.log(
+            '🔍 [TradingInterface] maxInstantWithdrawable updated:',
+            maxInstantWithdrawable
+        )
+    }, [maxInstantWithdrawable])
 
     // Token configuration based on active tab
     const fromToken = activeTab === 'mint' ? 'USDC' : 'hUSD'
@@ -182,7 +206,10 @@ export function TradingInterface() {
 
             {/* Instant withdrawal limit warning */}
             {activeTab === 'redeem' && redeemType === 'instant' && rateData && (
-                <div className='bg-blue-50 border border-blue-200 p-3 rounded-lg'>
+                <div
+                    key={`instant-limit-${maxInstantWithdrawable}`}
+                    className='bg-blue-50 border border-blue-200 p-3 rounded-lg'
+                >
                     <div className='text-sm text-blue-800'>
                         <strong>Instant Withdrawal Capacity:</strong> Maximum{' '}
                         {formatCurrency(maxInstantWithdrawable, 6)} USDC (
@@ -206,7 +233,7 @@ export function TradingInterface() {
                     fromAmount={fromAmount}
                     toAmount={toAmount}
                     usdcBalance={balances.USDC}
-                    onBalanceRefresh={refreshBalances}
+                    onBalanceRefresh={enhancedRefreshBalances}
                     onInputClear={handleInputClear}
                     rateData={rateData}
                 />
@@ -214,7 +241,7 @@ export function TradingInterface() {
                 <RedeemActionButton
                     fromAmount={fromAmount}
                     hUSDBalance={parseFloat(balances.hUSD) || 0}
-                    onBalanceRefresh={refreshBalances}
+                    onBalanceRefresh={enhancedRefreshBalances}
                     onInputClear={handleInputClear}
                     rateData={rateData || undefined}
                     redeemType={redeemType}

@@ -6,7 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Loader2, AlertTriangle, Zap } from 'lucide-react'
 import { useRealTimeRate } from '@/hooks/useRealTimeRate'
 import { useWithdrawSubmit } from '@/hooks/useWithdrawSubmit'
-import { useInstantWithdraw } from '@/hooks/useInstantWithdraw'
+import {
+    useInstantWithdraw,
+    refreshInstantWithdrawMax,
+} from '@/hooks/useInstantWithdraw'
 import { useTokenBalances } from '../hooks/useTokenBalances'
 import { Signer, TransferTransaction, TokenId, AccountId } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
@@ -70,6 +73,8 @@ export function RedeemActionButton({
             if (onInputClear) onInputClear()
             await refreshBalances()
             if (onBalanceRefresh) await onBalanceRefresh()
+            // Force refresh of instant withdraw max amount across all components
+            refreshInstantWithdrawMax()
         },
         onError: (error) => toastSuccess(`Instant redeem failed: ${error}`),
     })

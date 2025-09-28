@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 
 interface InstantWithdrawData {
@@ -37,12 +37,32 @@ interface UseInstantWithdrawReturn {
     refreshMaxAmount: () => Promise<void>
 }
 
+// Simple global state for forcing refresh
+let globalRefreshTimestamp = Date.now()
+const refreshCallbacks = new Set<() => void>()
+
+const triggerGlobalRefresh = () => {
+    globalRefreshTimestamp = Date.now()
+    console.log(
+        '🌐 [useInstantWithdraw] Triggering global refresh, notifying',
+        refreshCallbacks.size,
+        'instances'
+    )
+    refreshCallbacks.forEach((callback) => callback())
+}
+
+// Export the trigger function for use by other components if needed
+export const refreshInstantWithdrawMax = () => {
+    triggerGlobalRefresh()
+}
+
 export function useInstantWithdraw(): UseInstantWithdrawReturn {
     const [maxInstantWithdrawable, setMaxInstantWithdrawable] = useState(0)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [lastRefresh, setLastRefresh] = useState(Date.now())
 
-    const fetchMaxInstantWithdrawable = async () => {
+    const fetchMaxInstantWithdrawable = useCallback(async () => {
         setIsLoading(true)
         setError(null)
 
@@ -58,6 +78,10 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
             }
 
             setMaxInstantWithdrawable(data.maxInstantWithdrawable)
+            console.log(
+                '🔄 [useInstantWithdraw] Max amount updated to:',
+                data.maxInstantWithdrawable
+            )
         } catch (err) {
             const errorMessage =
                 err instanceof Error ? err.message : 'Unknown error'
@@ -66,11 +90,11 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [])
 
-    const refreshMaxAmount = async () => {
+    const refreshMaxAmount = useCallback(async () => {
         await fetchMaxInstantWithdrawable()
-    }
+    }, [fetchMaxInstantWithdrawable])
 
     const calculateInstantWithdrawAmounts = (
         amountHUSD: number,
@@ -124,8 +148,10 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
             }
 
             console.log('✅ Instant withdraw successful!')
-            // Refresh max amount after successful withdrawal
+
+            // Refresh max amount after successful withdrawal and trigger global refresh
             await fetchMaxInstantWithdrawable()
+            triggerGlobalRefresh()
 
             return data
         } catch (err) {
@@ -139,10 +165,32 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
         }
     }
 
+    // Subscribe to global refresh updates
+    useEffect(() => {
+        const handleRefresh = () => {
+            setLastRefresh(Date.now())
+        }
+
+        refreshCallbacks.add(handleRefresh)
+        return () => {
+            refreshCallbacks.delete(handleRefresh)
+        }
+    }, [])
+
+    // Refresh when global refresh is triggered
+    useEffect(() => {
+        if (lastRefresh < globalRefreshTimestamp) {
+            console.log(
+                '🔄 [useInstantWithdraw] Global refresh triggered, updating max amount...'
+            )
+            fetchMaxInstantWithdrawable()
+        }
+    }, [lastRefresh, fetchMaxInstantWithdrawable])
+
     // Fetch max amount on mount
     useEffect(() => {
         fetchMaxInstantWithdrawable()
-    }, [])
+    }, [fetchMaxInstantWithdrawable])
 
     return {
         maxInstantWithdrawable,

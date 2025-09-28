@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { HederaService } from '../../../../src/services/hederaService'
 import { WithdrawService } from '../../../../src/services/withdrawService'
+import { TelegramService } from '../../../../src/services/telegramService'
 import {
     NUMERIC,
     TOKENS,
@@ -322,6 +323,33 @@ export default async function handler(
             txId: topicTxId,
             status: topicReceipt.status.toString(),
         })
+
+        // Step 7: Send Telegram notification
+        console.log('📱 [INSTANT WITHDRAW] Sending Telegram notification...')
+
+        try {
+            const telegramService = new TelegramService()
+            // Calculate the balance after withdrawal (balance before - net amount sent)
+            const walletBalanceAfter = instantWithdrawWalletBalance - netUSDC
+
+            await telegramService.sendWithdrawNotification({
+                type: 'instant',
+                userAccountId,
+                amountHUSD,
+                amountUSDC: netUSDC,
+                rate,
+                txId: transferTxId,
+                fee,
+                timestamp: new Date().toISOString(),
+                walletBalanceAfter,
+            })
+        } catch (telegramError) {
+            console.error(
+                '❌ [INSTANT WITHDRAW] Telegram notification failed:',
+                telegramError
+            )
+            // Don't fail the entire withdrawal process due to notification error
+        }
 
         // Success response
         console.log('🎉 [INSTANT WITHDRAW] Process completed successfully')

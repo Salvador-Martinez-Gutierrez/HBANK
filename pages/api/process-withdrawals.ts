@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { WithdrawService } from '@/services/withdrawService'
 import { HederaService } from '@/services/hederaService'
+import { TelegramService } from '@/services/telegramService'
 import { ACCOUNTS } from '@/app/backend-constants'
 
 interface WithdrawProcessingResult {
@@ -165,17 +166,18 @@ export default async function handler(
                 const usdcAmount = withdrawal.amountHUSD * withdrawal.rate
                 const usdcTokenId = process.env.USDC_TOKEN_ID!
 
-                // Check treasury USDC balance (USDC payments come from treasury)
-                const treasuryWalletId = ACCOUNTS.treasury
-                const treasuryBalance = await hederaService.checkBalance(
-                    treasuryWalletId,
-                    usdcTokenId
-                )
+                // Check Standard Withdraw USDC balance (USDC payments come from standard withdraw wallet)
+                const standardWithdrawWalletId = ACCOUNTS.standardWithdraw
+                const standardWithdrawBalance =
+                    await hederaService.checkBalance(
+                        standardWithdrawWalletId,
+                        usdcTokenId
+                    )
                 console.log(
-                    `Treasury USDC balance: ${treasuryBalance}, Required: ${usdcAmount}`
+                    `Standard Withdraw USDC balance: ${standardWithdrawBalance}, Required: ${usdcAmount}`
                 )
 
-                if (treasuryBalance >= usdcAmount) {
+                if (standardWithdrawBalance >= usdcAmount) {
                     console.log(
                         `✅ Sufficient balance, transferring ${usdcAmount} USDC to ${withdrawal.user}`
                     )
@@ -191,6 +193,31 @@ export default async function handler(
                             'completed',
                             txId
                         )
+
+                        // Send Telegram notification for successful standard withdrawal
+                        try {
+                            const telegramService = new TelegramService()
+                            // Calculate the balance after withdrawal (balance before - amount sent)
+                            const walletBalanceAfter =
+                                standardWithdrawBalance - usdcAmount
+
+                            await telegramService.sendWithdrawNotification({
+                                type: 'standard',
+                                userAccountId: withdrawal.user,
+                                amountHUSD: withdrawal.amountHUSD,
+                                amountUSDC: usdcAmount,
+                                rate: withdrawal.rate,
+                                txId: txId,
+                                timestamp: new Date().toISOString(),
+                                walletBalanceAfter,
+                            })
+                        } catch (telegramError) {
+                            console.error(
+                                '❌ Telegram notification failed for standard withdrawal:',
+                                telegramError
+                            )
+                            // Don't fail the entire withdrawal process due to notification error
+                        }
 
                         results.completed++
                         console.log(
@@ -261,7 +288,9 @@ export default async function handler(
                         }
                     }
                 } else {
-                    console.log(`❌ Insufficient treasury USDC balance`)
+                    console.log(
+                        `❌ Insufficient Standard Withdraw USDC balance`
+                    )
                     console.log(`🔄 Attempting to rollback HUSD to user...`)
 
                     try {
@@ -280,7 +309,7 @@ export default async function handler(
                             withdrawal.requestId,
                             'failed',
                             rollbackTxId,
-                            'Insufficient treasury USDC balance. HUSD tokens have been returned to your account.'
+                            'Insufficient Standard Withdraw USDC balance. HUSD tokens have been returned to your account.'
                         )
 
                         results.failed++
@@ -297,7 +326,7 @@ export default async function handler(
                             withdrawal.requestId,
                             'failed',
                             undefined,
-                            `Insufficient treasury USDC balance and failed to return HUSD: ${
+                            `Insufficient Standard Withdraw USDC balance and failed to return HUSD: ${
                                 rollbackError instanceof Error
                                     ? rollbackError.message
                                     : rollbackError

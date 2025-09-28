@@ -36,6 +36,7 @@ export const ACCOUNTS = {
     treasury: process.env.TREASURY_WALLET_ID || '0.0.6887438',
     emissions: process.env.EMISSIONS_WALLET_ID || '0.0.6887460',
     instantWithdraw: process.env.INSTANT_WITHDRAW_WALLET_ID || '0.0.6887450',
+    standardWithdraw: process.env.STANDARD_WITHDRAW_WALLET_ID || '0.0.6887453',
     operator: process.env.HEDERA_OPERATOR_ID || '0.0.6887438',
     deposit: process.env.DEPOSIT_WALLET_ID || '0.0.6887448', // Wallet de depósitos
 }
