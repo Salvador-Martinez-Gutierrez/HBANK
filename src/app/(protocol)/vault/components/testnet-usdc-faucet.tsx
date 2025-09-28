@@ -15,7 +15,7 @@ export function TestnetUsdcFaucet() {
       >
         Circle&apos;s Official Faucet
       </a>
-      . Make sure to associate USDC Token Id to your wallet first: 0.0.429274
+      . Make sure to associate USDC Token Id first: 0.0.429274
     </div>
   )
 }
