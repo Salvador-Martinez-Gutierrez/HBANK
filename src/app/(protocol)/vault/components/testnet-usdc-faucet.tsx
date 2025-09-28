@@ -13,7 +13,7 @@ export function TestnetUsdcFaucet() {
         rel="noopener noreferrer"
         className="text-sm text-amber-800 hover:text-blue-500 underline"
       >
-        Circle&apos;s official faucet
+        Circle&apos;s Official Faucet
       </a>
     </div>
   )
