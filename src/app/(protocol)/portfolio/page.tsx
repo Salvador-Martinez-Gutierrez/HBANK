@@ -49,7 +49,7 @@ export default function PortfolioPage() {
         })
     }
 
-    // Token card configuration to avoid duplication
+    //Token card configuration to avoid duplication
     const tokenConfigs = [
         {
             key: 'hbar' as const,
