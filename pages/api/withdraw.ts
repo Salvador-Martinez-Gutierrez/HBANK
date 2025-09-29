@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { HederaService } from '@/services/hederaService'
 import { WithdrawService } from '@/services/withdrawService'
-import { TelegramService } from '@/services/telegramService'
 import { ACCOUNTS } from '@/app/backend-constants'
 
 export default async function handler(

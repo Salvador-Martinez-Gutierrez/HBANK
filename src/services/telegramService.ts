@@ -209,29 +209,29 @@ export class TelegramService {
     /**
      * Get bot information for debugging
      */
-    async getBotInfo(): Promise<any> {
+    async getBotInfo(): Promise<Record<string, unknown> | null> {
         if (!this.isEnabled || !this.bot) {
             return null
         }
 
         try {
             const me = await this.bot.getMe()
+            const meUnknown = me as unknown as Record<string, unknown>
             return {
                 id: me.id,
                 is_bot: me.is_bot,
                 first_name: me.first_name,
                 username: me.username,
                 // Optional properties that might not exist in all versions
-                ...((me as any).can_join_groups !== undefined && {
-                    can_join_groups: (me as any).can_join_groups,
+                ...(meUnknown.can_join_groups !== undefined && {
+                    can_join_groups: meUnknown.can_join_groups,
                 }),
-                ...((me as any).can_read_all_group_messages !== undefined && {
-                    can_read_all_group_messages: (me as any)
-                        .can_read_all_group_messages,
+                ...(meUnknown.can_read_all_group_messages !== undefined && {
+                    can_read_all_group_messages:
+                        meUnknown.can_read_all_group_messages,
                 }),
-                ...((me as any).supports_inline_queries !== undefined && {
-                    supports_inline_queries: (me as any)
-                        .supports_inline_queries,
+                ...(meUnknown.supports_inline_queries !== undefined && {
+                    supports_inline_queries: meUnknown.supports_inline_queries,
                 }),
             }
         } catch (error) {
@@ -243,7 +243,13 @@ export class TelegramService {
     /**
      * Get recent updates to help find chat IDs
      */
-    async getRecentUpdates(): Promise<any[]> {
+    async getRecentUpdates(): Promise<
+        Array<{
+            chat_id: number
+            chat_type: string
+            chat_title: string
+        }>
+    > {
         if (!this.isEnabled || !this.bot) {
             return []
         }
@@ -264,7 +270,9 @@ export class TelegramService {
                           }
                         : null
                 })
-                .filter(Boolean)
+                .filter(
+                    (item): item is NonNullable<typeof item> => item !== null
+                )
         } catch (error) {
             console.error('❌ Error getting updates:', error)
             return []

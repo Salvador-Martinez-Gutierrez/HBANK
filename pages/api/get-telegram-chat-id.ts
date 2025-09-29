@@ -68,11 +68,11 @@ export default async function handler(
 
         // Remove duplicates based on chat_id
         const uniqueChats = chats.reduce((acc, chat) => {
-            if (!acc.find((c) => c?.chat_id === chat?.chat_id)) {
+            if (chat && !acc.find((c) => c && c.chat_id === chat.chat_id)) {
                 acc.push(chat)
             }
             return acc
-        }, [] as any[])
+        }, [] as typeof chats)
 
         return res.status(200).json({
             success: true,

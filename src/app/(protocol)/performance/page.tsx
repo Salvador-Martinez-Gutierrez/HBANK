@@ -24,7 +24,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RATES_TOPIC_ID } from '@/app/backend-constants'
-import { useTheme } from '@/components/theme-provider'
 
 // interface TooltipProps {
 //     active?: boolean
@@ -40,17 +39,12 @@ import { useTheme } from '@/components/theme-provider'
 export default function PerformancePage() {
     const [timeRange, setTimeRange] = useState<'1h' | '4h' | '1d' | '7d'>('1d')
     const [limit, setLimit] = useState(100)
-    const { theme } = useTheme()
-
-    // Determine tick color based on theme
-    const tickColor = theme === 'dark' ? '#ffffff' : '#000000'
 
     const {
         data,
         loading,
         error,
         refetch,
-        lastUpdated,
         currentRate,
         priceChange,
         priceChangePercent,
