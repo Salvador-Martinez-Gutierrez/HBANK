@@ -13,9 +13,9 @@ export function TestnetUsdcFaucet() {
         rel="noopener noreferrer"
         className="text-sm text-amber-800 hover:text-blue-500 underline"
       >
-        Circle&apos;s Official Faucet.
+        Circle&apos;s Official Faucet
       </a>
-      Make sure to associate USDC Token Id: 0.0.429274
+      . Make sure to associate USDC Token Id: 0.0.429274
     </div>
   )
 }

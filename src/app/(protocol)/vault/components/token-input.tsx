@@ -46,6 +46,7 @@ export function TokenInput({
                         (() => {
                             const [imagePath, filter] = tokenIcon.split('|')
                             const isGrey = filter === 'grey'
+                            const isPurple = filter === 'purple'
                             return (
                                 <Image
                                     src={imagePath}
@@ -55,6 +56,7 @@ export function TokenInput({
                                     className={`rounded-full ${
                                         isGrey ? 'grayscale' : ''
                                     }`}
+                                    style={isPurple ? { filter: 'sepia(1) saturate(4) hue-rotate(240deg) brightness(0.9)' } : undefined}
                                 />
                             )
                         })()

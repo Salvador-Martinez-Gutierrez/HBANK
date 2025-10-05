@@ -4,10 +4,12 @@ import {
     PieChart,
     CircleDollarSign,
     TrendingUp,
+    Landmark,
 } from 'lucide-react'
 
 export const navigation = [
     { name: 'hUSD', href: '/vault', icon: CircleDollarSign },
+    { name: 'HCF Vault', href: '/hcf-vault', icon: Landmark },
     { name: 'Portfolio', href: '/portfolio', icon: PieChart },
     { name: 'Performance', href: '/performance', icon: TrendingUp },
     { name: 'Transparency', href: '/transparency', icon: Eye },
