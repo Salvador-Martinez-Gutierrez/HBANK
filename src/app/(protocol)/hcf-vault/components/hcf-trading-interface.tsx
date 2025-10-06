@@ -226,7 +226,7 @@ export function HCFTradingInterface() {
             )}
 
             {/* Transaction Details */}
-            <TransactionDetails exchangeRate={FIXED_RATE} />
+            <TransactionDetails exchangeRate={FIXED_RATE} tokenSymbol="fUSD" />
         </div>
     )
 

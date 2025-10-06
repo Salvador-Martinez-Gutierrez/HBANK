@@ -4,9 +4,17 @@ import Image from "next/image"
 
 interface ApyCardProps {
   apy: string
+  badgeText?: string
+  tokenIcon?: string
+  tokenSymbol?: string
 }
 
-export function ApyCard({ apy }: ApyCardProps) {
+export function ApyCard({ 
+  apy, 
+  badgeText = 'with',
+  tokenIcon = '/usdc.svg',
+  tokenSymbol = 'hUSD'
+}: ApyCardProps) {
   return (
     <Card className="bg-green-200 border-green-500 lg:max-w-2/3">
       <CardContent className=" flex flex-col gap-2 items-center text-center">
@@ -16,7 +24,7 @@ export function ApyCard({ apy }: ApyCardProps) {
         <Badge
           variant="default"
           className="bg-green-300 text-black text-sm lg:text-md border-green-400" >
-          with <Image src="/usdc.svg" alt="USDC" width={20} height={20} className="rounded-full grayscale inline-block mx-1" /> hUSD
+          {badgeText} <Image src={tokenIcon} alt={tokenSymbol} width={20} height={20} className="rounded-full inline-block mx-1" /> {tokenSymbol}
         </Badge>
     </CardContent>
     </Card >

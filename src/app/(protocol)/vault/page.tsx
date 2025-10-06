@@ -28,14 +28,18 @@ export default function VaultPage() {
                     {/* Sidebar Information - Only visible on medium+ screens */}
                     <div className='hidden md:block space-y-6'>
                         <ApyCard apy={apy} />
-                        <InfoCard />
+                        <InfoCard>
+                            <strong>hUSD</strong> is a yield bearing token earning rewards, so it&apos;s dollar value is always higher than the base stablecoin. You are still getting the same dollar amount of the token when you mint.
+                        </InfoCard>
                     </div>
                 </div>
 
                 {/* ApyCard and InfoCard - Only visible on small screens, displayed below trading interface */}
                 <div className='md:hidden mt-6 space-y-6'>
                     <ApyCard apy={apy} />
-                    <InfoCard />
+                    <InfoCard>
+                        <strong>hUSD</strong> is a yield bearing token earning rewards, so it&apos;s dollar value is always higher than the base stablecoin. You are still getting the same dollar amount of the token when you mint.
+                    </InfoCard>
                 </div>
             </div>
         </div>
