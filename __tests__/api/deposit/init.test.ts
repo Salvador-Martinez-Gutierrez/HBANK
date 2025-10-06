@@ -1,230 +1,131 @@
 import { createMocks } from 'node-mocks-http'
+
 import handler from '../../../pages/api/deposit/init'
+import { conflict } from '../../../src/lib/errors'
+import { depositService } from '../../../src/services/depositService'
 
-// Mock Hedera SDK
-const mockExecute = jest.fn()
-const mockGetReceipt = jest.fn()
-const mockScheduleId = '0.0.99999'
-const mockTransactionId = '0.0.123456@1234567890.123456789'
-const mockAccountBalanceQueryExecute = jest.fn()
-
-jest.mock('@hashgraph/sdk', () => ({
-    Client: {
-        forTestnet: jest.fn(() => ({
-            setOperator: jest.fn(),
-        })),
+jest.mock('../../../src/services/depositService', () => ({
+    depositService: {
+        initializeDeposit: jest.fn(),
     },
-    AccountId: {
-        fromString: jest.fn((id) => ({ toString: () => id })),
-    },
-    PrivateKey: {
-        fromString: jest.fn(() => ({
-            publicKey: { toString: () => 'mock-public-key' },
-        })),
-    },
-    TokenId: {
-        fromString: jest.fn((id) => id), // Return the token ID for Map.get()
-    },
-    AccountBalanceQuery: jest.fn(() => ({
-        setAccountId: jest.fn(() => ({
-            execute: mockAccountBalanceQueryExecute,
-        })),
-    })),
-    TransferTransaction: jest.fn(() => ({
-        addTokenTransfer: jest.fn(function () {
-            return this
-        }),
-        setTransactionMemo: jest.fn(function () {
-            return this
-        }),
-    })),
-    ScheduleCreateTransaction: jest.fn(() => ({
-        setScheduledTransaction: jest.fn(function () {
-            return this
-        }),
-        setScheduleMemo: jest.fn(function () {
-            return this
-        }),
-        setAdminKey: jest.fn(function () {
-            return this
-        }),
-        setPayerAccountId: jest.fn(function () {
-            return this
-        }),
-        execute: mockExecute,
-    })),
 }))
 
-// Mock the deposit rate module
-jest.mock('../../../src/lib/deposit-rate', () => ({
-    calculateHUSDCAmount: jest.fn((amount) => amount * 1.0), // 1:1 rate
-    getCurrentRateConfig: jest.fn(() => Promise.resolve({ baseRate: 1.0 })),
-}))
+const initializeDepositMock = depositService.initializeDeposit as jest.Mock
 
 describe('/api/deposit/init', () => {
     beforeEach(() => {
         jest.clearAllMocks()
-
-        // Setup environment variables
-        process.env.DEPOSIT_WALLET_ID = '0.0.6510977'
-        process.env.DEPOSIT_WALLET_KEY = 'mock-deposit-key'
-        process.env.USDC_TOKEN_ID = '0.0.429274'
-        process.env.HUSD_TOKEN_ID = '0.0.6889338' // Updated token ID
-
-        // Setup successful responses
-        mockExecute.mockResolvedValue({
-            transactionId: { toString: () => mockTransactionId },
-            getReceipt: jest.fn(() =>
-                Promise.resolve({
-                    scheduleId: { toString: () => mockScheduleId },
-                })
-            ),
-        })
-
-        // Setup default balance responses (1000 USDC, 1000 HUSDC)
-        mockAccountBalanceQueryExecute.mockResolvedValue({
-            tokens: new Map([
-                ['0.0.429274', BigInt(1000_000_000)], // 1000 USDC (6 decimals)
-                ['0.0.6889338', BigInt(1000_000)], // 1000 hUSD (3 decimals)
-            ]),
-        })
     })
 
-    it('should successfully initialize atomic deposit', async () => {
+    it('responds with deposit data when service succeeds', async () => {
         const { req, res } = createMocks({
             method: 'POST',
             body: {
                 userAccountId: '0.0.12345',
                 amount: 100.5,
-                expectedRate: 1.0,
-                rateSequenceNumber: 'test-sequence-123',
-                rateTimestamp: new Date().toISOString(),
+                expectedRate: 1.01,
+                rateSequenceNumber: '123',
             },
         })
+
+        const mockResult = {
+            success: true,
+            scheduleId: '0.0.9999',
+            amountHUSDC: 99.5,
+            rate: 1.01,
+            rateSequenceNumber: '123',
+            usdcAmount: 100.5,
+            timestamp: new Date().toISOString(),
+            txId: 'tx-id',
+        }
+
+        initializeDepositMock.mockResolvedValueOnce(mockResult)
 
         await handler(req, res)
 
         expect(res._getStatusCode()).toBe(200)
-        const responseData = JSON.parse(res._getData())
-
-        expect(responseData).toEqual({
-            success: true,
-            scheduleId: mockScheduleId,
-            amountHUSDC: 100.5,
-            rate: 1.0,
-            usdcAmount: 100.5,
-            timestamp: expect.any(String),
-            txId: mockTransactionId,
+        expect(JSON.parse(res._getData())).toEqual(mockResult)
+        expect(initializeDepositMock).toHaveBeenCalledWith({
+            userAccountId: '0.0.12345',
+            amount: 100.5,
+            expectedRate: 1.01,
+            rateSequenceNumber: '123',
         })
     })
 
-    it('should reject invalid amounts', async () => {
-        const { req, res } = createMocks({
-            method: 'POST',
-            body: {
-                userAccountId: '0.0.12345',
-                amount: -10,
-                expectedRate: 1.0,
-                rateSequenceNumber: 'test-sequence-123',
-                rateTimestamp: new Date().toISOString(),
-            },
-        })
-
-        await handler(req, res)
-
-        expect(res._getStatusCode()).toBe(400)
-        const responseData = JSON.parse(res._getData())
-        expect(responseData.error).toBe('Invalid amount')
-    })
-
-    it('should reject missing fields', async () => {
-        const { req, res } = createMocks({
-            method: 'POST',
-            body: {
-                userAccountId: '0.0.12345',
-                // missing amount
-            },
-        })
-
-        await handler(req, res)
-
-        expect(res._getStatusCode()).toBe(400)
-        const responseData = JSON.parse(res._getData())
-        expect(responseData.error).toBe('Missing required fields')
-    })
-
-    it('should reject non-POST methods', async () => {
-        const { req, res } = createMocks({
-            method: 'GET',
-        })
+    it('rejects unsupported HTTP methods', async () => {
+        const { req, res } = createMocks({ method: 'GET' })
 
         await handler(req, res)
 
         expect(res._getStatusCode()).toBe(405)
-        const responseData = JSON.parse(res._getData())
-        expect(responseData.error).toBe('Method not allowed')
+        expect(JSON.parse(res._getData())).toEqual({
+            error: 'Method not allowed',
+            allowedMethods: ['POST'],
+        })
     })
 
-    it('should handle insufficient user balance', async () => {
-        // Mock insufficient user balance
-        mockAccountBalanceQueryExecute.mockResolvedValueOnce({
-            tokens: new Map([
-                ['0.0.429274', BigInt(50_000_000)], // Only 50 USDC
-            ]),
-        })
-
+    it('returns 422 for validation errors', async () => {
         const { req, res } = createMocks({
             method: 'POST',
             body: {
-                userAccountId: '0.0.12345',
-                amount: 100.5,
-                expectedRate: 1.0,
-                rateSequenceNumber: 'test-sequence-123',
-                rateTimestamp: new Date().toISOString(),
+                userAccountId: 'invalid-account',
+                amount: 100,
+                expectedRate: 1.01,
+                rateSequenceNumber: '123',
             },
         })
 
         await handler(req, res)
 
-        expect(res._getStatusCode()).toBe(400)
-        const responseData = JSON.parse(res._getData())
-        expect(responseData.error).toBe('Insufficient USDC balance')
-        expect(responseData.required).toBe(100.5)
-        expect(responseData.available).toBe(50)
+        expect(res._getStatusCode()).toBe(422)
+        const body = JSON.parse(res._getData())
+        expect(body.error).toBe('Validation failed')
+        expect(body.details.fieldErrors.userAccountId).toBeDefined()
     })
 
-    it('should handle insufficient treasury balance', async () => {
-        // Mock sufficient user balance (first call)
-        mockAccountBalanceQueryExecute.mockResolvedValueOnce({
-            tokens: new Map([
-                ['0.0.429274', BigInt(1000_000_000)], // 1000 USDC
-            ]),
-        })
-
-        // Mock insufficient treasury balance (second call)
-        mockAccountBalanceQueryExecute.mockResolvedValueOnce({
-            tokens: new Map([
-                ['0.0.6889338', BigInt(50_000)], // Only 50 hUSD (3 decimals)
-            ]),
-        })
-
+    it('propagates domain errors from the service', async () => {
         const { req, res } = createMocks({
             method: 'POST',
             body: {
                 userAccountId: '0.0.12345',
                 amount: 100.5,
-                expectedRate: 1.0,
-                rateSequenceNumber: 'test-sequence-123',
-                rateTimestamp: new Date().toISOString(),
+                expectedRate: 1.01,
+                rateSequenceNumber: '123',
             },
         })
 
+        initializeDepositMock.mockRejectedValueOnce(
+            conflict('Rate changed', { sequence: '999' })
+        )
+
         await handler(req, res)
 
-        expect(res._getStatusCode()).toBe(400)
-        const responseData = JSON.parse(res._getData())
-        expect(responseData.error).toBe('Insufficient treasury HUSDC balance')
-        expect(responseData.required).toBe(100.5)
-        expect(responseData.available).toBe(50)
+        expect(res._getStatusCode()).toBe(409)
+        expect(JSON.parse(res._getData())).toEqual({
+            error: 'Rate changed',
+            details: { sequence: '999' },
+        })
+    })
+
+    it('masks unexpected errors', async () => {
+        const { req, res } = createMocks({
+            method: 'POST',
+            body: {
+                userAccountId: '0.0.12345',
+                amount: 100.5,
+                expectedRate: 1.01,
+                rateSequenceNumber: '123',
+            },
+        })
+
+        initializeDepositMock.mockRejectedValueOnce(new Error('boom'))
+
+        await handler(req, res)
+
+        expect(res._getStatusCode()).toBe(500)
+        expect(JSON.parse(res._getData())).toEqual({
+            error: 'Unexpected server error',
+        })
     })
 })

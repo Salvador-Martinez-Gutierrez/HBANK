@@ -1,375 +1,57 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { HederaService } from '../../../../src/services/hederaService'
-import { WithdrawService } from '../../../../src/services/withdrawService'
-import { TelegramService } from '../../../../src/services/telegramService'
-import {
-    NUMERIC,
-    TOKENS,
-    ACCOUNTS,
-} from '../../../../src/app/backend-constants'
-import {
-    Client,
-    AccountId,
-    PrivateKey,
-    TokenId,
-    TransferTransaction,
-    TopicMessageSubmitTransaction,
-    TopicId,
-} from '@hashgraph/sdk'
+import { withApiHandler } from '@/lib/api-handler'
+import { instantWithdrawService } from '@/services/instantWithdrawService'
+import { TelegramService } from '@/services/telegramService'
+import { instantWithdrawSchema } from '@/utils/validation/withdraw'
 
-interface InstantWithdrawRequest {
-    userAccountId: string
-    amountHUSD: number
-    rate: number
-    rateSequenceNumber: string
-    requestType: 'instant'
-}
+const telegramService = new TelegramService()
 
-interface InstantWithdrawResponse {
-    success: boolean
-    txId?: string
-    grossUSDC?: number
-    fee?: number
-    netUSDC?: number
-    error?: string
-    currentRate?: unknown // For rate conflict responses
-}
+export default withApiHandler(
+    async ({ req, res, logger }) => {
+        const payload = instantWithdrawSchema.parse(req.body)
 
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse<InstantWithdrawResponse>
-) {
-    console.log('🚀 [INSTANT WITHDRAW] Starting handler...')
-    console.log('📋 [INSTANT WITHDRAW] Method:', req.method)
-    console.log('📋 [INSTANT WITHDRAW] Body keys:', Object.keys(req.body || {}))
-
-    if (req.method !== 'POST') {
-        console.log('❌ [INSTANT WITHDRAW] Method not allowed')
-        return res.status(405).json({
-            success: false,
-            error: 'Method not allowed',
-        })
-    }
-
-    try {
-        console.log('🔍 [INSTANT WITHDRAW] Parsing request body...')
-
-        const {
-            userAccountId,
-            amountHUSD,
-            rate,
-            rateSequenceNumber,
-            requestType,
-        }: InstantWithdrawRequest = req.body
-
-        console.log('⚡ [INSTANT WITHDRAW] Data parsed successfully:', {
-            userAccountId,
-            amountHUSD,
-            rate,
-            rateSequenceNumber,
-            requestType,
+        logger.info('Instant withdraw payload validated', {
+            userAccountIdSuffix: payload.userAccountId.slice(-6),
+            rateSequenceNumber: payload.rateSequenceNumber,
         })
 
-        // DEBUG: Log the HUSD amount conversion
-        console.log('💰 [INSTANT WITHDRAW] HUSD amount analysis:', {
-            amountHUSD: amountHUSD,
-            amountType: typeof amountHUSD,
-            expectedUnitsFor1HUSD: 1000,
-            calculatedUnits: amountHUSD * NUMERIC.HUSD_MULTIPLIER,
-            HUSD_MULTIPLIER: NUMERIC.HUSD_MULTIPLIER,
-        })
-
-        // Basic validation first
-        if (requestType !== 'instant') {
-            console.log(
-                '❌ [INSTANT WITHDRAW] Invalid request type:',
-                requestType
-            )
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid request type. Expected "instant"',
-            })
-        }
-
-        // Validate required fields
-        if (!userAccountId || !amountHUSD || !rate || !rateSequenceNumber) {
-            console.log('❌ [INSTANT WITHDRAW] Missing fields:', {
-                userAccountId: !!userAccountId,
-                amountHUSD: !!amountHUSD,
-                rate: !!rate,
-                rateSequenceNumber: !!rateSequenceNumber,
-            })
-            return res.status(400).json({
-                success: false,
-                error: 'Missing required fields',
-            })
-        }
-
-        // Validate userAccountId format
-        if (!userAccountId.match(/^\d+\.\d+\.\d+$/)) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid userAccountId format. Expected format: x.x.x',
-            })
-        }
-
-        if (amountHUSD <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: 'Amount must be greater than 0',
-            })
-        }
-
-        console.log('🔍 [INSTANT WITHDRAW] Creating services...')
-        const withdrawService = new WithdrawService()
-        const hederaService = new HederaService()
-        console.log('✅ [INSTANT WITHDRAW] Services created successfully')
-
-        // Validate environment variables
-        const instantWithdrawWalletId = process.env.INSTANT_WITHDRAW_WALLET_ID
-        const instantWithdrawWalletKey = process.env.INSTANT_WITHDRAW_WALLET_KEY
-        const usdcTokenId = TOKENS.usdc
-        const emissionsWalletId = ACCOUNTS.emissions
-
-        if (
-            !instantWithdrawWalletId ||
-            !instantWithdrawWalletKey ||
-            !usdcTokenId ||
-            !emissionsWalletId
-        ) {
-            console.log(
-                '❌ [INSTANT WITHDRAW] Missing environment variables:',
-                {
-                    instantWithdrawWalletId: !!instantWithdrawWalletId,
-                    instantWithdrawWalletKey: !!instantWithdrawWalletKey,
-                    usdcTokenId: !!usdcTokenId,
-                    emissionsWalletId: !!emissionsWalletId,
-                }
-            )
-            return res.status(500).json({
-                success: false,
-                error: 'Missing required environment variables',
-            })
-        }
-
-        console.log('📋 [INSTANT WITHDRAW] Environment variables loaded:', {
-            instantWithdrawWalletId,
-            usdcTokenId,
-            emissionsWalletId,
-        })
-
-        // Step 1: Validate rate against latest published rate in HCS
-        console.log('🔍 [INSTANT WITHDRAW] Validating rate against HCS...')
-        const isRateValid = await withdrawService.validateRate(
-            rate,
-            rateSequenceNumber
+        const result = await instantWithdrawService.processInstantWithdrawal(
+            payload
         )
 
-        if (!isRateValid) {
-            console.log('❌ [INSTANT WITHDRAW] Rate validation failed')
-            const latestRate = await withdrawService.rateService.getLatestRate()
-            return res.status(409).json({
-                success: false,
-                error: 'Rate has changed',
-                currentRate: latestRate,
-            })
-        }
-
-        console.log('✅ [INSTANT WITHDRAW] Rate validation passed')
-
-        // Step 2: Calculate amounts using backend constants
-        const grossUSDC = amountHUSD * rate
-        const fee = grossUSDC * NUMERIC.INSTANT_WITHDRAW_FEE
-        const netUSDC = grossUSDC - fee
-
-        console.log('💰 [INSTANT WITHDRAW] Calculated amounts:', {
-            grossUSDC,
-            fee: `${fee} (${NUMERIC.INSTANT_WITHDRAW_FEE * 100}%)`,
-            netUSDC,
+        logger.info('Instant withdraw completed', {
+            transferTxId: result.txId,
+            topicTxId: result.topicTxId,
+            walletBalanceAfter: result.walletBalanceAfter,
         })
-
-        // Step 3: Check if instant withdraw wallet has enough USDC
-        const instantWithdrawWalletBalance = await hederaService.checkBalance(
-            instantWithdrawWalletId,
-            usdcTokenId
-        )
-
-        console.log('🏦 [INSTANT WITHDRAW] Wallet balance check:', {
-            walletId: instantWithdrawWalletId,
-            balance: instantWithdrawWalletBalance,
-            required: netUSDC,
-            hasSufficient: instantWithdrawWalletBalance >= netUSDC,
-        })
-
-        if (instantWithdrawWalletBalance < netUSDC) {
-            return res.status(400).json({
-                success: false,
-                error: `Insufficient balance in instant withdraw wallet. Available: ${instantWithdrawWalletBalance} USDC, Required: ${netUSDC} USDC`,
-            })
-        }
-
-        // Step 4: Verify HUSD transfer from user to emissions wallet
-        console.log(
-            '🔍 [INSTANT WITHDRAW] Verifying HUSD transfer to emissions wallet...'
-        )
-
-        // Check for transfers in the last 10 minutes (increased window)
-        const since = new Date(Date.now() - 10 * 60 * 1000).toISOString()
-
-        console.log('🔍 [INSTANT WITHDRAW] HUSD transfer search parameters:', {
-            from: userAccountId,
-            to: emissionsWalletId,
-            expectedAmount: amountHUSD,
-            since: since,
-            token: TOKENS.husd,
-        })
-
-        // Try with corrected decimals (3 for HUSD, not 8)
-        const husdTransferVerified = await hederaService.verifyHUSDTransfer(
-            userAccountId,
-            emissionsWalletId,
-            amountHUSD,
-            since
-        )
-
-        console.log(
-            '🔍 [INSTANT WITHDRAW] HUSD transfer verification result:',
-            {
-                from: userAccountId,
-                to: emissionsWalletId,
-                token: TOKENS.husd,
-                amount: amountHUSD * NUMERIC.HUSD_MULTIPLIER,
-                verified: husdTransferVerified,
-            }
-        )
-
-        if (!husdTransferVerified) {
-            return res.status(400).json({
-                success: false,
-                error: `HUSD transfer not found. Expected transfer of ${amountHUSD} HUSD from ${userAccountId} to emissions wallet ${emissionsWalletId}`,
-            })
-        }
-
-        console.log('✅ [INSTANT WITHDRAW] HUSD transfer verified')
-
-        // Step 5: Create and submit USDC transfer transaction
-        console.log(
-            '📝 [INSTANT WITHDRAW] Creating USDC transfer transaction...'
-        )
-
-        const client = Client.forTestnet().setOperator(
-            AccountId.fromString(instantWithdrawWalletId),
-            PrivateKey.fromString(instantWithdrawWalletKey)
-        )
-
-        const transferTx = new TransferTransaction()
-            .addTokenTransfer(
-                TokenId.fromString(usdcTokenId),
-                AccountId.fromString(instantWithdrawWalletId),
-                -(netUSDC * NUMERIC.USDC_MULTIPLIER)
-            )
-            .addTokenTransfer(
-                TokenId.fromString(usdcTokenId),
-                AccountId.fromString(userAccountId),
-                netUSDC * NUMERIC.USDC_MULTIPLIER
-            )
-            .setTransactionMemo(
-                `Instant withdraw: ${amountHUSD} HUSD -> ${netUSDC} USDC`
-            )
-            .freezeWith(client)
-
-        const transferTxResponse = await transferTx.execute(client)
-        const transferReceipt = await transferTxResponse.getReceipt(client)
-        const transferTxId = transferTxResponse.transactionId.toString()
-
-        console.log('✅ [INSTANT WITHDRAW] USDC transfer completed:', {
-            txId: transferTxId,
-            status: transferReceipt.status.toString(),
-            from: instantWithdrawWalletId,
-            to: userAccountId,
-            amount: netUSDC,
-            fee: fee,
-        })
-
-        // Step 6: Submit withdrawal record to HCS topic
-        console.log(
-            '📝 [INSTANT WITHDRAW] Submitting withdrawal record to HCS...'
-        )
-
-        const withdrawRecord = {
-            type: 'instant_withdraw',
-            userAccountId,
-            amountHUSD,
-            amountUSDC: netUSDC,
-            fee,
-            rate,
-            rateSequenceNumber,
-            transferTxId,
-            timestamp: new Date().toISOString(),
-        }
-
-        const topicTx = new TopicMessageSubmitTransaction({
-            topicId: TopicId.fromString(
-                process.env.WITHDRAW_TOPIC_ID || '0.0.6908395'
-            ),
-            message: JSON.stringify(withdrawRecord),
-        }).freezeWith(client)
-
-        const topicTxResponse = await topicTx.execute(client)
-        const topicReceipt = await topicTxResponse.getReceipt(client)
-        const topicTxId = topicTxResponse.transactionId.toString()
-
-        console.log('✅ [INSTANT WITHDRAW] HCS record submitted:', {
-            txId: topicTxId,
-            status: topicReceipt.status.toString(),
-        })
-
-        // Step 7: Send Telegram notification
-        console.log('📱 [INSTANT WITHDRAW] Sending Telegram notification...')
 
         try {
-            const telegramService = new TelegramService()
-            // Calculate the balance after withdrawal (balance before - net amount sent)
-            const walletBalanceAfter = instantWithdrawWalletBalance - netUSDC
-
             await telegramService.sendWithdrawNotification({
                 type: 'instant',
-                userAccountId,
-                amountHUSD,
-                amountUSDC: netUSDC,
-                rate,
-                txId: transferTxId,
-                fee,
+                userAccountId: payload.userAccountId,
+                amountHUSD: payload.amountHUSD,
+                amountUSDC: result.grossUSDC,
+                rate: payload.rate,
+                txId: result.txId,
+                fee: result.feeUSDC,
                 timestamp: new Date().toISOString(),
-                walletBalanceAfter,
+                walletBalanceAfter: result.walletBalanceAfter,
             })
-        } catch (telegramError) {
-            console.error(
-                '❌ [INSTANT WITHDRAW] Telegram notification failed:',
-                telegramError
-            )
-            // Don't fail the entire withdrawal process due to notification error
+        } catch (error) {
+            logger.warn('Telegram notification failed', {
+                message: error instanceof Error ? error.message : 'Unknown',
+            })
         }
 
-        // Success response
-        console.log('🎉 [INSTANT WITHDRAW] Process completed successfully')
-
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
-            txId: transferTxId,
-            grossUSDC,
-            fee,
-            netUSDC,
+            txId: result.txId,
+            grossUSDC: result.grossUSDC,
+            fee: result.feeUSDC,
+            netUSDC: result.netUSDC,
         })
-    } catch (error) {
-        console.error('❌ [INSTANT WITHDRAW] Unexpected error:', error)
-
-        const errorMessage =
-            error instanceof Error ? error.message : 'Unknown error occurred'
-
-        return res.status(500).json({
-            success: false,
-            error: `Internal server error: ${errorMessage}`,
-        })
+    },
+    {
+        methods: ['POST'],
+        scope: 'api:withdraw:instant',
     }
-}
+)

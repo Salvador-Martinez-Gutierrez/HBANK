@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process')
-
 console.log('🤖 VALORA Telegram Bot Setup Helper\n')
 
 console.log('📋 Current configuration:')

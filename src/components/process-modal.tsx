@@ -190,7 +190,7 @@ export function ProcessModal({
                                         </p>
                                     )}
                                     {step.status === 'error' && error && (
-                                        <p className='text-sm text-red-400 mt-2 font-medium'>
+                                        <p className='text-sm text-red-400 mt-2 font-medium break-words whitespace-pre-line'>
                                             {error}
                                         </p>
                                     )}
@@ -239,7 +239,9 @@ export function ProcessModal({
                                 Process Failed
                             </span>
                         </div>
-                        <p className='text-sm text-red-300 mt-1'>{error}</p>
+                        <p className='text-sm text-red-300 mt-1 break-words whitespace-pre-line'>
+                            {error}
+                        </p>
                     </div>
                 )}
 

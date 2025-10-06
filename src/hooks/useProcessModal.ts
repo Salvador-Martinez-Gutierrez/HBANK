@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { ProcessType, ProcessStep } from '@/components/process-modal'
+import { formatProcessError } from '@/lib/process-error'
 
 export interface UseProcessModalProps {
     onComplete?: () => void | Promise<void>
@@ -31,10 +32,15 @@ export function useProcessModal({
                 toToken?: string
             }
         ) => {
-            console.log('🚀 Starting process:', type, 'with steps:', initialSteps.length)
+            console.log(
+                '🚀 Starting process:',
+                type,
+                'with steps:',
+                initialSteps.length
+            )
             setProcessType(type)
             // Mark the first step as active when starting the process
-            const stepsWithFirstActive = initialSteps.map((step, index) => 
+            const stepsWithFirstActive = initialSteps.map((step, index) =>
                 index === 0 ? { ...step, status: 'active' as const } : step
             )
             console.log('📝 Steps with first active:', stepsWithFirstActive)
@@ -72,21 +78,33 @@ export function useProcessModal({
     const nextStep = useCallback(() => {
         console.log('⏭️ nextStep called, currentStep:', currentStep)
         setSteps((prev) => {
-            console.log('📊 Current steps before nextStep:', prev.map(s => ({ id: s.id, status: s.status })))
-            
+            console.log(
+                '📊 Current steps before nextStep:',
+                prev.map((s) => ({ id: s.id, status: s.status }))
+            )
+
             // Find the currently active step instead of relying on currentStep state
             const currentIndex = prev.findIndex(
                 (step) => step.status === 'active'
             )
-            
+
             // If no active step found, find by currentStep as fallback
-            const fallbackIndex = currentIndex === -1 
-                ? prev.findIndex((step) => step.id === currentStep)
-                : currentIndex
+            const fallbackIndex =
+                currentIndex === -1
+                    ? prev.findIndex((step) => step.id === currentStep)
+                    : currentIndex
 
-            const indexToUse = currentIndex !== -1 ? currentIndex : fallbackIndex
+            const indexToUse =
+                currentIndex !== -1 ? currentIndex : fallbackIndex
 
-            console.log('🔍 Active step index:', currentIndex, 'fallback index:', fallbackIndex, 'using:', indexToUse)
+            console.log(
+                '🔍 Active step index:',
+                currentIndex,
+                'fallback index:',
+                fallbackIndex,
+                'using:',
+                indexToUse
+            )
 
             if (indexToUse === -1) {
                 console.warn('⚠️ No active step found to advance from')
@@ -107,27 +125,36 @@ export function useProcessModal({
                     ...updatedSteps[nextIndex],
                     status: 'active',
                 }
-                console.log('✅ Moving to next step:', prev[nextIndex].id, 'at index:', nextIndex)
+                console.log(
+                    '✅ Moving to next step:',
+                    prev[nextIndex].id,
+                    'at index:',
+                    nextIndex
+                )
                 // Update currentStep state after updating steps
                 setTimeout(() => setCurrentStep(prev[nextIndex].id), 0)
             } else {
                 console.log('🏁 No more steps to advance to')
             }
 
-            console.log('📊 Updated steps after nextStep:', updatedSteps.map(s => ({ id: s.id, status: s.status })))
+            console.log(
+                '📊 Updated steps after nextStep:',
+                updatedSteps.map((s) => ({ id: s.id, status: s.status }))
+            )
             return updatedSteps
         })
     }, [currentStep])
 
     const setStepError = useCallback(
         (stepId: string, errorMessage: string) => {
+            const formattedError = formatProcessError(errorMessage)
             setSteps((prev) =>
                 prev.map((step) =>
                     step.id === stepId ? { ...step, status: 'error' } : step
                 )
             )
-            setError(errorMessage)
-            onError?.(errorMessage)
+            setError(formattedError)
+            onError?.(formattedError)
         },
         [onError]
     )
