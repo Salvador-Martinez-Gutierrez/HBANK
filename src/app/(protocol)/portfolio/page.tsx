@@ -1,45 +1,169 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Image from 'next/image'
+import { useState } from 'react'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
+import { AddWalletDialog } from '@/components/add-wallet-dialog'
 import { useAccountId } from '@/app/(protocol)/vault/hooks/useAccountID'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { fetchAccountBalances } from '@/services/token.services'
+import { Button } from '@/components/ui/button'
+import { usePortfolioAuth } from '@/hooks/usePortfolioAuth'
+import { usePortfolioWallets } from '@/hooks/usePortfolioWallets'
+import { generateAuthMessage } from '@/services/portfolioAuthClient'
+import {
+    Wallet as WalletIcon,
+    RefreshCw,
+    TrendingUp,
+    Shield,
+} from 'lucide-react'
+import toast from 'react-hot-toast'
+import { WalletCard } from '@/components/wallet-card'
+import { useWalletCollapse } from '@/hooks/useWalletCollapse'
+import { useWalletOrder } from '@/hooks/useWalletOrder'
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core'
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 
 export default function PortfolioPage() {
     const { isConnected } = useWallet()
     const accountId = useAccountId()
-    const [balances, setBalances] = useState({
-        hbar: '0',
-        usdc: '0',
-        husd: '0',
-        husdValueUsd: '0',
-        rate: '1',
-    })
-    const [loading, setLoading] = useState(false)
-    const [hbarPrice] = useState<number>(0)
+    const {
+        user,
+        isAuthenticated,
+        signIn,
+        loading: authLoading,
+    } = usePortfolioAuth()
+    const {
+        wallets: rawWallets,
+        loading: walletsLoading,
+        totalValue,
+        syncTokens,
+        addWallet,
+        deleteWallet,
+    } = usePortfolioWallets(user?.id || null)
+    const [syncing, setSyncing] = useState(false)
 
-    useEffect(() => {
-        const run = async () => {
-            if (!isConnected || !accountId) {
-                setBalances({
-                    hbar: '0',
-                    usdc: '0',
-                    husd: '0',
-                    husdValueUsd: '0',
-                    rate: '1',
-                })
-                return
-            }
-            setLoading(true)
-            const result = await fetchAccountBalances(accountId)
-            setBalances(result)
-            setLoading(false)
+    // Wallet collapse state (localStorage, instant)
+    const { isWalletCollapsed, toggleWalletCollapsed } = useWalletCollapse()
+
+    // Wallet order state (localStorage, instant)
+    const { sortWallets, saveWalletOrder } = useWalletOrder(user?.id || null)
+
+    // Apply custom order to wallets
+    const wallets = sortWallets(rawWallets)
+
+    // Drag and drop sensors
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    )
+
+    const handleAuthenticatePortfolio = async () => {
+        if (!accountId) {
+            toast.error('Please connect your wallet first')
+            return
         }
-        run()
-    }, [isConnected, accountId])
+
+        console.log('🚀 Starting authentication for:', accountId)
+
+        try {
+            // Generate message to sign
+            const message = generateAuthMessage(accountId)
+            const timestamp = Date.now()
+
+            console.log('📝 Message generated:', message)
+
+            // For now, we'll use a mock signature
+            // In production, you need to implement actual wallet signing
+            const signature = 'mock_signature_' + Date.now()
+
+            console.log('✍️ Calling signIn...')
+            // Authenticate with backend
+            const result = await signIn(
+                accountId,
+                signature,
+                message,
+                timestamp
+            )
+
+            console.log('📥 signIn result:', result)
+
+            if (result.success) {
+                console.log('✅ Authentication successful!')
+                toast.success('Portfolio authenticated successfully!')
+            } else {
+                console.error('❌ Authentication failed:', result.error)
+                toast.error(result.error || 'Authentication failed')
+            }
+        } catch (error) {
+            console.error('💥 Authentication error:', error)
+            toast.error('Failed to authenticate portfolio')
+        }
+    }
+
+    const handleSyncWallet = async (
+        walletId: string,
+        walletAddress: string
+    ) => {
+        setSyncing(true)
+        try {
+            const result = await syncTokens(walletId, walletAddress)
+            if (result.success) {
+                toast.success('Tokens synced successfully')
+            } else {
+                toast.error(result.error || 'Failed to sync tokens')
+            }
+        } catch (error) {
+            console.error('Sync error:', error)
+            toast.error('Failed to sync tokens')
+        } finally {
+            setSyncing(false)
+        }
+    }
+
+    const handleDeleteWallet = async (walletId: string) => {
+        if (
+            confirm(
+                'Are you sure you want to remove this wallet from your portfolio?'
+            )
+        ) {
+            const result = await deleteWallet(walletId)
+            if (result.success) {
+                toast.success('Wallet removed')
+            } else {
+                toast.error(result.error || 'Failed to remove wallet')
+            }
+        }
+    }
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event
+
+        if (over && active.id !== over.id) {
+            const oldIndex = wallets.findIndex((w) => w.id === active.id)
+            const newIndex = wallets.findIndex((w) => w.id === over.id)
+
+            const newWallets = arrayMove(wallets, oldIndex, newIndex)
+
+            // Save new order to localStorage (instant, no API call)
+            const newOrder = newWallets.map((wallet) => wallet.id)
+            saveWalletOrder(newOrder)
+        }
+    }
 
     const formatUsd = (value: number) => {
         return value.toLocaleString(undefined, {
@@ -49,42 +173,25 @@ export default function PortfolioPage() {
         })
     }
 
-    //Token card configuration to avoid duplication
-    const tokenConfigs = [
-        {
-            key: 'hbar' as const,
-            name: 'HBAR',
-            icon: '/hbar.webp',
-            grayscale: false,
-            getValue: () =>
-                formatUsd(
-                    (parseFloat(balances.hbar || '0') || 0) * (hbarPrice || 0)
-                ),
-        },
-        {
-            key: 'usdc' as const,
-            name: 'USDC',
-            icon: '/usdc.svg',
-            grayscale: false,
-            getValue: () => formatUsd(parseFloat(balances.usdc || '0') || 0),
-        },
-        {
-            key: 'husd' as const,
-            name: 'hUSD',
-            icon: '/usdc.svg',
-            grayscale: true,
-            getValue: () =>
-                formatUsd(parseFloat(balances.husdValueUsd || '0') || 0),
-        },
-    ]
+    const formatBalance = (balance: string, decimals: number) => {
+        const value = parseFloat(balance) / Math.pow(10, decimals)
+        return value.toFixed(4)
+    }
 
     if (!isConnected) {
         return (
             <div className='h-full flex items-center justify-center'>
                 <div className='text-center space-y-6'>
-                    <p className='text-xl md:text-4xl max-w-lg mx-auto font-semibold text-foreground'>
-                        Earn a 13.33% APY on your USDC with the Hbank Protocol
-                    </p>
+                    <WalletIcon className='w-16 h-16 mx-auto text-muted-foreground' />
+                    <div>
+                        <p className='text-2xl md:text-4xl max-w-lg mx-auto font-semibold text-foreground mb-4'>
+                            Track Your Hedera Portfolio
+                        </p>
+                        <p className='text-muted-foreground max-w-md mx-auto'>
+                            Connect your wallet to view and manage your tokens,
+                            NFTs, and track your portfolio value in real-time.
+                        </p>
+                    </div>
                     <div className='flex justify-center'>
                         <ConnectWalletButton variant='full-width' />
                     </div>
@@ -93,66 +200,165 @@ export default function PortfolioPage() {
         )
     }
 
-    return (
-        <div className='h-full p-8'>
-            <h1 className='text-3xl font-bold text-foreground'>Portfolio</h1>
-            <p className='text-muted-foreground mt-2'>
-                Track your Hbank Protocol positions and balances.
-            </p>
+    if (!isAuthenticated) {
+        return (
+            <div className='h-full flex items-center justify-center'>
+                <div className='text-center space-y-6 max-w-md'>
+                    <Shield className='w-16 h-16 mx-auto text-primary' />
+                    <div>
+                        <h2 className='text-2xl font-bold text-foreground mb-2'>
+                            Authenticate Your Portfolio
+                        </h2>
+                        <p className='text-muted-foreground'>
+                            Sign a message with your wallet to securely access
+                            your portfolio data. This won&apos;t cost any gas
+                            fees.
+                        </p>
+                    </div>
+                    <Button
+                        onClick={handleAuthenticatePortfolio}
+                        disabled={authLoading}
+                        size='lg'
+                        className='w-full'
+                    >
+                        {authLoading
+                            ? 'Authenticating...'
+                            : 'Authenticate Portfolio'}
+                    </Button>
+                </div>
+            </div>
+        )
+    }
 
-            {isConnected && balances.rate !== '1' && (
-                <div className='mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg'>
-                    <p className='text-sm text-blue-700'>
-                        <span className='font-semibold'>
-                            Current Exchange Rate:
-                        </span>{' '}
-                        1 hUSD = ${parseFloat(balances.rate).toFixed(4)}
+    return (
+        <div className='p-4 md:p-8'>
+            {/* Header */}
+            <div className='flex items-center justify-between mb-6'>
+                <div>
+                    <h1 className='text-3xl font-bold text-foreground'>
+                        Portfolio
+                    </h1>
+                    <p className='text-muted-foreground mt-1'>
+                        {wallets.length}{' '}
+                        {wallets.length === 1 ? 'wallet' : 'wallets'} tracked •
+                        Mainnet
                     </p>
                 </div>
-            )}
-
-            <div className='mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4'>
-                {tokenConfigs.map((t) => (
-                    <Card key={t.key}>
-                        <CardHeader>
-                            <CardTitle>
-                                <div className='flex items-center gap-2'>
-                                    <Image
-                                        src={t.icon}
-                                        alt={t.name}
-                                        width={32}
-                                        height={32}
-                                        className={`rounded-full ${
-                                            t.grayscale ? 'grayscale' : ''
-                                        }`}
-                                    />
-                                    <span>{t.name}</span>
-                                </div>
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className='flex items-end justify-between'>
-                                <div>
-                                    <div className='text-sm text-muted-foreground'>
-                                        Balance
-                                    </div>
-                                    <div className='text-2xl font-semibold'>
-                                        {loading ? '—' : balances[t.key]}
-                                    </div>
-                                </div>
-                                <div className='text-right'>
-                                    <div className='text-sm text-muted-foreground'>
-                                        Value
-                                    </div>
-                                    <div className='text-xl font-medium'>
-                                        {loading ? '—' : t.getValue()}
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                <div className='flex items-center gap-2'>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => {
+                            wallets.forEach((w) =>
+                                handleSyncWallet(w.id, w.wallet_address)
+                            )
+                        }}
+                        disabled={syncing || walletsLoading}
+                    >
+                        <RefreshCw
+                            className={`w-4 h-4 mr-2 ${
+                                syncing ? 'animate-spin' : ''
+                            }`}
+                        />
+                        Sync All
+                    </Button>
+                    <AddWalletDialog onAddWallet={addWallet} />
+                </div>
             </div>
+
+            {/* Info Banner */}
+            <Card className='mb-6 bg-blue-500/10 border-blue-500/20'>
+                <CardContent className='py-4'>
+                    <p className='text-sm text-blue-600 dark:text-blue-400'>
+                        📊 <strong>Mainnet Portfolio:</strong> Track your Hedera
+                        mainnet wallets and tokens. Add multiple wallets to see
+                        an aggregated view of your portfolio.
+                    </p>
+                </CardContent>
+            </Card>
+
+            {/* Total Value Card */}
+            <Card className='mb-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20'>
+                <CardHeader>
+                    <CardTitle className='flex items-center gap-2'>
+                        <TrendingUp className='w-5 h-5' />
+                        Total Portfolio Value
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className='text-4xl font-bold text-foreground'>
+                        {walletsLoading ? '...' : formatUsd(totalValue)}
+                    </div>
+                    <p className='text-sm text-muted-foreground mt-1'>
+                        Across {wallets.length}{' '}
+                        {wallets.length === 1 ? 'wallet' : 'wallets'}
+                    </p>
+                </CardContent>
+            </Card>
+
+            {/* Wallets */}
+            {walletsLoading ? (
+                <div className='text-center py-12'>
+                    <RefreshCw className='w-8 h-8 animate-spin mx-auto text-muted-foreground mb-4' />
+                    <p className='text-muted-foreground'>
+                        Loading your wallets...
+                    </p>
+                </div>
+            ) : wallets.length === 0 ? (
+                <Card>
+                    <CardContent className='py-12 text-center'>
+                        <WalletIcon className='w-12 h-12 mx-auto text-muted-foreground mb-4' />
+                        <h3 className='text-lg font-semibold mb-2'>
+                            No Wallets Found
+                        </h3>
+                        <p className='text-muted-foreground mb-4'>
+                            Your primary wallet has been registered. Sync your
+                            tokens to start tracking.
+                        </p>
+                        <Button
+                            onClick={() => {
+                                if (wallets[0]) {
+                                    handleSyncWallet(
+                                        wallets[0].id,
+                                        wallets[0].wallet_address
+                                    )
+                                }
+                            }}
+                        >
+                            Sync Tokens
+                        </Button>
+                    </CardContent>
+                </Card>
+            ) : (
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                >
+                    <SortableContext
+                        items={wallets.map((w) => w.id)}
+                        strategy={verticalListSortingStrategy}
+                    >
+                        <div className='space-y-6'>
+                            {wallets.map((wallet) => (
+                                <WalletCard
+                                    key={wallet.id}
+                                    wallet={wallet}
+                                    syncing={syncing}
+                                    isCollapsed={isWalletCollapsed(wallet.id)}
+                                    onSync={handleSyncWallet}
+                                    onDelete={handleDeleteWallet}
+                                    onToggleCollapse={() =>
+                                        toggleWalletCollapsed(wallet.id)
+                                    }
+                                    formatUsd={formatUsd}
+                                    formatBalance={formatBalance}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
+            )}
         </div>
     )
 }

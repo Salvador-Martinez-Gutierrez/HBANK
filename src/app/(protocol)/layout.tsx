@@ -10,17 +10,12 @@ export default function AppLayout({
 }>) {
     return (
         <WalletProvider>
-            <ThemeProvider
-                defaultTheme='dark'
-                storageKey='hbank-ui-theme'
-            >
+            <ThemeProvider defaultTheme='dark' storageKey='hbank-ui-theme'>
                 <div className='relative min-h-screen bg-background'>
                     <Sidebar />
                     <div className='md:pl-64'>
                         <MainNav />
-                        <main className='relative h-[calc(100vh-4.5rem)] md:h-[calc(100vh-5rem)]'>
-                            {children}
-                        </main>
+                        <main className='relative'>{children}</main>
                     </div>
                 </div>
             </ThemeProvider>

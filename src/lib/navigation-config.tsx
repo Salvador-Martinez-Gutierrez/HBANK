@@ -4,7 +4,6 @@ import {
     PieChart,
     CircleDollarSign,
     TrendingUp,
-    Landmark,
 } from 'lucide-react'
 
 export const navigation = [
