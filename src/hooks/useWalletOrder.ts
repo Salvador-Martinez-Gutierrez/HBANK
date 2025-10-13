@@ -7,9 +7,13 @@ const STORAGE_KEY = 'portfolio_wallet_order'
 export function useWalletOrder(userId: string | null) {
     const [walletOrder, setWalletOrder] = useState<string[]>([])
 
-    // Load order from localStorage on mount
+    // Load order from localStorage on mount and clear when userId changes
     useEffect(() => {
-        if (!userId) return
+        if (!userId) {
+            console.log('🧹 Clearing wallet order (no userId)')
+            setWalletOrder([])
+            return
+        }
 
         try {
             const stored = localStorage.getItem(STORAGE_KEY)

@@ -8,6 +8,15 @@ export function usePortfolioWallets(userId: string | null) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
+    // Clear wallets immediately when userId changes or becomes null
+    useEffect(() => {
+        if (!userId) {
+            console.log('🧹 Clearing wallets data (no userId)')
+            setWallets([])
+            setError(null)
+        }
+    }, [userId])
+
     const fetchWallets = useCallback(async () => {
         if (!userId) {
             setWallets([])

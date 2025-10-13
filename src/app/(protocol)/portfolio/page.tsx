@@ -43,8 +43,9 @@ export default function PortfolioPage() {
         user,
         isAuthenticated,
         signIn,
+        signOut,
         loading: authLoading,
-    } = usePortfolioAuth()
+    } = usePortfolioAuth(accountId)
     const {
         wallets: rawWallets,
         loading: walletsLoading,
@@ -183,7 +184,8 @@ export default function PortfolioPage() {
             <div className='h-full flex items-center justify-center'>
                 <div className='text-center space-y-6'>
                     <p className='text-xl md:text-4xl max-w-xl mx-auto font-semibold text-foreground'>
-                        Track your assets and DeFi positions across multiple wallets
+                        Track your assets and DeFi positions across multiple
+                        wallets
                     </p>
                     <div className='flex justify-center'>
                         <ConnectWalletButton variant='full-width' />
@@ -214,9 +216,7 @@ export default function PortfolioPage() {
                         size='lg'
                         className='w-full'
                     >
-                        {authLoading
-                            ? 'Authenticating...'
-                            : 'Authenticate'}
+                        {authLoading ? 'Authenticating...' : 'Authenticate'}
                     </Button>
                 </div>
             </div>
@@ -227,7 +227,9 @@ export default function PortfolioPage() {
         <div className='p-4 md:p-8'>
             {/* Info Banner */}
             <div className='mb-8 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800'>
-                📊 <strong>Mainnet Portfolio:</strong> Add multiple mainnet accounts to see the aggregated value of your assets and DeFi positions.
+                📊 <strong>Mainnet Portfolio:</strong> Add multiple mainnet
+                accounts to see the aggregated value of your assets and DeFi
+                positions.
             </div>
 
             {/* Header */}
@@ -254,8 +256,9 @@ export default function PortfolioPage() {
                         disabled={syncing || walletsLoading}
                     >
                         <RefreshCw
-                            className={`w-4 h-4 ${syncing ? 'animate-spin' : ''
-                                }`}
+                            className={`w-4 h-4 ${
+                                syncing ? 'animate-spin' : ''
+                            }`}
                         />
                         Sync All
                     </Button>

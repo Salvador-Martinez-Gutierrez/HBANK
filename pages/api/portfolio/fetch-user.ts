@@ -70,11 +70,12 @@ export default async function handler(
         }
 
         // Try to query the users table using the authenticated user's ID
+        // Use maybeSingle() instead of single() to handle potential duplicates
         const { data, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', user.id)
-            .single()
+            .maybeSingle()
 
         if (error) {
             return res.status(403).json({
@@ -85,6 +86,14 @@ export default async function handler(
                 userId: user.id,
                 userEmail: user.email,
                 requestedWallet: walletAddress,
+            })
+        }
+
+        if (!data) {
+            return res.status(404).json({
+                error: 'User not found in database',
+                userId: user.id,
+                userEmail: user.email,
             })
         }
 

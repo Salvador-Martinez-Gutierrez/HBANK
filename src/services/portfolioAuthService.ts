@@ -55,18 +55,21 @@ export async function registerOrGetUser(walletAddress: string) {
         if (existingAuthUser) {
             console.log('Auth user already exists:', existingAuthUser.id)
 
-            // Check if user exists in our database table
+            // Check if user exists in our database table (use maybeSingle to handle duplicates)
             const { data: existingDbUser } = await supabaseAdmin
                 .from('users')
                 .select('*')
                 .eq('id', existingAuthUser.id)
-                .single()
+                .maybeSingle()
 
             if (existingDbUser) {
-                console.log('User found in database:', existingDbUser.id)
+                console.log(
+                    'User found in database:',
+                    (existingDbUser as any).id
+                )
                 return { success: true, user: existingDbUser }
             } else {
-                // Auth user exists but not in our database, create record
+                // Auth user exists but not in our database, create record using upsert
                 console.log(
                     'Auth user exists, creating database record:',
                     existingAuthUser.id
@@ -74,19 +77,22 @@ export async function registerOrGetUser(walletAddress: string) {
                 const { data: newDbUser, error: insertError } =
                     await supabaseAdmin
                         .from('users')
-                        .insert({
-                            id: existingAuthUser.id,
-                            wallet_address: walletAddress,
-                        })
+                        .upsert(
+                            {
+                                id: existingAuthUser.id,
+                                wallet_address: walletAddress,
+                            } as any,
+                            { onConflict: 'id' }
+                        )
                         .select()
-                        .single()
+                        .maybeSingle()
 
                 if (insertError) {
                     console.error(
                         'Error creating database record:',
                         insertError
                     )
-                    // Return minimal user info even if DB insert fails
+                    // Return minimal user info even if DB upsert fails
                     return {
                         success: true,
                         user: {
@@ -99,9 +105,22 @@ export async function registerOrGetUser(walletAddress: string) {
                 }
 
                 // Create primary wallet
-                await createPrimaryWallet(newDbUser.id, walletAddress)
+                if (newDbUser) {
+                    await createPrimaryWallet(
+                        (newDbUser as any).id,
+                        walletAddress
+                    )
+                }
 
-                return { success: true, user: newDbUser }
+                return {
+                    success: true,
+                    user: newDbUser || {
+                        id: existingAuthUser.id,
+                        wallet_address: walletAddress,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                    },
+                }
             }
         }
 
@@ -128,19 +147,21 @@ export async function registerOrGetUser(walletAddress: string) {
             userId
         )
 
-        // Insert user into our database table
-        const { data: newUser, error: insertError } = await supabase
+        // Insert user into our database table using upsert to handle potential duplicates
+        const { data: newUser, error: insertError } = await supabaseAdmin
             .from('users')
-            .insert({ id: userId, wallet_address: walletAddress })
+            .upsert({ id: userId, wallet_address: walletAddress } as any, {
+                onConflict: 'id',
+            })
             .select()
-            .single()
+            .maybeSingle()
 
         if (insertError) {
             console.error(
                 'Error inserting new user into database:',
                 insertError
             )
-            // Return minimal user info even if DB insert fails
+            // Return minimal user info even if DB upsert fails
             return {
                 success: true,
                 user: {
@@ -153,9 +174,19 @@ export async function registerOrGetUser(walletAddress: string) {
         }
 
         // Create primary wallet
-        await createPrimaryWallet(newUser.id, walletAddress)
+        if ((newUser as any)?.id) {
+            await createPrimaryWallet((newUser as any).id, walletAddress)
+        }
 
-        return { success: true, user: newUser }
+        return {
+            success: true,
+            user: newUser || {
+                id: userId,
+                wallet_address: walletAddress,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            },
+        }
     } catch (error) {
         console.error('Error in registerOrGetUser:', error)
         return { success: false, error: 'Database error' }
@@ -171,7 +202,7 @@ async function createPrimaryWallet(userId: string, walletAddress: string) {
         wallet_address: walletAddress,
         label: 'Primary Wallet',
         is_primary: true,
-    })
+    } as any)
 
     if (error) {
         console.error('Error creating primary wallet:', error)
@@ -346,16 +377,19 @@ export async function getCurrentUser(req?: any) {
 
             const { data: newUser, error: insertError } = await supabaseAdmin
                 .from('users')
-                .insert({
-                    id: authUser.id,
-                    wallet_address: walletAddress,
-                })
+                .upsert(
+                    {
+                        id: authUser.id,
+                        wallet_address: walletAddress,
+                    } as any,
+                    { onConflict: 'id' }
+                )
                 .select()
-                .single()
+                .maybeSingle()
 
             if (insertError) {
                 console.error('Error creating user record:', insertError)
-                // Return minimal user info even if insert fails
+                // Return minimal user info even if upsert fails
                 return {
                     success: true,
                     user: {
@@ -370,12 +404,22 @@ export async function getCurrentUser(req?: any) {
             console.log('User record created successfully:', newUser)
 
             // Create primary wallet
-            await createPrimaryWallet(newUser.id, walletAddress)
+            if ((newUser as any)?.id) {
+                await createPrimaryWallet((newUser as any).id, walletAddress)
+            }
 
-            return { success: true, user: newUser }
+            return {
+                success: true,
+                user: newUser || {
+                    id: authUser.id,
+                    wallet_address: walletAddress,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                },
+            }
         }
 
-        console.log('Database user found:', dbUser.id)
+        console.log('Database user found:', (dbUser as any).id)
         return { success: true, user: dbUser }
     } catch (error) {
         console.error('Error getting current user:', error)

@@ -1,11 +1,69 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User } from '@/types/portfolio'
 
-export function usePortfolioAuth() {
+export function usePortfolioAuth(currentWalletId?: string | null) {
     const [user, setUser] = useState<User | null>(null)
     const [loading, setLoading] = useState(true)
     const [isAuthenticated, setIsAuthenticated] = useState(false)
+    const previousWalletIdRef = useRef<string | null | undefined>(
+        currentWalletId
+    )
+
+    // Detect wallet changes and clear session
+    useEffect(() => {
+        const previousWalletId = previousWalletIdRef.current
+
+        // If wallet was disconnected (currentWalletId is now null/undefined)
+        if (previousWalletId && !currentWalletId) {
+            console.log('🚪 Wallet disconnected, clearing session...')
+
+            // Clear the session immediately
+            setUser(null)
+            setIsAuthenticated(false)
+
+            // Sign out from Supabase
+            supabase.auth
+                .signOut()
+                .then(() => {
+                    console.log('✅ Session cleared after wallet disconnect')
+                })
+                .catch((error) => {
+                    console.error('❌ Error signing out:', error)
+                })
+        }
+        // If wallet changed (and we had a previous wallet), sign out
+        else if (
+            previousWalletId &&
+            currentWalletId &&
+            previousWalletId !== currentWalletId
+        ) {
+            console.log(
+                '🔄 Wallet changed from',
+                previousWalletId,
+                'to',
+                currentWalletId
+            )
+            console.log('🚪 Signing out previous wallet session...')
+
+            // Clear the session immediately
+            setUser(null)
+            setIsAuthenticated(false)
+
+            // Sign out from Supabase
+            supabase.auth
+                .signOut()
+                .then(() => {
+                    console.log('✅ Previous session cleared')
+                })
+                .catch((error) => {
+                    console.error('❌ Error signing out:', error)
+                })
+        }
+
+        // Update the ref
+        previousWalletIdRef.current = currentWalletId
+    }, [currentWalletId])
 
     useEffect(() => {
         // Check current session
@@ -71,6 +129,20 @@ export function usePortfolioAuth() {
             .replace(/-/g, '.')
 
         console.log('🔍 loadUser: Querying for wallet:', walletAddress)
+
+        // SECURITY CHECK: Verify that the session wallet matches the currently connected wallet
+        if (currentWalletId && currentWalletId !== walletAddress) {
+            console.warn('⚠️ MISMATCH: Session wallet !== Connected wallet')
+            console.warn('Session wallet:', walletAddress)
+            console.warn('Connected wallet:', currentWalletId)
+            console.warn('🚪 Signing out stale session...')
+
+            // Clear stale session
+            setUser(null)
+            setIsAuthenticated(false)
+            await supabase.auth.signOut()
+            return
+        }
 
         try {
             // Use server-side endpoint to fetch user data (this will use session cookies)
