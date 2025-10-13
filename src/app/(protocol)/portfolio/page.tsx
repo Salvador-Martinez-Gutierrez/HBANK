@@ -50,6 +50,8 @@ export default function PortfolioPage() {
         wallets: rawWallets,
         loading: walletsLoading,
         totalValue,
+        canAddMoreWallets,
+        walletsRemaining,
         syncTokens,
         addWallet,
         deleteWallet,
@@ -245,7 +247,11 @@ export default function PortfolioPage() {
                     </p>
                 </div>
                 <div className='flex items-center gap-2'>
-                    <AddWalletDialog onAddWallet={addWallet} />
+                    <AddWalletDialog
+                        onAddWallet={addWallet}
+                        canAddMore={canAddMoreWallets}
+                        walletsRemaining={walletsRemaining}
+                    />
                     <Button
                         variant='outline'
                         onClick={() => {

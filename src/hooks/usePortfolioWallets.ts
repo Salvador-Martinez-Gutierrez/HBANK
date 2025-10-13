@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { WalletWithTokens } from '@/types/portfolio'
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
+import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
 
 export function usePortfolioWallets(userId: string | null) {
     const [wallets, setWallets] = useState<WalletWithTokens[]>([])
@@ -128,6 +129,25 @@ export function usePortfolioWallets(userId: string | null) {
     const addWallet = useCallback(
         async (walletAddress: string, label?: string) => {
             try {
+                // Frontend validation: Check wallet limit before making API call
+                if (wallets.length >= MAX_WALLETS_PER_USER) {
+                    return {
+                        success: false,
+                        error: `Maximum ${MAX_WALLETS_PER_USER} wallets allowed per user`,
+                    }
+                }
+
+                // Check for duplicates
+                const isDuplicate = wallets.some(
+                    (w) => w.wallet_address === walletAddress
+                )
+                if (isDuplicate) {
+                    return {
+                        success: false,
+                        error: 'This wallet is already added to your portfolio',
+                    }
+                }
+
                 const response = await fetch('/api/portfolio/wallets', {
                     method: 'POST',
                     headers: {
@@ -149,7 +169,7 @@ export function usePortfolioWallets(userId: string | null) {
                 return { success: false, error: 'Failed to add wallet' }
             }
         },
-        [fetchWallets]
+        [fetchWallets, wallets]
     )
 
     const updateWalletLabel = useCallback(
@@ -255,6 +275,8 @@ export function usePortfolioWallets(userId: string | null) {
         loading,
         error,
         totalValue: calculateTotalValue(),
+        canAddMoreWallets: wallets.length < MAX_WALLETS_PER_USER,
+        walletsRemaining: MAX_WALLETS_PER_USER - wallets.length,
         addWallet,
         updateWalletLabel,
         deleteWallet,

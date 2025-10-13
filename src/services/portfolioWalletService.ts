@@ -6,6 +6,7 @@ import {
     getTokenPrice,
     createTokenLookupMap,
 } from './saucerSwapService'
+import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
 
 // Portfolio uses MAINNET mirror node (separate from vault/testnet)
 const PORTFOLIO_MIRROR_NODE = 'https://mainnet-public.mirrornode.hedera.com'
@@ -44,6 +45,7 @@ export async function getUserWallets(
 /**
  * Add a new wallet for a user
  * Uses supabaseAdmin to bypass RLS when called from API routes
+ * Maximum 5 wallets per user
  */
 export async function addWallet(
     userId: string,
@@ -51,6 +53,40 @@ export async function addWallet(
     label?: string
 ) {
     try {
+        // Check current wallet count
+        const { data: existingWallets, error: countError } = await supabaseAdmin
+            .from('wallets')
+            .select('id', { count: 'exact', head: false })
+            .eq('user_id', userId)
+
+        if (countError) {
+            console.error('Error counting wallets:', countError)
+            return { success: false, error: 'Failed to verify wallet limit' }
+        }
+
+        // Enforce wallet maximum
+        if (existingWallets && existingWallets.length >= MAX_WALLETS_PER_USER) {
+            return {
+                success: false,
+                error: `Maximum ${MAX_WALLETS_PER_USER} wallets allowed per user`,
+            }
+        }
+
+        // Check if wallet already exists for this user
+        const { data: duplicateCheck } = await supabaseAdmin
+            .from('wallets')
+            .select('id')
+            .eq('user_id', userId)
+            .eq('wallet_address', walletAddress)
+            .maybeSingle()
+
+        if (duplicateCheck) {
+            return {
+                success: false,
+                error: 'This wallet is already added to your portfolio',
+            }
+        }
+
         // Use admin client to bypass RLS policies in server-side operations
         const { data, error } = await supabaseAdmin
             .from('wallets')
@@ -59,7 +95,7 @@ export async function addWallet(
                 wallet_address: walletAddress,
                 label: label || 'Sub Wallet',
                 is_primary: false,
-            })
+            } as any)
             .select()
             .single()
 

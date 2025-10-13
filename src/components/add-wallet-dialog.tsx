@@ -24,9 +24,15 @@ interface AddWalletDialogProps {
         success: boolean
         error?: string
     }>
+    canAddMore?: boolean
+    walletsRemaining?: number
 }
 
-export function AddWalletDialog({ onAddWallet }: AddWalletDialogProps) {
+export function AddWalletDialog({
+    onAddWallet,
+    canAddMore = true,
+    walletsRemaining = 5,
+}: AddWalletDialogProps) {
     const [open, setOpen] = useState(false)
     const [walletAddress, setWalletAddress] = useState('')
     const [label, setLabel] = useState('')
@@ -73,7 +79,7 @@ export function AddWalletDialog({ onAddWallet }: AddWalletDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button disabled={!canAddMore}>
                     <Plus className='w-4 h-4' />
                     Add Wallet
                 </Button>
@@ -82,15 +88,17 @@ export function AddWalletDialog({ onAddWallet }: AddWalletDialogProps) {
                 <DialogHeader>
                     <DialogTitle>Add Wallet to Portfolio</DialogTitle>
                     <DialogDescription>
-                        You can track up to 5 mainnet wallets.
+                        {canAddMore
+                            ? `You can add ${walletsRemaining} more wallet${
+                                  walletsRemaining !== 1 ? 's' : ''
+                              } (max 5 total).`
+                            : 'You have reached the maximum of 5 wallets per account.'}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
                     <div className='grid gap-4 py-4 mb-4'>
                         <div className='grid gap-2'>
-                            <Label htmlFor='wallet-address'>
-                                Account ID *
-                            </Label>
+                            <Label htmlFor='wallet-address'>Account ID *</Label>
                             <Input
                                 id='wallet-address'
                                 placeholder='0.0.12345'
