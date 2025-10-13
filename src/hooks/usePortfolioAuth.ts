@@ -66,20 +66,22 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
     }, [currentWalletId])
 
     useEffect(() => {
-        // Check current session
+        // Check current session on mount
         checkUser()
 
         // Listen to auth changes
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            console.log('🔐 Auth state change:', _event, session?.user?.email)
+
             if (session) {
-                loadUser(session.user.email)
+                await loadUser(session.user.email)
             } else {
                 setUser(null)
                 setIsAuthenticated(false)
+                setLoading(false)
             }
-            setLoading(false)
         })
 
         return () => {
@@ -140,6 +142,7 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             // Clear stale session
             setUser(null)
             setIsAuthenticated(false)
+            setLoading(false)
             await supabase.auth.signOut()
             return
         }
@@ -174,6 +177,8 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             }
         } catch (error) {
             console.error('❌ loadUser: Fetch error:', error)
+        } finally {
+            setLoading(false)
         }
     }
 

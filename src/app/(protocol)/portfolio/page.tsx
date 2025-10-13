@@ -57,6 +57,7 @@ export default function PortfolioPage() {
         deleteWallet,
     } = usePortfolioWallets(user?.id || null)
     const [syncing, setSyncing] = useState(false)
+    const [syncingWallets, setSyncingWallets] = useState<Set<string>>(new Set())
 
     // Wallet collapse state (localStorage, instant)
     const { isWalletCollapsed, toggleWalletCollapsed } = useWalletCollapse()
@@ -122,7 +123,9 @@ export default function PortfolioPage() {
         walletId: string,
         walletAddress: string
     ) => {
-        setSyncing(true)
+        // Add wallet to syncing set
+        setSyncingWallets((prev) => new Set(prev).add(walletId))
+
         try {
             const result = await syncTokens(walletId, walletAddress)
             if (result.success) {
@@ -133,6 +136,34 @@ export default function PortfolioPage() {
         } catch (error) {
             console.error('Sync error:', error)
             toast.error('Failed to sync tokens')
+        } finally {
+            // Remove wallet from syncing set
+            setSyncingWallets((prev) => {
+                const newSet = new Set(prev)
+                newSet.delete(walletId)
+                return newSet
+            })
+        }
+    }
+
+    const handleSyncAllWallets = async () => {
+        setSyncing(true)
+        try {
+            // Sync all wallets in parallel
+            const syncPromises = wallets.map((w) =>
+                syncTokens(w.id, w.wallet_address)
+            )
+            const results = await Promise.all(syncPromises)
+
+            const allSuccess = results.every((r) => r.success)
+            if (allSuccess) {
+                toast.success('All wallets synced successfully')
+            } else {
+                toast.error('Some wallets failed to sync')
+            }
+        } catch (error) {
+            console.error('Sync all error:', error)
+            toast.error('Failed to sync wallets')
         } finally {
             setSyncing(false)
         }
@@ -197,6 +228,20 @@ export default function PortfolioPage() {
         )
     }
 
+    // Show loading state while checking authentication
+    if (authLoading) {
+        return (
+            <div className='h-full flex items-center justify-center'>
+                <div className='text-center space-y-4'>
+                    <RefreshCw className='w-12 h-12 mx-auto text-primary animate-spin' />
+                    <p className='text-muted-foreground'>
+                        Checking authentication...
+                    </p>
+                </div>
+            </div>
+        )
+    }
+
     if (!isAuthenticated) {
         return (
             <div className='h-full flex items-center justify-center'>
@@ -253,12 +298,9 @@ export default function PortfolioPage() {
                         walletsRemaining={walletsRemaining}
                     />
                     <Button
+                        type='button'
                         variant='outline'
-                        onClick={() => {
-                            wallets.forEach((w) =>
-                                handleSyncWallet(w.id, w.wallet_address)
-                            )
-                        }}
+                        onClick={handleSyncAllWallets}
                         disabled={syncing || walletsLoading}
                     >
                         <RefreshCw
@@ -306,6 +348,7 @@ export default function PortfolioPage() {
                             tokens to start tracking.
                         </p>
                         <Button
+                            type='button'
                             onClick={() => {
                                 if (wallets[0]) {
                                     handleSyncWallet(
@@ -334,7 +377,7 @@ export default function PortfolioPage() {
                                 <WalletCard
                                     key={wallet.id}
                                     wallet={wallet}
-                                    syncing={syncing}
+                                    syncing={syncingWallets.has(wallet.id)}
                                     isCollapsed={isWalletCollapsed(wallet.id)}
                                     onSync={handleSyncWallet}
                                     onDelete={handleDeleteWallet}
