@@ -1,17 +1,17 @@
 import {
-    Eye,
     FileText,
     PieChart,
     CircleDollarSign,
-    TrendingUp,
+    CreditCard,
+    ArrowRightLeft,
 } from 'lucide-react'
 
 export const navigation = [
-    { name: 'hUSD', href: '/vault', icon: CircleDollarSign },
-    // { name: 'HCF Vault', href: '/hcf-vault', icon: Landmark },
+    { name: 'Earn', href: '/earn', icon: CircleDollarSign },
     { name: 'Portfolio', href: '/portfolio', icon: PieChart },
-    { name: 'Performance', href: '/performance', icon: TrendingUp },
-    { name: 'Transparency', href: '/transparency', icon: Eye },
+    { name: 'Swap', href: '/swap', icon: ArrowRightLeft },
+    { name: 'Spend', href: '/spend', icon: CreditCard },
+    // { name: 'HCF Vault', href: '/hcf-vault', icon: Landmark },
 ]
 
 export const socialLinks = [

@@ -9,15 +9,15 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover'
 import { Button } from '@/components/ui/button'
-import { TokenInput } from '../../vault/components/token-input'
-import { SwapButton } from '../../vault/components/swap-button'
-import { TransactionDetails } from '../../vault/components/transaction-details'
+import { TokenInput } from '../../earn/components/token-input'
+import { SwapButton } from '../../earn/components/swap-button'
+import { TransactionDetails } from '../../earn/components/transaction-details'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
-import { MintActionButton } from '../../vault/components/mint-action-button'
-import { RedeemActionButton } from '../../vault/components/redeem-action-button'
+import { MintActionButton } from '../../earn/components/mint-action-button'
+import { RedeemActionButton } from '../../earn/components/redeem-action-button'
 import { HistoryCards } from '@/components/history-cards'
 import { useWallet, useAccountId } from '@buidlerlabs/hashgraph-react-wallets'
-import { useTokenBalances } from '../../vault/hooks/useTokenBalances'
+import { useTokenBalances } from '../../earn/hooks/useTokenBalances'
 import {
     useInstantWithdraw,
     refreshInstantWithdrawMax,

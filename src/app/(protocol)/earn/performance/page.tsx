@@ -21,9 +21,11 @@ import {
     ArrowUp,
     ArrowDown,
     ExternalLink,
+    ArrowLeft,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RATES_TOPIC_ID } from '@/app/backend-constants'
+import Link from 'next/link'
 
 // interface TooltipProps {
 //     active?: boolean
@@ -151,6 +153,13 @@ export default function PerformancePage() {
             {/* Header with price info */}
             <div className='border-b border-border bg-card'>
                 <div className='p-6'>
+                    <Link
+                        href='/earn'
+                        className='inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4'
+                    >
+                        <ArrowLeft className='h-4 w-4' />
+                        Back to Earn
+                    </Link>
                     <div className='flex items-center justify-between mb-6'>
                         <div>
                             <h1 className='text-2xl font-bold text-foreground flex items-center gap-2'>

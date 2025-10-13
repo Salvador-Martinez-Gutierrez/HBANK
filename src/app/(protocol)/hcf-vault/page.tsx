@@ -1,11 +1,11 @@
 'use client'
 
 import { HCFTradingInterface } from './components/hcf-trading-interface'
-import { ApyCard } from '../vault/components/apy-card'
-import { InfoCard } from '../vault/components/info-card'
+import { ApyCard } from '../earn/components/apy-card'
+import { InfoCard } from '../earn/components/info-card'
 import { HCFStatsCards } from './components/hcf-stats-cards'
 import { HCFExplainer } from './components/hcf-explainer'
-import { TestnetUsdcFaucet } from '../vault/components/testnet-usdc-faucet'
+import { TestnetUsdcFaucet } from '../earn/components/testnet-usdc-faucet'
 import Link from 'next/link'
 
 export default function HCFVaultPage() {
