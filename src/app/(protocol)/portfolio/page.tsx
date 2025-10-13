@@ -296,6 +296,7 @@ export default function PortfolioPage() {
                         onAddWallet={addWallet}
                         canAddMore={canAddMoreWallets}
                         walletsRemaining={walletsRemaining}
+                        onSyncWallet={handleSyncWallet}
                     />
                     <Button
                         type='button'

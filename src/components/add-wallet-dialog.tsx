@@ -23,15 +23,21 @@ interface AddWalletDialogProps {
     ) => Promise<{
         success: boolean
         error?: string
+        wallet?: { id: string; wallet_address: string }
     }>
     canAddMore?: boolean
     walletsRemaining?: number
+    onSyncWallet?: (
+        walletId: string,
+        walletAddress: string
+    ) => void | Promise<void>
 }
 
 export function AddWalletDialog({
     onAddWallet,
     canAddMore = true,
     walletsRemaining = 5,
+    onSyncWallet,
 }: AddWalletDialogProps) {
     const [open, setOpen] = useState(false)
     const [walletAddress, setWalletAddress] = useState('')
@@ -62,9 +68,14 @@ export function AddWalletDialog({
 
             if (result.success) {
                 toast.success('Wallet added successfully!')
-                setOpen(false)
+                setOpen(false) // Close modal first
                 setWalletAddress('')
                 setLabel('')
+
+                // Sync the newly added wallet
+                if (onSyncWallet && result.wallet) {
+                    onSyncWallet(result.wallet.id, result.wallet.wallet_address)
+                }
             } else {
                 toast.error(result.error || 'Failed to add wallet')
             }
