@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
-import { useAccountId } from '@/app/(protocol)/vault/hooks/useAccountID'
+import { useAccountId } from '@/app/(protocol)/earn/hooks/useAccountID'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
 import { Button } from '@/components/ui/button'
 import { Loader2, AlertTriangle, Zap } from 'lucide-react'

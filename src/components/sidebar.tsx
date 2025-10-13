@@ -25,6 +25,52 @@ export function Sidebar() {
         <nav className="flex-1 flex flex-col px-4 py-4 space-y-4">
           {navigation.map((item) => {
             const isActive = pathname === item.href
+            const isDisabled = item.name === 'Swap' || item.name === 'Spend'
+            
+            const content = (
+              <>
+                <item.icon
+                  className={cn(
+                    'mr-2 h-6 w-6 flex-shrink-0',
+                    isActive ? 'text-white' : 'text-foreground group-hover:text-accent-foreground'
+                  )}
+                />
+                <div className="flex items-center justify-between gap-2 flex-1">
+                  {item.name}
+                  {item.name === 'Earn' && (
+                    <Badge 
+                      variant="default" 
+                      className="bg-blue-300 text-white border-blue-400"
+                    >
+                      {vyusdPercentage}%
+                    </Badge>
+                  )}
+                  {(item.name === 'Swap' || item.name === 'Spend') && (
+                    <Badge 
+                      variant="default" 
+                      className="bg-blue-300 text-white border-blue-400"
+                    >
+                      soon
+                    </Badge>
+                  )}
+                </div>
+              </>
+            )
+            
+            if (isDisabled) {
+              return (
+                <div
+                  key={item.name}
+                  className={cn(
+                    'group flex items-center px-3 py-3.5 text-md font-medium rounded-lg transition-colors cursor-not-allowed opacity-60',
+                    'text-foreground'
+                  )}
+                >
+                  {content}
+                </div>
+              )
+            }
+            
             return (
               <Link
                 key={item.name}
@@ -36,23 +82,7 @@ export function Sidebar() {
                     : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
               >
-                <item.icon
-                  className={cn(
-                    'mr-2 h-6 w-6 flex-shrink-0',
-                    isActive ? 'text-white' : 'text-foreground group-hover:text-accent-foreground'
-                  )}
-                />
-                <div className="flex items-center justify-between gap-2 flex-1">
-                  {item.name}
-                  {item.name === 'hUSD' && (
-                    <Badge 
-                      variant="default" 
-                      className="bg-blue-300 text-white border-blue-400"
-                    >
-                      {vyusdPercentage}%
-                    </Badge>
-                  )}
-                </div>
+                {content}
               </Link>
             )
           })}

@@ -45,6 +45,34 @@ export function MobileSidebar() {
           <nav className="flex-1 flex flex-col px-4 py-4 space-y-4">
             {navigation.map((item) => {
               const isActive = pathname === item.href
+              const isDisabled = item.name === 'Swap' || item.name === 'Spend'
+              
+              const content = (
+                <>
+                  {React.createElement(item.icon, {
+                    className: cn(
+                      'mr-3 h-6 w-6 flex-shrink-0',
+                      isActive ? 'text-white' : 'text-muted-foreground group-hover:text-accent-foreground'
+                    )
+                  })}
+                  {item.name}
+                </>
+              )
+              
+              if (isDisabled) {
+                return (
+                  <div
+                    key={item.name}
+                    className={cn(
+                      'group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-not-allowed opacity-60',
+                      'text-foreground'
+                    )}
+                  >
+                    {content}
+                  </div>
+                )
+              }
+              
               return (
                 <Link
                   key={item.name}
@@ -57,13 +85,7 @@ export function MobileSidebar() {
                       : 'text-foreground hover:bg-accent hover:text-accent-foreground'
                   )}
                 >
-                  {React.createElement(item.icon, {
-                    className: cn(
-                      'mr-3 h-6 w-6 flex-shrink-0',
-                      isActive ? 'text-white' : 'text-muted-foreground group-hover:text-accent-foreground'
-                    )
-                  })}
-                  {item.name}
+                  {content}
                 </Link>
               )
             })}
