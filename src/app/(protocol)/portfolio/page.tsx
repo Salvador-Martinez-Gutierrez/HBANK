@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
-import { useAccountId } from '@/app/(protocol)/vault/hooks/useAccountID'
+import { useAccountId } from '@/app/(protocol)/earn/hooks/useAccountID'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { fetchAccountBalances } from '@/services/token.services'
 
@@ -82,8 +82,8 @@ export default function PortfolioPage() {
         return (
             <div className='h-full flex items-center justify-center'>
                 <div className='text-center space-y-6'>
-                    <p className='text-xl md:text-4xl max-w-lg mx-auto font-semibold text-foreground'>
-                        Earn a 13.33% APY on your USDC with the Hbank Protocol
+                    <p className='text-xl md:text-4xl max-w-xl mx-auto font-semibold text-foreground'>
+                        Track your assets and DeFi positions across multiple wallets
                     </p>
                     <div className='flex justify-center'>
                         <ConnectWalletButton variant='full-width' />
@@ -122,9 +122,8 @@ export default function PortfolioPage() {
                                         alt={t.name}
                                         width={32}
                                         height={32}
-                                        className={`rounded-full ${
-                                            t.grayscale ? 'grayscale' : ''
-                                        }`}
+                                        className={`rounded-full ${t.grayscale ? 'grayscale' : ''
+                                            }`}
                                     />
                                     <span>{t.name}</span>
                                 </div>

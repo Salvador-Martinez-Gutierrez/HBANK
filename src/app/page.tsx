@@ -9,6 +9,7 @@ import {
     CardTitle,
 } from '@/components/ui/card'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
     ArrowRight,
     Lock,
@@ -16,6 +17,10 @@ import {
     Globe,
     Sparkles,
     ChevronDown,
+    Wallet,
+    ArrowRightLeft,
+    CreditCard,
+    CircleCheck,
 } from 'lucide-react'
 import Head from 'next/head'
 import { useTVL } from '@/hooks/useTVL'
@@ -25,22 +30,22 @@ export default function Home() {
     return (
         <>
             <Head>
-                <title>Hbank Protocol - Tokenized Yield Solutions</title>
+                <title>HBank - The Onchain Neobank on Hedera</title>
                 <meta
                     name='description'
-                    content="Maximize your crypto yields with Hbank Protocol's secure DeFi vault on Hedera Hashgraph. Get your APY with automated yield farming strategies and total transparency."
+                    content="Your complete onchain banking alternative on Hedera. Earn yield, track your portfolio, trade assets, and spend crypto—all self-custodial and fully transparent."
                 />
                 <meta
                     name='keywords'
-                    content='Hedera, DeFi, Yield, Vault, Yield Farming, Hedera Hashgraph, Crypto Staking, HBAR, DeFi Protocol'
+                    content='Hedera, Neobank, DeFi, Yield, Portfolio Tracker, Crypto Swaps, Credit Card, Self-Custodial, Hedera Hashgraph, HBAR, Onchain Banking'
                 />
                 <meta
                     property='og:title'
-                    content='Hbank Protocol - Tokenized Yield Solutions'
+                    content='HBank - The Onchain Neobank on Hedera'
                 />
                 <meta
                     property='og:description'
-                    content='Earn superior yields on Hedera with automated DeFi strategies. Transparent, secure, and optimized for maximum returns.'
+                    content='Earn, trade, spend and manage your onchain assets on Hedera. Fully self-custodial with total transparency.'
                 />
                 <meta property='og:type' content='website' />
                 <meta name='twitter:card' content='summary_large_image' />
@@ -49,25 +54,38 @@ export default function Home() {
 
             <div className='min-h-screen'>
                 {/* Hero Section */}
-                <section className='relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-secondary/10 px-4 py-20 sm:px-6 lg:px-8'>
+                <section className='relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-secondary/10 px-4 py-10 sm:px-6 lg:px-8'>
                     <div className='absolute inset-0 bg-grid-white/10 bg-[size:30px_30px] [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]' />
                     <div className='relative mx-auto max-w-7xl'>
+                        {/* Logo and Launch App Button */}
+                        <div className='mb-16 flex items-center justify-between'>
+                            <Image
+                                src='/hb_logo-no-bg.png'
+                                alt='HBank Logo'
+                                width={240}
+                                height={240}
+                                priority
+                            />
+                            <Link href='/earn'>
+                                <Button
+                                    size='lg'
+                                    className='min-w-[140px] text-base font-semibold'
+                                >
+                                    Launch App
+                                    <ArrowRight className='ml-2 h-4 w-4' />
+                                </Button>
+                            </Link>
+                        </div>
                         <div className='text-center'>
-                            <div className='mb-6 inline-flex items-center rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary'>
-                                <Sparkles className='mr-2 h-4 w-4' />
-                                Powered by Hedera Hashgraph
-                            </div>
                             <h1 className='mb-6 text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl'>
                                 <span className='bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent'>
-                                    Tokenized Yield Solutions
+                                    The Onchain Neobank
                                 </span>
                                 <br />
                                 On Hedera Hashgraph
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                                Hbank is the premier on-chain asset management
-                                platform specializing in the issuance of liquid
-                                yield tokens on Hedera Hashgraph.
+                                The all-in-one onchain banking alternative on Hedera Hashgraph. Earn, spend and manage your assets all in one place.
                             </p>
                             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
                                 <Button
@@ -83,7 +101,7 @@ export default function Home() {
                                 >
                                     Learn More
                                 </Button>
-                                <Link href='/vault'>
+                                <Link href='/earn'>
                                     <Button
                                         size='lg'
                                         className='group min-w-[200px] text-base cursor-pointer hover:cursor-pointer'
@@ -139,23 +157,22 @@ export default function Home() {
                     </div>
                 </section>
 
-                {/* Transparency Section */}
+                {/* Value Proposition Section */}
                 <section className='bg-gradient-to-b from-secondary/5 to-background px-4 py-20 sm:px-6 lg:px-8'>
                     <div className='mx-auto max-w-7xl'>
                         <div className='grid items-center gap-12 lg:grid-cols-2'>
                             <div>
                                 <h2 className='mb-6 text-3xl font-bold sm:text-4xl'>
-                                    Institutional Grade
+                                    Your Complete
                                     <br />
                                     <span className='bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent'>
-                                        Onchain Asset Management
+                                        Onchain Banking Alternative
                                     </span>
                                 </h2>
                                 <p className='mb-8 text-lg text-muted-foreground'>
-                                    Launch and invest in liquid, transparent and
-                                    composable yield bearing tokens backed by
-                                    diversified DeFi strategies deployed on
-                                    blue-chip DeFi protocols.
+                                    Everything you need to manage your digital assets in one place. 
+                                    Earn yield, track your portfolio, trade, and spend — all while maintaining 
+                                    full self-custody and complete transparency.
                                 </p>
                             </div>
                             <div className='relative'>
@@ -165,7 +182,7 @@ export default function Home() {
                                         <Lock className='mr-3 mt-1 h-5 w-5 text-primary' />
                                         <div>
                                             <h3 className='font-semibold'>
-                                                Immutable & Secure
+                                                Self-Custodial & Secure
                                             </h3>
                                             <p className='text-sm text-muted-foreground'>
                                                 Permanent and unalterable record
@@ -177,12 +194,10 @@ export default function Home() {
                                         <Globe className='mr-3 mt-1 h-5 w-5 text-primary' />
                                         <div>
                                             <h3 className='font-semibold'>
-                                                Compossable and liquid
+                                                Composable & Liquid
                                             </h3>
                                             <p className='text-sm text-muted-foreground'>
-                                                Use our yield bearing tokens as
-                                                collateral for other DeFi
-                                                protocols
+                                                Seamlessly integrate with DeFi protocols
                                             </p>
                                         </div>
                                     </div>
@@ -190,7 +205,7 @@ export default function Home() {
                                         <BarChart3 className='mr-3 mt-1 h-5 w-5 text-primary' />
                                         <div>
                                             <h3 className='font-semibold'>
-                                                Real-Time Analytics
+                                                Real-Time Transparency
                                             </h3>
                                             <p className='text-sm text-muted-foreground'>
                                                 Dashboards with auditable and
@@ -215,30 +230,34 @@ export default function Home() {
                                 Our Products
                             </h2>
                             <p className='mx-auto mb-12 max-w-2xl text-lg text-muted-foreground'>
-                                Complete solutions for investors and asset
-                                managers
+                                Complete financial solutions for your onchain journey
                             </p>
                         </div>
 
-                        <div className='grid gap-8 md:grid-cols-2'>
+                        <div className='grid gap-6 md:grid-cols-2 lg:gap-8'>
+                            {/* Liquid Yield Tokens */}
                             <Card className='relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent'>
                                 <div className='absolute right-0 top-0 h-32 w-32 bg-primary/10 blur-3xl' />
                                 <CardHeader>
-                                    <div className='mb-4 flex items-center gap-4'>
-                                        <div className='inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-                                            <Lock className='h-7 w-7' />
+                                    <div className='mb-4 flex items-center justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className='inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                                                <Sparkles className='h-6 w-6' />
+                                            </div>
+                                            <span className='text-xl font-semibold'>
+                                                Liquid Yield
+                                            </span>
                                         </div>
-                                        <span className='text-2xl font-semibold'>
-                                            hUSD Vault
+                                        <span className='rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-600'>
+                                            Live - Testnet
                                         </span>
                                     </div>
-                                    <CardTitle className='text-2xl'>
-                                        For Qualified Investors
+                                    <CardTitle className='text-xl'>
+                                        Earn passive yield on your assets
                                     </CardTitle>
                                     <CardDescription className='text-base'>
-                                        Deposit your assets and generate yields
-                                        automatically with optimized delta
-                                        neutral strategies
+                                        Generate yields automatically with optimized 
+                                        DeFistrategies
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -262,70 +281,163 @@ export default function Home() {
                                             </span>
                                         </div>
                                     </div>
-                                    <Link href='/vault'>
+                                    <Link href='/earn'>
                                         <Button className='w-full' size='lg'>
-                                            Explore Vault
+                                            Start Earning
                                             <ArrowRight className='ml-2 h-4 w-4' />
                                         </Button>
                                     </Link>
                                 </CardContent>
                             </Card>
 
-                            <Card className='relative overflow-hidden border-secondary/20 bg-gradient-to-br from-secondary/5 to-transparent'>
+                            {/* Portfolio Tracker */}
+                            <Card className='relative overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent'>
                                 <div className='absolute right-0 top-0 h-32 w-32 bg-secondary/10 blur-3xl' />
                                 <CardHeader>
-                                    <div className='mb-4 flex items-center gap-4'>
-                                        <div className='inline-flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary'>
-                                            <Lock className='h-7 w-7' />
-                                        </div>
-                                        <span className='text-2xl font-semibold'>
-                                            Hbank SDK{' '}
-                                            <span className='text-sm text-muted-foreground'>
-                                                (Coming Soon)
+                                    <div className='mb-4 flex items-center justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className='inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                                                <Wallet className='h-6 w-6' />
+                                            </div>
+                                            <span className='text-xl font-semibold'>
+                                                Portfolio
                                             </span>
+                                        </div>
+                                        <span className='rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-600'>
+                                            Live - Testnet
                                         </span>
                                     </div>
-                                    <CardTitle className='text-2xl'>
-                                        For Asset Managers
+                                    <CardTitle className='text-xl'>
+                                        Manage all your holdings in one place
                                     </CardTitle>
                                     <CardDescription className='text-base'>
-                                        Launch and manage your own yield bearing
-                                        tokens optimizing operational processes
+                                        Track multiple wallets and DeFi positions 
+                                        from a unified dashboard
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className='mb-6 space-y-3'>
                                         <div className='flex items-center justify-between'>
                                             <span className='text-sm text-muted-foreground'>
-                                                Accelerate
+                                                Multi-Wallet Support
                                             </span>
-                                            <span className='text-sm font-semibold'>
-                                                Time to Market
-                                            </span>
+                                            <CircleCheck className='h-5 w-5 text-green-500' />
                                         </div>
                                         <div className='flex items-center justify-between'>
                                             <span className='text-sm text-muted-foreground'>
-                                                Security
+                                                Real-Time Updates
                                             </span>
-                                            <span className='text-sm font-medium'>
-                                                Audited Platform
-                                            </span>
+                                            <CircleCheck className='h-5 w-5 text-green-500' />
                                         </div>
                                     </div>
-                                    <Link
-                                        href='https://hbank.gitbook.io/hbank-docs/'
-                                        target='_blank'
-                                        rel='noopener noreferrer'
-                                    >
-                                        <Button
-                                            className='w-full'
-                                            size='lg'
-                                            variant='secondary'
-                                        >
-                                            Explore Docs
+                                    <Link href='/portfolio'>
+                                        <Button className='w-full' size='lg'>
+                                            View Portfolio
                                             <ArrowRight className='ml-2 h-4 w-4' />
                                         </Button>
                                     </Link>
+                                </CardContent>
+                            </Card>
+
+                            {/* Crypto Swaps */}
+                            <Card className='relative overflow-hidden border-primary/20 bg-gradient-to-br from-secondary/5 to-transparent'>
+                                <div className='absolute right-0 top-0 h-32 w-32 bg-secondary/10 blur-3xl' />
+                                <CardHeader>
+                                    <div className='mb-4 flex items-center justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className='inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                                                <ArrowRightLeft className='h-6 w-6' />
+                                            </div>
+                                            <span className='text-xl font-semibold'>
+                                                Swaps
+                                            </span>
+                                        </div>
+                                        <span className='rounded-full bg-yellow-500/10 px-3 py-1 text-xs font-medium text-yellow-600'>
+                                            Coming Soon
+                                        </span>
+                                    </div>
+                                    <CardTitle className='text-xl'>
+                                        Trade assets with the best prices
+                                    </CardTitle>
+                                    <CardDescription className='text-base'>
+                                        Access optimal liquidity through ETAswap 
+                                        aggregator integration
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className='mb-6 space-y-3'>
+                                        <div className='flex items-center justify-between'>
+                                            <span className='text-sm text-muted-foreground'>
+                                                Best Rates Guaranteed
+                                            </span>
+                                            <CircleCheck className='h-5 w-5 text-green-500' />
+                                        </div>
+                                        <div className='flex items-center justify-between'>
+                                            <span className='text-sm text-muted-foreground'>
+                                                Multiple DEXs Supported
+                                            </span>
+                                            <CircleCheck className='h-5 w-5 text-green-500' />
+                                        </div>
+                                    </div>
+                                    <Button 
+                                        className='w-full' 
+                                        size='lg'
+                                        variant='secondary'
+                                        disabled
+                                    >
+                                        Coming Soon
+                                    </Button>
+                                </CardContent>
+                            </Card>
+
+                            {/* Credit Card */}
+                            <Card className='relative overflow-hidden border-primary/20 bg-gradient-to-br from-secondary/5 to-transparent'>
+                                <div className='absolute right-0 top-0 h-32 w-32 bg-secondary/10 blur-3xl' />
+                                <CardHeader>
+                                    <div className='mb-4 flex items-center justify-between'>
+                                        <div className='flex items-center gap-3'>
+                                            <div className='inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary'>
+                                                <CreditCard className='h-6 w-6' />
+                                            </div>
+                                            <span className='text-xl font-semibold'>
+                                                Credit Card
+                                            </span>
+                                        </div>
+                                        <span className='rounded-full bg-yellow-500/10 px-3 py-1 text-xs font-medium text-yellow-600'>
+                                            Coming Soon
+                                        </span>
+                                    </div>
+                                    <CardTitle className='text-xl'>
+                                        Spend your crypto anywhere
+                                    </CardTitle>
+                                    <CardDescription className='text-base'>
+                                        Self-custodial card for seamless everyday 
+                                        spending of your onchain assets
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className='mb-6 space-y-3'>
+                                        <div className='flex items-center justify-between'>
+                                            <span className='text-sm text-muted-foreground'>
+                                                Global
+                                            </span>
+                                            <CircleCheck className='h-5 w-5 text-green-500' />
+                                        </div>
+                                        <div className='flex items-center justify-between'>
+                                            <span className='text-sm text-muted-foreground'>
+                                                Full Self-Custody
+                                            </span>
+                                            <CircleCheck className='h-5 w-5 text-green-500' />
+                                        </div>
+                                    </div>
+                                    <Button 
+                                        className='w-full' 
+                                        size='lg'
+                                        variant='secondary'
+                                        disabled
+                                    >
+                                        Coming Soon
+                                    </Button>
                                 </CardContent>
                             </Card>
                         </div>
@@ -340,28 +452,25 @@ export default function Home() {
                                 Frequently Asked Questions
                             </h2>
                             <p className='mx-auto mb-12 max-w-2xl text-lg text-muted-foreground'>
-                                Everything you need to know about the Hbank
-                                Protocol
+                                Everything you need to know about HBank
                             </p>
                         </div>
 
                         <div className='space-y-4'>
                             <details className='group rounded-lg border bg-card p-6'>
                                 <summary className='flex cursor-pointer items-center justify-between font-semibold'>
-                                    What is Hbank Protocol?
+                                    What is HBank?
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    Hbank Protocol is the premier onchain asset
-                                    management platform specialized in liquid
-                                    yield tokens. Built on Hedera Hashgraph, we
-                                    provide institutional-grade DeFi solutions
-                                    that launch and manage yield-bearing tokens
-                                    backed by diversified strategies deployed on
-                                    blue-chip DeFi protocols. Our platform
-                                    offers total transparency, composability,
-                                    and real-time analytics for both qualified
-                                    investors and asset managers.
+                                    HBank is the fully onchain, self-custodial neobank 
+                                    built on Hedera Hashgraph. We provide a complete suite 
+                                    of financial services including liquid yield tokens for 
+                                    earning passive income, a multi-wallet portfolio tracker, 
+                                    crypto swaps through aggregated liquidity, and a credit 
+                                    card for seamless spending. Unlike traditional neobanks, 
+                                    you maintain full custody of your assets with complete 
+                                    transparency and verifiability on-chain.
                                 </p>
                             </details>
 
@@ -450,11 +559,11 @@ export default function Home() {
                             {/* Brand */}
                             <div className='space-y-4 col-span-2 md:col-span-1 ml-4 md:ml-0'>
                                 <h3 className='text-lg font-bold'>
-                                    Hbank Protocol
+                                    HBank
                                 </h3>
                                 <p className='text-sm text-muted-foreground'>
-                                    The onchain asset management platform on
-                                    Hedera Hashgraph.
+                                    Your complete onchain banking alternative 
+                                    on Hedera Hashgraph.
                                 </p>
                                 <div className='flex gap-4'>
                                     <Link
@@ -483,7 +592,7 @@ export default function Home() {
                                 <ul className='space-y-2 text-sm'>
                                     <li>
                                         <Link
-                                            href='/vault'
+                                            href='/earn'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
                                             Vault
@@ -566,7 +675,7 @@ export default function Home() {
                         <div className='mt-8 border-t pt-8'>
                             <div className='flex flex-col items-center justify-between gap-4 sm:flex-row'>
                                 <p className='text-sm text-muted-foreground'>
-                                    © 2025 Hbank Protocol. All rights reserved.
+                                    © 2025 HBank. All rights reserved.
                                 </p>
                                 <div className='flex items-center gap-2 text-sm text-muted-foreground'>
                                     <span>Powered by</span>
