@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -9,6 +10,7 @@ import {
     ChevronDown,
     ChevronUp,
     GripVertical,
+    ArrowUpDown,
 } from 'lucide-react'
 import type { WalletWithTokens } from '@/types/portfolio'
 import { useSortable } from '@dnd-kit/sortable'
@@ -35,6 +37,8 @@ export function WalletCard({
     formatUsd,
     formatBalance,
 }: WalletCardProps) {
+    const [sortByValue, setSortByValue] = useState(true) // true = highest to lowest
+
     const {
         attributes,
         listeners,
@@ -67,6 +71,25 @@ export function WalletCard({
 
     const totalValue = calculateTotalValue()
     const tokenCount = wallet.wallet_tokens?.length || 0
+
+    // Sort tokens by USD value
+    const sortedTokens = useMemo(() => {
+        if (!wallet.wallet_tokens) return []
+
+        return [...wallet.wallet_tokens].sort((a, b) => {
+            const balanceA = parseFloat(a.balance || '0')
+            const priceA = parseFloat(a.tokens_registry?.price_usd || '0')
+            const decimalsA = a.tokens_registry?.decimals || 0
+            const valueA = (balanceA / Math.pow(10, decimalsA)) * priceA
+
+            const balanceB = parseFloat(b.balance || '0')
+            const priceB = parseFloat(b.tokens_registry?.price_usd || '0')
+            const decimalsB = b.tokens_registry?.decimals || 0
+            const valueB = (balanceB / Math.pow(10, decimalsB)) * priceB
+
+            return sortByValue ? valueB - valueA : valueA - valueB
+        })
+    }, [wallet.wallet_tokens, sortByValue])
 
     return (
         <Card
@@ -122,6 +145,23 @@ export function WalletCard({
 
                     {/* Right section: Action buttons */}
                     <div className='flex items-center gap-1'>
+                        {/* Sort tokens button - only show when not collapsed and has tokens */}
+                        {!isCollapsed && tokenCount > 0 && (
+                            <Button
+                                type='button'
+                                variant='ghost'
+                                size='sm'
+                                onClick={() => setSortByValue(!sortByValue)}
+                                title={
+                                    sortByValue
+                                        ? 'Sort by lowest value'
+                                        : 'Sort by highest value'
+                                }
+                            >
+                                <ArrowUpDown className='w-4 h-4' />
+                            </Button>
+                        )}
+
                         {/* Collapse/Expand button */}
                         <Button
                             type='button'
@@ -186,7 +226,7 @@ export function WalletCard({
                         </div>
                     ) : (
                         <div className='space-y-2 overflow-visible'>
-                            {wallet.wallet_tokens.map((walletToken) => {
+                            {sortedTokens.map((walletToken) => {
                                 const token = walletToken.tokens_registry
                                 const balance = formatBalance(
                                     walletToken.balance,
