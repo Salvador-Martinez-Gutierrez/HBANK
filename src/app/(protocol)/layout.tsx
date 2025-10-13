@@ -15,7 +15,9 @@ export default function AppLayout({
                     <Sidebar />
                     <div className='md:pl-64'>
                         <MainNav />
-                        <main className='relative'>{children}</main>
+                        <main className='relative h-[calc(100vh-4.5rem)] md:h-[calc(100vh-5rem)]'>
+                            {children}
+                        </main>
                     </div>
                 </div>
             </ThemeProvider>

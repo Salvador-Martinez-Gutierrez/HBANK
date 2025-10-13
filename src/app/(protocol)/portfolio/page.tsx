@@ -182,16 +182,9 @@ export default function PortfolioPage() {
         return (
             <div className='h-full flex items-center justify-center'>
                 <div className='text-center space-y-6'>
-                    <WalletIcon className='w-16 h-16 mx-auto text-muted-foreground' />
-                    <div>
-                        <p className='text-2xl md:text-4xl max-w-lg mx-auto font-semibold text-foreground mb-4'>
-                            Track Your Hedera Portfolio
-                        </p>
-                        <p className='text-muted-foreground max-w-md mx-auto'>
-                            Connect your wallet to view and manage your tokens,
-                            NFTs, and track your portfolio value in real-time.
-                        </p>
-                    </div>
+                    <p className='text-xl md:text-4xl max-w-xl mx-auto font-semibold text-foreground'>
+                        Track your assets and DeFi positions across multiple wallets
+                    </p>
                     <div className='flex justify-center'>
                         <ConnectWalletButton variant='full-width' />
                     </div>
@@ -207,7 +200,7 @@ export default function PortfolioPage() {
                     <Shield className='w-16 h-16 mx-auto text-primary' />
                     <div>
                         <h2 className='text-2xl font-bold text-foreground mb-2'>
-                            Authenticate Your Portfolio
+                            Authenticate your Account
                         </h2>
                         <p className='text-muted-foreground'>
                             Sign a message with your wallet to securely access
@@ -223,7 +216,7 @@ export default function PortfolioPage() {
                     >
                         {authLoading
                             ? 'Authenticating...'
-                            : 'Authenticate Portfolio'}
+                            : 'Authenticate'}
                     </Button>
                 </div>
             </div>
@@ -232,6 +225,11 @@ export default function PortfolioPage() {
 
     return (
         <div className='p-4 md:p-8'>
+            {/* Info Banner */}
+            <div className='mb-8 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800'>
+                📊 <strong>Mainnet Portfolio:</strong> Add multiple mainnet accounts to see the aggregated value of your assets and DeFi positions.
+            </div>
+
             {/* Header */}
             <div className='flex items-center justify-between mb-6'>
                 <div>
@@ -245,9 +243,9 @@ export default function PortfolioPage() {
                     </p>
                 </div>
                 <div className='flex items-center gap-2'>
+                    <AddWalletDialog onAddWallet={addWallet} />
                     <Button
                         variant='outline'
-                        size='sm'
                         onClick={() => {
                             wallets.forEach((w) =>
                                 handleSyncWallet(w.id, w.wallet_address)
@@ -256,43 +254,26 @@ export default function PortfolioPage() {
                         disabled={syncing || walletsLoading}
                     >
                         <RefreshCw
-                            className={`w-4 h-4 mr-2 ${
-                                syncing ? 'animate-spin' : ''
-                            }`}
+                            className={`w-4 h-4 ${syncing ? 'animate-spin' : ''
+                                }`}
                         />
                         Sync All
                     </Button>
-                    <AddWalletDialog onAddWallet={addWallet} />
                 </div>
             </div>
 
-            {/* Info Banner */}
-            <Card className='mb-6 bg-blue-500/10 border-blue-500/20'>
-                <CardContent className='py-4'>
-                    <p className='text-sm text-blue-600 dark:text-blue-400'>
-                        📊 <strong>Mainnet Portfolio:</strong> Track your Hedera
-                        mainnet wallets and tokens. Add multiple wallets to see
-                        an aggregated view of your portfolio.
-                    </p>
-                </CardContent>
-            </Card>
-
             {/* Total Value Card */}
-            <Card className='mb-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20'>
+            <Card className='mb-6 bg-card/80 backdrop-blur-sm border-border/50'>
                 <CardHeader>
                     <CardTitle className='flex items-center gap-2'>
                         <TrendingUp className='w-5 h-5' />
-                        Total Portfolio Value
+                        Total Value
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className='text-4xl font-bold text-foreground'>
                         {walletsLoading ? '...' : formatUsd(totalValue)}
                     </div>
-                    <p className='text-sm text-muted-foreground mt-1'>
-                        Across {wallets.length}{' '}
-                        {wallets.length === 1 ? 'wallet' : 'wallets'}
-                    </p>
                 </CardContent>
             </Card>
 
@@ -305,7 +286,7 @@ export default function PortfolioPage() {
                     </p>
                 </div>
             ) : wallets.length === 0 ? (
-                <Card>
+                <Card className='bg-card/80 backdrop-blur-sm border-border/50'>
                     <CardContent className='py-12 text-center'>
                         <WalletIcon className='w-12 h-12 mx-auto text-muted-foreground mb-4' />
                         <h3 className='text-lg font-semibold mb-2'>

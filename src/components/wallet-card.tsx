@@ -72,7 +72,7 @@ export function WalletCard({
         <Card
             ref={setNodeRef}
             style={style}
-            className={`overflow-visible ${isDragging ? 'z-50' : ''}`}
+            className={`overflow-visible ${isDragging ? 'z-50' : ''} bg-card/80 backdrop-blur-sm border-border/50`}
         >
             <CardHeader>
                 <div className='flex items-center justify-between gap-4'>

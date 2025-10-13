@@ -74,7 +74,7 @@ export function AddWalletDialog({ onAddWallet }: AddWalletDialogProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button>
-                    <Plus className='w-4 h-4 mr-2' />
+                    <Plus className='w-4 h-4' />
                     Add Wallet
                 </Button>
             </DialogTrigger>
@@ -82,15 +82,14 @@ export function AddWalletDialog({ onAddWallet }: AddWalletDialogProps) {
                 <DialogHeader>
                     <DialogTitle>Add Wallet to Portfolio</DialogTitle>
                     <DialogDescription>
-                        Add another Hedera wallet to track in your portfolio.
-                        You can track multiple wallets from mainnet.
+                        You can track up to 5 mainnet wallets.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>
-                    <div className='grid gap-4 py-4'>
+                    <div className='grid gap-4 py-4 mb-4'>
                         <div className='grid gap-2'>
                             <Label htmlFor='wallet-address'>
-                                Wallet Address *
+                                Account ID *
                             </Label>
                             <Input
                                 id='wallet-address'
@@ -101,9 +100,6 @@ export function AddWalletDialog({ onAddWallet }: AddWalletDialogProps) {
                                 }
                                 disabled={loading}
                             />
-                            <p className='text-xs text-muted-foreground'>
-                                Enter a Hedera mainnet account ID
-                            </p>
                         </div>
                         <div className='grid gap-2'>
                             <Label htmlFor='label'>Label (Optional)</Label>
@@ -114,9 +110,6 @@ export function AddWalletDialog({ onAddWallet }: AddWalletDialogProps) {
                                 onChange={(e) => setLabel(e.target.value)}
                                 disabled={loading}
                             />
-                            <p className='text-xs text-muted-foreground'>
-                                Give this wallet a friendly name
-                            </p>
                         </div>
                     </div>
                     <DialogFooter>
