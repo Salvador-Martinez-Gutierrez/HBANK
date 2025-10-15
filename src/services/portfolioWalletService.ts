@@ -3,16 +3,29 @@ import type { WalletWithTokens } from '@/types/portfolio'
 import { createTokenLookupMap } from './saucerSwapService'
 import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
 
-// Portfolio uses MAINNET mirror node (separate from vault/testnet)
-const PORTFOLIO_MIRROR_NODE = 'https://mainnet-public.mirrornode.hedera.com'
+/**
+ * Get Validation Cloud Mirror Node URL
+ * Uses environment variables for API key and base URL
+ */
+function getValidationCloudUrl(): string {
+    const apiKey = process.env.VALIDATION_CLOUD_API_KEY
+    const baseUrl =
+        process.env.VALIDATION_CLOUD_BASE_URL ||
+        'https://mainnet.hedera.validationcloud.io/v1'
+
+    if (!apiKey) {
+        throw new Error('VALIDATION_CLOUD_API_KEY is not configured')
+    }
+
+    return `${baseUrl}/${apiKey}/api/v1`
+}
 
 /**
- * Get all wallets for a user
+ * Get all wallets for a user with all asset types
  * Uses supabaseAdmin to bypass RLS when called from API routes
+ * Fetches: fungible tokens, LP tokens, and NFTs
  */
-export async function getUserWallets(
-    userId: string
-): Promise<WalletWithTokens[]> {
+export async function getUserWallets(userId: string): Promise<any[]> {
     try {
         // Use admin client to bypass RLS policies
         // This is safe because we're validating JWT before calling this function
@@ -25,7 +38,14 @@ export async function getUserWallets(
                     *,
                     tokens_registry (*)
                 ),
-                nfts (*)
+                liquidity_pool_tokens (
+                    *,
+                    tokens_registry (*)
+                ),
+                nfts (
+                    *,
+                    tokens_registry (*)
+                )
             `
             )
             .eq('user_id', userId)
@@ -37,7 +57,7 @@ export async function getUserWallets(
             return []
         }
 
-        return (wallets as WalletWithTokens[]) || []
+        return wallets || []
     } catch (error) {
         console.error('Error in getUserWallets:', error)
         return []
@@ -171,41 +191,99 @@ export async function deleteWallet(walletId: string) {
 }
 
 /**
- * Sync tokens for a wallet from Hedera
+ * Check if a token is a liquidity pool token
+ * LP tokens on SaucerSwap/Hedera typically have specific naming patterns
+ */
+function isLiquidityPoolToken(tokenSymbol: string, tokenName: string): boolean {
+    const lpPatterns = [
+        /LP$/i, // Ends with LP
+        /^LP-/i, // Starts with LP-
+        /SAUCER.*LP/i, // SaucerSwap LP tokens
+        /^HBAR-/i, // HBAR paired tokens
+        /.*-HBAR$/i, // Tokens paired with HBAR
+        /.*\/.*/, // Contains slash (e.g., HBAR/USDC)
+    ]
+
+    const textToCheck = `${tokenSymbol} ${tokenName}`
+    return lpPatterns.some((pattern) => pattern.test(textToCheck))
+}
+
+/**
+ * Sync all assets for a wallet from Hedera Validation Cloud
+ * Fetches and categorizes:
+ * - Fungible Tokens
+ * - NFTs
+ * - Liquidity Pool Tokens
  * Uses supabaseAdmin to bypass RLS when called from API routes
- * Also fetches token metadata and prices from SaucerSwap
- * Now uses normalized schema (tokens_registry + wallet_tokens)
+ * Uses normalized schema with separate tables for each asset type
  */
 export async function syncWalletTokens(
     walletId: string,
     walletAddress: string
 ) {
     try {
-        // Fetch tokens from Hedera Mirror Node (MAINNET for portfolio)
-        const response = await fetch(
-            `${PORTFOLIO_MIRROR_NODE}/api/v1/accounts/${walletAddress}/tokens`
-        )
+        const validationCloudBaseUrl = getValidationCloudUrl()
 
-        if (!response.ok) {
+        // ========================================
+        // 1. FETCH FUNGIBLE & LP TOKENS
+        // ========================================
+        const tokensUrl = `${validationCloudBaseUrl}/accounts/${walletAddress}/tokens`
+        console.log(`📡 Fetching tokens from Validation Cloud: ${tokensUrl}`)
+
+        const tokensResponse = await fetch(tokensUrl)
+        if (!tokensResponse.ok) {
             throw new Error('Failed to fetch tokens from Hedera')
         }
 
-        const data = await response.json()
-        const tokens = data.tokens || []
+        const tokensData = await tokensResponse.json()
+        const tokens = tokensData.tokens || []
 
         console.log(
-            `📊 Syncing ${tokens.length} tokens for wallet ${walletAddress}`
+            `📊 Found ${tokens.length} total tokens for wallet ${walletAddress}`
         )
 
-        // Create a lookup map for SaucerSwap tokens (ONE API call, cached for 5 minutes)
+        // ========================================
+        // 2. FETCH NFTs
+        // ========================================
+        const nftsUrl = `${validationCloudBaseUrl}/accounts/${walletAddress}/nfts`
+        console.log(`📡 Fetching NFTs from Validation Cloud: ${nftsUrl}`)
+
+        let nfts: any[] = []
+        try {
+            const nftsResponse = await fetch(nftsUrl)
+            if (nftsResponse.ok) {
+                const nftsData = await nftsResponse.json()
+                nfts = nftsData.nfts || []
+                console.log(
+                    `🎨 Found ${nfts.length} NFTs for wallet ${walletAddress}`
+                )
+            }
+        } catch (nftError) {
+            console.warn('⚠️ Could not fetch NFTs:', nftError)
+        }
+
+        // ========================================
+        // 3. GET TOKEN METADATA FROM SAUCERSWAP
+        // ========================================
         const tokenLookupMap = await createTokenLookupMap()
         console.log(
             `🔍 Loaded ${tokenLookupMap.size} tokens from SaucerSwap (cached)`
         )
 
-        // Process each token
+        // ========================================
+        // 4. PROCESS FUNGIBLE & LP TOKENS
+        // ========================================
+        let fungibleCount = 0
+        let lpCount = 0
+
         for (const token of tokens) {
             const tokenAddress = token.token_id
+            const tokenType = token.type || 'FUNGIBLE_COMMON'
+
+            // Skip NFTs (they are processed separately)
+            if (tokenType === 'NON_FUNGIBLE_UNIQUE') {
+                continue
+            }
 
             // Get token info from SaucerSwap cache
             const saucerToken = tokenLookupMap.get(tokenAddress)
@@ -215,15 +293,21 @@ export async function syncWalletTokens(
             const decimals = token.decimals || 0
             const priceUsd = saucerToken?.priceUsd?.toString() || '0'
 
+            // Determine if this is an LP token
+            const isLPToken = isLiquidityPoolToken(tokenSymbol, tokenName)
+            const finalTokenType = isLPToken ? 'LP_TOKEN' : 'FUNGIBLE'
+
             if (saucerToken) {
-                console.log(`💰 ${tokenSymbol}: $${priceUsd} (${tokenName})`)
+                console.log(
+                    `💰 ${tokenSymbol}: $${priceUsd} (${tokenName}) [${finalTokenType}]`
+                )
             } else {
                 console.log(
-                    `ℹ️ Token ${tokenAddress} not found in SaucerSwap (no price available)`
+                    `ℹ️ Token ${tokenAddress} not found in SaucerSwap [${finalTokenType}]`
                 )
             }
 
-            // Step 1: Upsert token in registry (shared across all wallets)
+            // Step 1: Upsert token in registry
             const { data: registryToken, error: registryError } =
                 await supabaseAdmin
                     .from('tokens_registry')
@@ -234,6 +318,7 @@ export async function syncWalletTokens(
                             token_symbol: tokenSymbol,
                             token_icon: tokenIcon,
                             decimals: decimals,
+                            token_type: finalTokenType,
                             price_usd: priceUsd,
                             last_price_update: new Date().toISOString(),
                         },
@@ -253,33 +338,146 @@ export async function syncWalletTokens(
                 continue
             }
 
-            // Step 2: Upsert wallet-token relationship with balance
-            const { error: walletTokenError } = await supabaseAdmin
-                .from('wallet_tokens')
-                .upsert(
-                    {
-                        wallet_id: walletId,
-                        token_id: registryToken.id,
-                        balance: token.balance.toString(),
-                        last_synced_at: new Date().toISOString(),
-                    },
-                    {
-                        onConflict: 'wallet_id,token_id',
-                    }
-                )
+            // Step 2: Upsert to appropriate table
+            if (isLPToken) {
+                // Insert into liquidity_pool_tokens
+                const { error: lpTokenError } = await supabaseAdmin
+                    .from('liquidity_pool_tokens')
+                    .upsert(
+                        {
+                            wallet_id: walletId,
+                            token_id: registryToken.id,
+                            balance: token.balance.toString(),
+                            pool_metadata: {
+                                // You can enrich this with more data if available
+                                tokenAddress,
+                                decimals,
+                            },
+                            last_synced_at: new Date().toISOString(),
+                        },
+                        {
+                            onConflict: 'wallet_id,token_id',
+                        }
+                    )
 
-            if (walletTokenError) {
-                console.error(
-                    'Error syncing wallet token:',
-                    tokenAddress,
-                    walletTokenError
-                )
+                if (lpTokenError) {
+                    console.error(
+                        'Error syncing LP token:',
+                        tokenAddress,
+                        lpTokenError
+                    )
+                } else {
+                    lpCount++
+                    console.log(`✅ Synced LP token: ${tokenSymbol}`)
+                }
             } else {
-                console.log(`✅ Synced token: ${tokenSymbol} (${tokenAddress})`)
+                // Insert into wallet_tokens
+                const { error: walletTokenError } = await supabaseAdmin
+                    .from('wallet_tokens')
+                    .upsert(
+                        {
+                            wallet_id: walletId,
+                            token_id: registryToken.id,
+                            balance: token.balance.toString(),
+                            last_synced_at: new Date().toISOString(),
+                        },
+                        {
+                            onConflict: 'wallet_id,token_id',
+                        }
+                    )
+
+                if (walletTokenError) {
+                    console.error(
+                        'Error syncing fungible token:',
+                        tokenAddress,
+                        walletTokenError
+                    )
+                } else {
+                    fungibleCount++
+                    console.log(`✅ Synced fungible token: ${tokenSymbol}`)
+                }
             }
         }
 
-        return { success: true }
+        // ========================================
+        // 5. PROCESS NFTs
+        // ========================================
+        let nftCount = 0
+
+        for (const nft of nfts) {
+            const tokenAddress = nft.token_id
+            const serialNumber = nft.serial_number
+
+            // Upsert NFT token in registry
+            const { data: registryToken, error: registryError } =
+                await supabaseAdmin
+                    .from('tokens_registry')
+                    .upsert(
+                        {
+                            token_address: tokenAddress,
+                            token_name: nft.metadata?.name || tokenAddress,
+                            token_symbol: nft.metadata?.symbol || tokenAddress,
+                            token_icon: nft.metadata?.image || null,
+                            token_type: 'NON_FUNGIBLE',
+                            decimals: 0,
+                        },
+                        {
+                            onConflict: 'token_address',
+                        }
+                    )
+                    .select('id')
+                    .single()
+
+            if (registryError) {
+                console.error(
+                    'Error upserting NFT registry:',
+                    tokenAddress,
+                    registryError
+                )
+                continue
+            }
+
+            // Insert into nfts table
+            const { error: nftError } = await supabaseAdmin.from('nfts').upsert(
+                {
+                    wallet_id: walletId,
+                    token_id: tokenAddress,
+                    token_registry_id: registryToken.id,
+                    serial_number: serialNumber,
+                    metadata: nft.metadata || {},
+                    last_synced_at: new Date().toISOString(),
+                },
+                {
+                    onConflict: 'wallet_id,token_id,serial_number',
+                }
+            )
+
+            if (nftError) {
+                console.error(
+                    'Error syncing NFT:',
+                    `${tokenAddress}#${serialNumber}`,
+                    nftError
+                )
+            } else {
+                nftCount++
+            }
+        }
+
+        console.log(`
+✅ Sync completed for wallet ${walletAddress}:
+   📦 ${fungibleCount} fungible tokens
+   💧 ${lpCount} LP tokens  
+   🎨 ${nftCount} NFTs
+        `)
+
+        return {
+            success: true,
+            stats: {
+                fungibleTokens: fungibleCount,
+                lpTokens: lpCount,
+                nfts: nftCount,
+            },
+        }
     } catch (error) {
         console.error('Error in syncWalletTokens:', error)
         return { success: false, error: 'Sync failed' }
@@ -287,13 +485,14 @@ export async function syncWalletTokens(
 }
 
 /**
- * Get token metadata from Hedera
+ * Get token metadata from Hedera using Validation Cloud
  */
 export async function getTokenMetadata(tokenId: string) {
     try {
-        const response = await fetch(
-            `${PORTFOLIO_MIRROR_NODE}/api/v1/tokens/${tokenId}`
-        )
+        const validationCloudBaseUrl = getValidationCloudUrl()
+        const url = `${validationCloudBaseUrl}/tokens/${tokenId}`
+
+        const response = await fetch(url)
 
         if (!response.ok) {
             throw new Error('Failed to fetch token metadata')

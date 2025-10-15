@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,14 +10,13 @@ import {
     ChevronDown,
     ChevronUp,
     GripVertical,
-    ArrowUpDown,
 } from 'lucide-react'
-import type { WalletWithTokens } from '@/types/portfolio'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { AssetSections } from './asset-sections'
 
 interface WalletCardProps {
-    wallet: WalletWithTokens
+    wallet: any // TODO: Update with proper type once Supabase types are regenerated
     syncing: boolean
     isCollapsed: boolean
     onSync: (walletId: string, walletAddress: string) => void
@@ -37,8 +36,6 @@ export function WalletCard({
     formatUsd,
     formatBalance,
 }: WalletCardProps) {
-    const [sortByValue, setSortByValue] = useState(true) // true = highest to lowest
-
     const {
         attributes,
         listeners,
@@ -54,9 +51,11 @@ export function WalletCard({
         opacity: isDragging ? 0.5 : 1,
     }
 
-    // Calculate total wallet value
+    // Calculate total wallet value (across all asset types)
     const calculateTotalValue = () => {
         let total = 0
+
+        // Add fungible tokens value
         for (const walletToken of wallet.wallet_tokens || []) {
             const balance = parseFloat(walletToken.balance || '0')
             const price = parseFloat(
@@ -66,30 +65,62 @@ export function WalletCard({
             const normalizedBalance = balance / Math.pow(10, decimals)
             total += normalizedBalance * price
         }
+
+        // Add LP tokens value
+        for (const lpToken of wallet.liquidity_pool_tokens || []) {
+            const balance = parseFloat(lpToken.balance || '0')
+            const price = parseFloat(lpToken.tokens_registry?.price_usd || '0')
+            const decimals = lpToken.tokens_registry?.decimals || 0
+            const normalizedBalance = balance / Math.pow(10, decimals)
+            total += normalizedBalance * price
+        }
+
         return total
     }
 
     const totalValue = calculateTotalValue()
-    const tokenCount = wallet.wallet_tokens?.length || 0
+    const fungibleCount = wallet.wallet_tokens?.length || 0
+    const lpCount = wallet.liquidity_pool_tokens?.length || 0
+    const nftCount = wallet.nfts?.length || 0
+    const totalAssets = fungibleCount + lpCount + nftCount
 
-    // Sort tokens by USD value
-    const sortedTokens = useMemo(() => {
-        if (!wallet.wallet_tokens) return []
+    // Prepare data for AssetSections component
+    const fungibleTokens = useMemo(() => {
+        return (wallet.wallet_tokens || []).map((wt: any) => ({
+            id: wt.id,
+            balance: wt.balance,
+            token_name: wt.tokens_registry?.token_name,
+            token_symbol: wt.tokens_registry?.token_symbol,
+            token_address: wt.tokens_registry?.token_address,
+            token_icon: wt.tokens_registry?.token_icon,
+            decimals: wt.tokens_registry?.decimals || 0,
+            price_usd: wt.tokens_registry?.price_usd || '0',
+        }))
+    }, [wallet.wallet_tokens])
 
-        return [...wallet.wallet_tokens].sort((a, b) => {
-            const balanceA = parseFloat(a.balance || '0')
-            const priceA = parseFloat(a.tokens_registry?.price_usd || '0')
-            const decimalsA = a.tokens_registry?.decimals || 0
-            const valueA = (balanceA / Math.pow(10, decimalsA)) * priceA
+    const lpTokens = useMemo(() => {
+        return (wallet.liquidity_pool_tokens || []).map((lp: any) => ({
+            id: lp.id,
+            balance: lp.balance,
+            token_name: lp.tokens_registry?.token_name,
+            token_symbol: lp.tokens_registry?.token_symbol,
+            token_address: lp.tokens_registry?.token_address,
+            token_icon: lp.tokens_registry?.token_icon,
+            decimals: lp.tokens_registry?.decimals || 0,
+            price_usd: lp.tokens_registry?.price_usd || '0',
+        }))
+    }, [wallet.liquidity_pool_tokens])
 
-            const balanceB = parseFloat(b.balance || '0')
-            const priceB = parseFloat(b.tokens_registry?.price_usd || '0')
-            const decimalsB = b.tokens_registry?.decimals || 0
-            const valueB = (balanceB / Math.pow(10, decimalsB)) * priceB
-
-            return sortByValue ? valueB - valueA : valueA - valueB
-        })
-    }, [wallet.wallet_tokens, sortByValue])
+    const nfts = useMemo(() => {
+        return (wallet.nfts || []).map((nft: any) => ({
+            id: nft.id,
+            token_id: nft.token_id,
+            serial_number: nft.serial_number,
+            metadata: nft.metadata,
+            token_name: nft.tokens_registry?.token_name,
+            token_icon: nft.tokens_registry?.token_icon,
+        }))
+    }, [wallet.nfts])
 
     return (
         <Card
@@ -136,8 +167,8 @@ export function WalletCard({
                                     {formatUsd(totalValue)}
                                 </span>
                                 <span className='text-xs text-muted-foreground'>
-                                    · {tokenCount}{' '}
-                                    {tokenCount === 1 ? 'token' : 'tokens'}
+                                    · {fungibleCount + lpCount} tokens ·{' '}
+                                    {nftCount} NFTs
                                 </span>
                             </div>
                         )}
@@ -145,23 +176,6 @@ export function WalletCard({
 
                     {/* Right section: Action buttons */}
                     <div className='flex items-center gap-1'>
-                        {/* Sort tokens button - only show when not collapsed and has tokens */}
-                        {!isCollapsed && tokenCount > 0 && (
-                            <Button
-                                type='button'
-                                variant='ghost'
-                                size='sm'
-                                onClick={() => setSortByValue(!sortByValue)}
-                                title={
-                                    sortByValue
-                                        ? 'Sort by lowest value'
-                                        : 'Sort by highest value'
-                                }
-                            >
-                                <ArrowUpDown className='w-4 h-4' />
-                            </Button>
-                        )}
-
                         {/* Collapse/Expand button */}
                         <Button
                             type='button'
@@ -219,77 +233,13 @@ export function WalletCard({
             {/* Show content only when not collapsed */}
             {!isCollapsed && (
                 <CardContent className='overflow-visible'>
-                    {!wallet.wallet_tokens ||
-                    wallet.wallet_tokens.length === 0 ? (
-                        <div className='text-center py-6 text-muted-foreground'>
-                            <p>No tokens found. Click sync to load tokens.</p>
-                        </div>
-                    ) : (
-                        <div className='space-y-2 overflow-visible'>
-                            {sortedTokens.map((walletToken) => {
-                                const token = walletToken.tokens_registry
-                                const balance = formatBalance(
-                                    walletToken.balance,
-                                    token?.decimals || 0
-                                )
-                                const priceUsd = parseFloat(
-                                    token?.price_usd || '0'
-                                )
-                                const valueUsd = parseFloat(balance) * priceUsd
-
-                                return (
-                                    <div
-                                        key={walletToken.id}
-                                        className='flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors'
-                                    >
-                                        <div className='flex items-center gap-3'>
-                                            {token?.token_icon ? (
-                                                <img
-                                                    src={token.token_icon}
-                                                    alt={
-                                                        token?.token_symbol ||
-                                                        'Token'
-                                                    }
-                                                    className='w-8 h-8 rounded-full'
-                                                    onError={(e) => {
-                                                        e.currentTarget.style.display =
-                                                            'none'
-                                                    }}
-                                                />
-                                            ) : (
-                                                <div className='w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold'>
-                                                    {token?.token_symbol?.[0] ||
-                                                        '?'}
-                                                </div>
-                                            )}
-                                            <div>
-                                                <div className='font-medium'>
-                                                    {token?.token_name ||
-                                                        token?.token_symbol ||
-                                                        token?.token_address}
-                                                </div>
-                                                <div className='text-sm text-muted-foreground'>
-                                                    {balance}{' '}
-                                                    {token?.token_symbol ||
-                                                        'tokens'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className='text-right'>
-                                            <div className='font-medium'>
-                                                {formatUsd(valueUsd)}
-                                            </div>
-                                            {priceUsd > 0 && (
-                                                <div className='text-sm text-muted-foreground'>
-                                                    @{formatUsd(priceUsd)}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
+                    <AssetSections
+                        fungibleTokens={fungibleTokens}
+                        lpTokens={lpTokens}
+                        nfts={nfts}
+                        formatUsd={formatUsd}
+                        formatBalance={formatBalance}
+                    />
                 </CardContent>
             )}
         </Card>

@@ -58,7 +58,7 @@ Verifica la firma y crea una sesión JWT.
 **Cookie Set:**
 
 ```
-hbank-auth-token=jwt-token; HttpOnly; Secure; SameSite=Strict; Max-Age=604800
+hbank-auth-token=jwt-token; HttpOnly; Secure; SameSite=Strict; Max-Age=86400
 ```
 
 **Example:**
@@ -129,7 +129,7 @@ curl "https://your-domain.com/api/auth/me" \
 ## 🔒 Security
 
 -   Nonces expire in 5 minutes
--   JWT expires in 7 days
+-   JWT expires in 24 hours
 -   Cookies are HttpOnly, Secure, SameSite=Strict
 -   No transaction fees (off-chain signing)
 -   Automatic logout on wallet disconnect

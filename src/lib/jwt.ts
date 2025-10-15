@@ -1,12 +1,7 @@
-/**
- * Utilidades para crear y verificar JWT con jose
- */
-
 import { SignJWT, jwtVerify } from 'jose'
 import type { JWTPayload } from '@/types/auth'
 import { logger } from './logger'
 
-// Obtener el secret desde variables de entorno
 const getJWTSecret = (): Uint8Array => {
     const secret = process.env.JWT_SECRET
     if (!secret) {
@@ -15,15 +10,10 @@ const getJWTSecret = (): Uint8Array => {
     return new TextEncoder().encode(secret)
 }
 
-// Tiempo de expiración del JWT (7 días)
-const JWT_EXPIRATION = '7d'
+const JWT_EXPIRATION = '24h'
 
-// Issuer del JWT
 const JWT_ISSUER = 'hbank-protocol'
 
-/**
- * Crea un JWT para un accountId
- */
 export async function createJWT(accountId: string): Promise<string> {
     try {
         const secret = getJWTSecret()
@@ -47,9 +37,6 @@ export async function createJWT(accountId: string): Promise<string> {
     }
 }
 
-/**
- * Verifica un JWT y devuelve el payload
- */
 export async function verifyJWT(token: string): Promise<JWTPayload | null> {
     try {
         const secret = getJWTSecret()
@@ -58,7 +45,6 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
             issuer: JWT_ISSUER,
         })
 
-        // Validar que tenga los campos necesarios
         if (!payload.sub || typeof payload.sub !== 'string') {
             logger.warn('JWT payload missing required fields')
             return null
@@ -78,10 +64,6 @@ export async function verifyJWT(token: string): Promise<JWTPayload | null> {
     }
 }
 
-/**
- * Extrae el accountId de un JWT sin verificar (solo decodifica)
- * ADVERTENCIA: Solo usar para logging o debugging, no para autorización
- */
 export function decodeJWT(token: string): { accountId?: string } | null {
     try {
         const parts = token.split('.')

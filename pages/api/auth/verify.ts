@@ -1,12 +1,3 @@
-/**
- * Endpoint para verificar la firma y generar JWT de sesión
- *
- * POST /api/auth/verify
- * Body: { accountId, nonce, signature, publicKey? }
- *
- * Verifica la firma del mensaje y devuelve un JWT en una cookie segura
- */
-
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { NonceService } from '@/services/nonceService'
 import {
@@ -22,7 +13,6 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse<AuthResponse>
 ) {
-    // Solo permitir POST
     if (req.method !== 'POST') {
         return res.status(405).json({
             success: false,
@@ -34,7 +24,6 @@ export default async function handler(
         const { accountId, nonce, signature, publicKey } =
             req.body as VerifyRequest
 
-        // Validar campos requeridos
         if (!accountId || !nonce || !signature) {
             logger.warn('Missing required fields in verify request')
             return res.status(400).json({
@@ -43,7 +32,6 @@ export default async function handler(
             })
         }
 
-        // Validar formato de accountId
         if (!isValidHederaAccountId(accountId)) {
             logger.warn('Invalid Hedera accountId format', { accountId })
             return res.status(400).json({
@@ -52,7 +40,6 @@ export default async function handler(
             })
         }
 
-        // Validar el nonce
         const nonceValidation = NonceService.validateNonce(nonce, accountId)
         if (!nonceValidation.valid || !nonceValidation.message) {
             logger.warn('Nonce validation failed', {
@@ -65,11 +52,9 @@ export default async function handler(
             })
         }
 
-        // Verificar la firma
         let isValidSignature = false
 
         if (publicKey) {
-            // Si el cliente envió la public key, usarla directamente
             logger.info('Verifying signature with provided public key', {
                 accountId,
             })
@@ -79,7 +64,6 @@ export default async function handler(
                 publicKey
             )
         } else {
-            // Si no, consultar el Mirror Node
             logger.info('Verifying signature with Mirror Node public key', {
                 accountId,
             })
@@ -98,17 +82,14 @@ export default async function handler(
             })
         }
 
-        // Marcar el nonce como usado
         NonceService.markAsUsed(nonce)
 
-        // Crear JWT
         const token = await createJWT(accountId)
 
-        // Configurar cookie segura
         res.setHeader('Set-Cookie', [
             `hbank-auth-token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${
-                7 * 24 * 60 * 60
-            }`, // 7 días
+                24 * 60 * 60
+            }`,
         ])
 
         logger.info('Authentication successful', { accountId })

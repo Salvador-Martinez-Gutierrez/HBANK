@@ -5,17 +5,34 @@ export type Wallet = Database['public']['Tables']['wallets']['Row']
 export type TokenRegistry =
     Database['public']['Tables']['tokens_registry']['Row']
 export type WalletToken = Database['public']['Tables']['wallet_tokens']['Row']
+export type LiquidityPoolToken =
+    Database['public']['Tables']['liquidity_pool_tokens']['Row']
 export type NFT = Database['public']['Tables']['nfts']['Row']
+
+// Token type enum
+export type TokenType = 'FUNGIBLE' | 'NON_FUNGIBLE' | 'LP_TOKEN'
 
 // Extended types for joined queries
 export interface WalletTokenWithMetadata extends WalletToken {
     tokens_registry: TokenRegistry
 }
 
-export interface WalletWithTokens extends Wallet {
-    wallet_tokens: WalletTokenWithMetadata[]
-    nfts: NFT[]
+export interface LPTokenWithMetadata extends LiquidityPoolToken {
+    tokens_registry: TokenRegistry
 }
+
+export interface NFTWithMetadata extends NFT {
+    tokens_registry?: TokenRegistry
+}
+
+export interface WalletWithAssets extends Wallet {
+    wallet_tokens: WalletTokenWithMetadata[]
+    liquidity_pool_tokens: LPTokenWithMetadata[]
+    nfts: NFTWithMetadata[]
+}
+
+// Legacy type alias for backward compatibility
+export type WalletWithTokens = WalletWithAssets
 
 export interface PortfolioData {
     user: User
