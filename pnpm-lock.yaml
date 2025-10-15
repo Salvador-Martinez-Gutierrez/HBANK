@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@buidlerlabs/hashgraph-react-wallets':
         specifier: ^2.5.0
-        version: 2.5.0(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))(@tanstack/query-core@5.85.5)(@types/react@18.2.0)(bufferutil@4.0.9)(immer@10.1.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+        version: 2.5.0(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))(@tanstack/query-core@5.85.5)(@types/react@18.2.0)(bufferutil@4.0.9)(immer@10.1.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -22,7 +22,7 @@ importers:
         version: 3.2.2(react@18.2.0)
       '@hashgraph/sdk':
         specifier: ^2.64.5
-        version: 2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
+        version: 2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
       '@radix-ui/react-dialog':
         specifier: ^1.1.15
         version: 1.1.15(@types/react-dom@18.2.0)(@types/react@18.2.0)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
@@ -74,6 +74,9 @@ importers:
       dotenv:
         specifier: ^17.2.1
         version: 17.2.1
+      jose:
+        specifier: ^6.1.0
+        version: 6.1.0
       lucide-react:
         specifier: ^0.539.0
         version: 0.539.0(react@18.2.0)
@@ -104,6 +107,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
+      uuid:
+        specifier: ^13.0.0
+        version: 13.0.0
       zod:
         specifier: ^3.23.8
         version: 3.25.76
@@ -132,6 +138,9 @@ importers:
       '@types/react-dom':
         specifier: 18.2.0
         version: 18.2.0
+      '@types/uuid':
+        specifier: ^11.0.0
+        version: 11.0.0
       eslint:
         specifier: ^9
         version: 9.34.0(jiti@2.5.1)
@@ -2262,6 +2271,10 @@ packages:
 
   '@types/use-sync-external-store@0.0.6':
     resolution: {integrity: sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==}
+
+  '@types/uuid@11.0.0':
+    resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
+    deprecated: This is a stub types definition. uuid provides its own type definitions, so you do not need this installed.
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -4596,6 +4609,9 @@ packages:
     resolution: {integrity: sha512-twQoecYPiVA5K/h6SxtORw/Bs3ar+mLUtoPSc7iMXzQzK8d7eJ/R09wmTwAjiamETn1cXYPGfNnu7DMoHgu12w==}
     hasBin: true
 
+  jose@6.1.0:
+    resolution: {integrity: sha512-TTQJyoEoKcC1lscpVDCSsVgYzUDg/0Bt3WE//WiTPK6uOCQC2KZS4MpugbMWt/zyjkopgZoXhZuCi00gLudfUA==}
+
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
@@ -6514,6 +6530,10 @@ packages:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
 
+  uuid@13.0.0:
+    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
+    hasBin: true
+
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
     deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
@@ -7465,11 +7485,11 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@buidlerlabs/hashgraph-react-wallets@2.5.0(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))(@tanstack/query-core@5.85.5)(@types/react@18.2.0)(bufferutil@4.0.9)(immer@10.1.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
+  '@buidlerlabs/hashgraph-react-wallets@2.5.0(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))(@tanstack/query-core@5.85.5)(@types/react@18.2.0)(bufferutil@4.0.9)(immer@10.1.1)(react-dom@18.2.0(react@18.2.0))(react@18.2.0)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)':
     dependencies:
-      '@hashgraph/hedera-wallet-connect': 1.5.1(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.8)(@walletconnect/utils@2.21.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))
-      '@hashgraph/sdk': 2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
-      '@magic-ext/hedera': 1.0.4(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))
+      '@hashgraph/hedera-wallet-connect': 1.5.1(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.8)(@walletconnect/utils@2.21.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))
+      '@hashgraph/sdk': 2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
+      '@magic-ext/hedera': 1.0.4(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))
       '@magic-ext/oauth': 15.6.0
       '@tanstack/react-query': 5.85.5(react@18.2.0)
       '@walletconnect/qrcode-modal': 1.8.0
@@ -7875,7 +7895,7 @@ snapshots:
       protobufjs: 7.2.5
       yargs: 17.7.2
 
-  '@hashgraph/cryptography@1.9.0(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))':
+  '@hashgraph/cryptography@1.9.0(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))':
     dependencies:
       '@noble/curves': 1.9.7
       asn1js: 3.0.6
@@ -7885,16 +7905,16 @@ snapshots:
       crypto-js: 4.2.0
       forge-light: 1.1.4
       js-base64: 3.7.8
-      react-native-get-random-values: 1.11.0(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
+      react-native-get-random-values: 1.11.0(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
       spark-md5: 3.0.2
       tweetnacl: 1.0.3
       utf8: 3.0.0
     transitivePeerDependencies:
       - react-native
 
-  '@hashgraph/hedera-wallet-connect@1.5.1(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.8)(@walletconnect/utils@2.21.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))':
+  '@hashgraph/hedera-wallet-connect@1.5.1(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))(@walletconnect/qrcode-modal@1.8.0)(@walletconnect/types@2.21.8)(@walletconnect/utils@2.21.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))(@walletconnect/web3wallet@1.16.1(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))':
     dependencies:
-      '@hashgraph/sdk': 2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
+      '@hashgraph/sdk': 2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
       '@walletconnect/qrcode-modal': 1.8.0
       '@walletconnect/types': 2.21.8
       '@walletconnect/utils': 2.21.8(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
@@ -7905,14 +7925,14 @@ snapshots:
       long: 5.3.2
       protobufjs: 7.2.5
 
-  '@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))':
+  '@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))':
     dependencies:
       '@ethersproject/abi': 5.8.0
       '@ethersproject/bignumber': 5.8.0
       '@ethersproject/bytes': 5.8.0
       '@ethersproject/rlp': 5.8.0
       '@grpc/grpc-js': 1.13.4
-      '@hashgraph/cryptography': 1.9.0(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
+      '@hashgraph/cryptography': 1.9.0(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
       '@hashgraph/proto': 2.22.0
       bignumber.js: 9.3.1
       bn.js: 5.2.2
@@ -8320,9 +8340,9 @@ snapshots:
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.4.0
 
-  '@magic-ext/hedera@1.0.4(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))':
+  '@magic-ext/hedera@1.0.4(@hashgraph/sdk@2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)))':
     dependencies:
-      '@hashgraph/sdk': 2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
+      '@hashgraph/sdk': 2.71.1(bn.js@5.2.2)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))
 
   '@magic-ext/oauth@15.6.0':
     dependencies:
@@ -9066,10 +9086,10 @@ snapshots:
       nullthrows: 1.1.1
       yargs: 17.7.2
 
-  '@react-native/community-cli-plugin@0.81.0(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+  '@react-native/community-cli-plugin@0.81.0(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
     dependencies:
       '@react-native/dev-middleware': 0.81.0(bufferutil@4.0.9)(utf-8-validate@5.0.10)
-      '@react-native/metro-config': 0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      '@react-native/metro-config': 0.81.0(@babel/core@7.28.3)
       debug: 4.4.1
       invariant: 2.2.4
       metro: 0.83.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
@@ -9114,7 +9134,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10)':
+  '@react-native/metro-config@0.81.0(@babel/core@7.28.3)':
     dependencies:
       '@react-native/js-polyfills': 0.81.0
       '@react-native/metro-babel-transformer': 0.81.0(@babel/core@7.28.3)
@@ -9122,18 +9142,16 @@ snapshots:
       metro-runtime: 0.83.1
     transitivePeerDependencies:
       - '@babel/core'
-      - bufferutil
       - supports-color
-      - utf-8-validate
 
   '@react-native/normalize-colors@0.81.0': {}
 
-  '@react-native/virtualized-lists@0.81.0(@types/react@18.2.0)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))(react@18.2.0)':
+  '@react-native/virtualized-lists@0.81.0(@types/react@18.2.0)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))(react@18.2.0)':
     dependencies:
       invariant: 2.2.4
       nullthrows: 1.1.1
       react: 18.2.0
-      react-native: 0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)
+      react-native: 0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)
     optionalDependencies:
       '@types/react': 18.2.0
 
@@ -9854,6 +9872,10 @@ snapshots:
   '@types/trusted-types@2.0.7': {}
 
   '@types/use-sync-external-store@0.0.6': {}
+
+  '@types/uuid@11.0.0':
+    dependencies:
+      uuid: 13.0.0
 
   '@types/ws@8.18.1':
     dependencies:
@@ -13511,6 +13533,8 @@ snapshots:
 
   jiti@2.5.1: {}
 
+  jose@6.1.0: {}
+
   joycon@3.1.1: {}
 
   js-base64@3.7.8: {}
@@ -14662,21 +14686,21 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-native-get-random-values@1.11.0(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)):
+  react-native-get-random-values@1.11.0(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)):
     dependencies:
       fast-base64-decode: 1.0.0
-      react-native: 0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)
+      react-native: 0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10)
 
-  react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10):
+  react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10):
     dependencies:
       '@jest/create-cache-key-function': 29.7.0
       '@react-native/assets-registry': 0.81.0
       '@react-native/codegen': 0.81.0(@babel/core@7.28.3)
-      '@react-native/community-cli-plugin': 0.81.0(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      '@react-native/community-cli-plugin': 0.81.0(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       '@react-native/gradle-plugin': 0.81.0
       '@react-native/js-polyfills': 0.81.0
       '@react-native/normalize-colors': 0.81.0
-      '@react-native/virtualized-lists': 0.81.0(@types/react@18.2.0)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3)(bufferutil@4.0.9)(utf-8-validate@5.0.10))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))(react@18.2.0)
+      '@react-native/virtualized-lists': 0.81.0(@types/react@18.2.0)(react-native@0.81.0(@babel/core@7.28.3)(@react-native/metro-config@0.81.0(@babel/core@7.28.3))(@types/react@18.2.0)(bufferutil@4.0.9)(react@18.2.0)(utf-8-validate@5.0.10))(react@18.2.0)
       abort-controller: 3.0.0
       anser: 1.4.10
       ansi-regex: 5.0.1
@@ -15693,6 +15717,8 @@ snapshots:
       which-typed-array: 1.1.19
 
   utils-merge@1.0.1: {}
+
+  uuid@13.0.0: {}
 
   uuid@3.4.0: {}
 

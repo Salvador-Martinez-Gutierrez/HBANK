@@ -37,6 +37,13 @@ const envSchema = z.object({
     MAX_SCHEDULE_SIGN_FEE_TINYBARS: z.string().optional(),
     INSTANT_WITHDRAW_RETRY_ATTEMPTS: z.string().optional(),
     INSTANT_WITHDRAW_RETRY_DELAY_MS: z.string().optional(),
+    // JWT Secret para autenticación con Hedera Wallet
+    JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
+    // Hedera Network (mainnet o testnet)
+    HEDERA_NETWORK: z
+        .enum(['mainnet', 'testnet'])
+        .optional()
+        .default('testnet'),
 })
 
 const parseInteger = (value: string | undefined, fallback: number): number => {
@@ -129,6 +136,9 @@ export const serverEnv = {
         retryAttempts: parseInteger(env.INSTANT_WITHDRAW_RETRY_ATTEMPTS, 6),
         retryDelayMs: parseInteger(env.INSTANT_WITHDRAW_RETRY_DELAY_MS, 750),
     },
+    // Autenticación
+    jwtSecret: env.JWT_SECRET,
+    hederaNetwork: env.HEDERA_NETWORK ?? 'testnet',
 } as const
 
 export type ServerEnv = typeof serverEnv

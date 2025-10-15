@@ -1,113 +1,53 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { createServerClient } from '@supabase/ssr'
-import type { Database } from '@/types/supabase'
+/**
+ * Endpoint para obtener datos del usuario autenticado
+ * Usa JWT authentication (cookie HttpOnly)
+ */
 
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse
-) {
+import type { NextApiResponse } from 'next'
+import { withAuth, type AuthenticatedRequest } from '@/lib/auth-middleware'
+import { syncOrCreateUser } from '@/services/portfolioUserService'
+
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    const { walletAddress } = req.query
+    const accountId = req.user.accountId
+    const { accountId: requestedAccountId } = req.query
 
-    if (!walletAddress || typeof walletAddress !== 'string') {
-        return res.status(400).json({ error: 'Missing walletAddress' })
+    if (!requestedAccountId || typeof requestedAccountId !== 'string') {
+        return res.status(400).json({ error: 'Missing accountId parameter' })
+    }
+
+    // SECURITY: Verify the authenticated user is requesting their own data
+    if (accountId !== requestedAccountId) {
+        return res.status(403).json({
+            error: 'Forbidden',
+            message: 'You can only access your own data',
+        })
     }
 
     try {
-        // Create server client that reads cookies from the request
-        const supabase = createServerClient<Database>(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                cookies: {
-                    get: (name) => {
-                        return req.cookies[name]
-                    },
-                    set: (name, value, options) => {
-                        res.setHeader(
-                            'Set-Cookie',
-                            `${name}=${value}; Path=/; ${
-                                options?.maxAge
-                                    ? `Max-Age=${options.maxAge}`
-                                    : ''
-                            }`
-                        )
-                    },
-                    remove: (name) => {
-                        res.setHeader(
-                            'Set-Cookie',
-                            `${name}=; Path=/; Max-Age=0`
-                        )
-                    },
-                },
-            }
-        )
+        // Sync or create user in Supabase
+        const result = await syncOrCreateUser(accountId)
 
-        // Authenticate user using getUser() instead of getSession() for security
-        const {
-            data: { user },
-            error: authError,
-        } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-            return res.status(401).json({
-                error: 'Not authenticated',
-                authError: authError?.message,
-                hasUser: !!user,
-            })
-        }
-
-        // Verify the user is requesting their own data
-        const userWalletFromMeta = user.user_metadata?.wallet_address
-        if (userWalletFromMeta !== walletAddress) {
-            return res.status(403).json({
-                error: 'Unauthorized',
-                message: 'You can only fetch your own wallet data',
-            })
-        }
-
-        // Try to query the users table using the authenticated user's ID
-        // Use maybeSingle() instead of single() to handle potential duplicates
-        const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle()
-
-        if (error) {
-            return res.status(403).json({
-                error: 'Failed to fetch user',
-                details: error.message,
-                code: error.code,
-                hint: error.hint,
-                userId: user.id,
-                userEmail: user.email,
-                requestedWallet: walletAddress,
-            })
-        }
-
-        if (!data) {
-            return res.status(404).json({
-                error: 'User not found in database',
-                userId: user.id,
-                userEmail: user.email,
+        if (!result.success) {
+            return res.status(500).json({
+                error: 'Failed to load user data',
             })
         }
 
         return res.status(200).json({
             success: true,
-            user: data,
-            auth: {
-                userId: user.id,
-                email: user.email,
-                walletFromMeta: userWalletFromMeta,
-            },
+            user: result.user || null,
+            accountId: accountId,
         })
-    } catch (error: any) {
+    } catch (error) {
         console.error('Server-side user fetch error:', error)
-        return res.status(500).json({ error: error.message })
+        return res.status(500).json({
+            error: error instanceof Error ? error.message : 'Internal error',
+        })
     }
 }
+
+export default withAuth(handler)

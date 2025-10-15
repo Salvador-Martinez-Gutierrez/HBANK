@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { usePortfolioAuth } from '@/hooks/usePortfolioAuth'
 import { usePortfolioWallets } from '@/hooks/usePortfolioWallets'
-import { generateAuthMessage } from '@/services/portfolioAuthClient'
+import { useSignMessage } from '@/hooks/useSignMessage'
 import {
     Wallet as WalletIcon,
     RefreshCw,
@@ -20,6 +20,7 @@ import toast from 'react-hot-toast'
 import { WalletCard } from '@/components/wallet-card'
 import { useWalletCollapse } from '@/hooks/useWalletCollapse'
 import { useWalletOrder } from '@/hooks/useWalletOrder'
+import { RealtimePriceIndicator } from '@/components/realtime-price-indicator'
 import {
     DndContext,
     closestCenter,
@@ -39,11 +40,11 @@ import {
 export default function PortfolioPage() {
     const { isConnected } = useWallet()
     const accountId = useAccountId()
+    const { signMessage, isReady: isSignReady } = useSignMessage()
     const {
         user,
         isAuthenticated,
         signIn,
-        signOut,
         loading: authLoading,
     } = usePortfolioAuth(accountId)
     const {
@@ -55,9 +56,11 @@ export default function PortfolioPage() {
         syncTokens,
         addWallet,
         deleteWallet,
+        lastPriceUpdate,
     } = usePortfolioWallets(user?.id || null)
     const [syncing, setSyncing] = useState(false)
     const [syncingWallets, setSyncingWallets] = useState<Set<string>>(new Set())
+    const [isAuthenticating, setIsAuthenticating] = useState(false)
 
     // Wallet collapse state (localStorage, instant)
     const { isWalletCollapsed, toggleWalletCollapsed } = useWalletCollapse()
@@ -82,29 +85,47 @@ export default function PortfolioPage() {
             return
         }
 
+        if (!isSignReady) {
+            toast.error('Wallet is not ready to sign messages. Please wait...')
+            return
+        }
+
         console.log('🚀 Starting authentication for:', accountId)
+        setIsAuthenticating(true)
 
         try {
-            // Generate message to sign
-            const message = generateAuthMessage(accountId)
-            const timestamp = Date.now()
+            // Step 1: Get nonce from backend
+            toast.loading('Requesting authentication challenge...', {
+                id: 'auth-flow',
+            })
 
-            console.log('📝 Message generated:', message)
-
-            // For now, we'll use a mock signature
-            // In production, you need to implement actual wallet signing
-            const signature = 'mock_signature_' + Date.now()
-
-            console.log('✍️ Calling signIn...')
-            // Authenticate with backend
-            const result = await signIn(
-                accountId,
-                signature,
-                message,
-                timestamp
+            const nonceResponse = await fetch(
+                `/api/auth/nonce?accountId=${encodeURIComponent(accountId)}`
             )
 
-            console.log('📥 signIn result:', result)
+            if (!nonceResponse.ok) {
+                throw new Error('Failed to get authentication challenge')
+            }
+
+            const { nonce, message } = await nonceResponse.json()
+            console.log('📝 Nonce received, message:', message)
+
+            // Step 2: Request signature from wallet
+            toast.loading('Please sign the message in your wallet...', {
+                id: 'auth-flow',
+            })
+
+            const { signature } = await signMessage(message)
+            console.log('✍️ Signature received')
+
+            // Step 3: Verify signature with backend and get JWT
+            toast.loading('Verifying signature...', {
+                id: 'auth-flow',
+            })
+
+            const result = await signIn(accountId, signature, nonce)
+
+            toast.dismiss('auth-flow')
 
             if (result.success) {
                 console.log('✅ Authentication successful!')
@@ -114,8 +135,15 @@ export default function PortfolioPage() {
                 toast.error(result.error || 'Authentication failed')
             }
         } catch (error) {
+            toast.dismiss('auth-flow')
             console.error('💥 Authentication error:', error)
-            toast.error('Failed to authenticate portfolio')
+            const errorMessage =
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to authenticate portfolio'
+            toast.error(errorMessage)
+        } finally {
+            setIsAuthenticating(false)
         }
     }
 
@@ -259,11 +287,19 @@ export default function PortfolioPage() {
                     </div>
                     <Button
                         onClick={handleAuthenticatePortfolio}
-                        disabled={authLoading}
+                        disabled={
+                            authLoading || isAuthenticating || !isSignReady
+                        }
                         size='lg'
                         className='w-full'
                     >
-                        {authLoading ? 'Authenticating...' : 'Authenticate'}
+                        {!isSignReady
+                            ? 'Wallet not ready...'
+                            : isAuthenticating
+                            ? 'Signing message...'
+                            : authLoading
+                            ? 'Authenticating...'
+                            : 'Authenticate'}
                     </Button>
                 </div>
             </div>
@@ -282,13 +318,19 @@ export default function PortfolioPage() {
             {/* Header */}
             <div className='flex items-center justify-between mb-6'>
                 <div>
-                    <h1 className='text-3xl font-bold text-foreground'>
-                        Portfolio
-                    </h1>
+                    <div className='flex items-center gap-3'>
+                        <h1 className='text-3xl font-bold text-foreground'>
+                            Portfolio
+                        </h1>
+                        <RealtimePriceIndicator
+                            enabled={wallets.length > 0}
+                            lastUpdate={lastPriceUpdate}
+                        />
+                    </div>
                     <p className='text-muted-foreground mt-1'>
                         {wallets.length}{' '}
                         {wallets.length === 1 ? 'wallet' : 'wallets'} tracked •
-                        Mainnet
+                        Mainnet • Prices update in real-time
                     </p>
                 </div>
                 <div className='flex items-center gap-2'>

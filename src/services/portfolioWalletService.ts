@@ -1,11 +1,6 @@
-import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import type { WalletWithTokens } from '@/types/portfolio'
-import {
-    getTokenInfo,
-    getTokenPrice,
-    createTokenLookupMap,
-} from './saucerSwapService'
+import { createTokenLookupMap } from './saucerSwapService'
 import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
 
 // Portfolio uses MAINNET mirror node (separate from vault/testnet)
@@ -13,29 +8,36 @@ const PORTFOLIO_MIRROR_NODE = 'https://mainnet-public.mirrornode.hedera.com'
 
 /**
  * Get all wallets for a user
+ * Uses supabaseAdmin to bypass RLS when called from API routes
  */
 export async function getUserWallets(
     userId: string
 ): Promise<WalletWithTokens[]> {
     try {
-        const { data: wallets, error } = await supabase
+        // Use admin client to bypass RLS policies
+        // This is safe because we're validating JWT before calling this function
+        const { data: wallets, error } = await supabaseAdmin
             .from('wallets')
             .select(
                 `
                 *,
-                tokens (*),
+                wallet_tokens (
+                    *,
+                    tokens_registry (*)
+                ),
                 nfts (*)
             `
             )
             .eq('user_id', userId)
             .order('is_primary', { ascending: false })
+            .order('created_at', { ascending: true })
 
         if (error) {
             console.error('Error fetching wallets:', error)
             return []
         }
 
-        return wallets as WalletWithTokens[]
+        return (wallets as WalletWithTokens[]) || []
     } catch (error) {
         console.error('Error in getUserWallets:', error)
         return []

@@ -1,5 +1,15 @@
-import { useState, useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+/**
+ * Hook de autenticación para Portfolio usando JWT seguro
+ *
+ * Flujo de autenticación:
+ * 1. Cliente obtiene nonce de /api/auth/nonce
+ * 2. Wallet firma el mensaje con el nonce
+ * 3. Cliente envía firma a /api/auth/verify
+ * 4. Backend verifica la firma y crea JWT en HttpOnly cookie
+ * 5. Todas las peticiones subsecuentes usan el JWT de la cookie
+ */
+
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { User } from '@/types/portfolio'
 
 export function usePortfolioAuth(currentWalletId?: string | null) {
@@ -22,13 +32,12 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             setUser(null)
             setIsAuthenticated(false)
 
-            // Sign out from Supabase
-            supabase.auth
-                .signOut()
+            // Sign out via API
+            fetch('/api/auth/logout', { method: 'POST' })
                 .then(() => {
                     console.log('✅ Session cleared after wallet disconnect')
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     console.error('❌ Error signing out:', error)
                 })
         }
@@ -50,13 +59,12 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             setUser(null)
             setIsAuthenticated(false)
 
-            // Sign out from Supabase
-            supabase.auth
-                .signOut()
+            // Sign out via API
+            fetch('/api/auth/logout', { method: 'POST' })
                 .then(() => {
                     console.log('✅ Previous session cleared')
                 })
-                .catch((error) => {
+                .catch((error: Error) => {
                     console.error('❌ Error signing out:', error)
                 })
         }
@@ -65,195 +73,123 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
         previousWalletIdRef.current = currentWalletId
     }, [currentWalletId])
 
-    useEffect(() => {
-        // Check current session on mount
-        checkUser()
+    const loadUser = useCallback(
+        async (accountId: string) => {
+            console.log('🔍 loadUser: Starting for accountId:', accountId)
 
-        // Listen to auth changes
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (_event, session) => {
-            console.log('🔐 Auth state change:', _event, session?.user?.email)
+            // SECURITY CHECK: Verify that the session wallet matches the currently connected wallet
+            if (currentWalletId && currentWalletId !== accountId) {
+                console.warn('⚠️ MISMATCH: Session wallet !== Connected wallet')
+                console.warn('Session wallet:', accountId)
+                console.warn('Connected wallet:', currentWalletId)
+                console.warn('🚪 Signing out stale session...')
 
-            if (session) {
-                await loadUser(session.user.email)
+                // Clear stale session
+                setUser(null)
+                setIsAuthenticated(false)
+                setLoading(false)
+                await fetch('/api/auth/logout', { method: 'POST' })
+                return
+            }
+
+            try {
+                // Fetch user data using JWT-authenticated endpoint
+                const response = await fetch(
+                    `/api/portfolio/fetch-user?accountId=${encodeURIComponent(
+                        accountId
+                    )}`
+                )
+                const result = await response.json()
+
+                if (!response.ok) {
+                    console.error('❌ loadUser: Server error:', {
+                        status: response.status,
+                        error: result.error,
+                    })
+
+                    // If unauthorized, clear session
+                    if (response.status === 401) {
+                        setUser(null)
+                        setIsAuthenticated(false)
+                    }
+                    return
+                }
+
+                if (result.success && result.user) {
+                    console.log('✅ loadUser: Success, data:', result.user)
+                    setUser(result.user)
+                    setIsAuthenticated(true)
+                }
+            } catch (error) {
+                console.error('❌ loadUser: Fetch error:', error)
+            } finally {
+                setLoading(false)
+            }
+        },
+        [currentWalletId]
+    )
+
+    const checkUser = useCallback(async () => {
+        try {
+            // Check if we have a valid JWT session
+            const response = await fetch('/api/auth/me')
+
+            if (response.ok) {
+                const data = await response.json()
+                console.log('✅ Valid session found for:', data.accountId)
+                await loadUser(data.accountId)
             } else {
                 setUser(null)
                 setIsAuthenticated(false)
                 setLoading(false)
             }
-        })
-
-        return () => {
-            subscription.unsubscribe()
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    async function checkUser() {
-        try {
-            const {
-                data: { user: authUser },
-            } = await supabase.auth.getUser()
-
-            if (authUser?.email) {
-                await loadUser(authUser.email)
-            } else {
-                setUser(null)
-                setIsAuthenticated(false)
-            }
         } catch (error) {
             console.error('Error checking user:', error)
             setUser(null)
             setIsAuthenticated(false)
-        } finally {
             setLoading(false)
         }
-    }
+    }, [loadUser])
 
-    async function loadUser(email: string | undefined) {
-        if (!email) return
+    useEffect(() => {
+        // Check current session on mount
+        checkUser()
+    }, [checkUser])
 
-        console.log('🔍 loadUser: Starting for email:', email)
-
-        // Verify session before querying
-        const { data: sessionCheck } = await supabase.auth.getSession()
-        console.log('🔐 loadUser: Session check:', {
-            hasSession: !!sessionCheck.session,
-            userId: sessionCheck.session?.user?.id,
-            email: sessionCheck.session?.user?.email,
-        })
-
-        // Convert email back to wallet address format
-        const walletAddress = email
-            .replace('wallet-', '')
-            .replace('@hbank.app', '')
-            .replace(/-/g, '.')
-
-        console.log('🔍 loadUser: Querying for wallet:', walletAddress)
-
-        // SECURITY CHECK: Verify that the session wallet matches the currently connected wallet
-        if (currentWalletId && currentWalletId !== walletAddress) {
-            console.warn('⚠️ MISMATCH: Session wallet !== Connected wallet')
-            console.warn('Session wallet:', walletAddress)
-            console.warn('Connected wallet:', currentWalletId)
-            console.warn('🚪 Signing out stale session...')
-
-            // Clear stale session
-            setUser(null)
-            setIsAuthenticated(false)
-            setLoading(false)
-            await supabase.auth.signOut()
-            return
-        }
-
-        try {
-            // Use server-side endpoint to fetch user data (this will use session cookies)
-            const response = await fetch(
-                `/api/portfolio/fetch-user?walletAddress=${encodeURIComponent(
-                    walletAddress
-                )}`
-            )
-            const result = await response.json()
-
-            if (!response.ok) {
-                console.error('❌ loadUser: Server error:', {
-                    status: response.status,
-                    error: result.error,
-                    details: result.details,
-                    code: result.code,
-                    hint: result.hint,
-                    sessionUserId: result.sessionUserId,
-                    sessionEmail: result.sessionEmail,
-                })
-                return
-            }
-
-            if (result.success && result.user) {
-                console.log('✅ loadUser: Success, data:', result.user)
-                console.log('✅ loadUser: Session info:', result.session)
-                setUser(result.user)
-                setIsAuthenticated(true)
-            }
-        } catch (error) {
-            console.error('❌ loadUser: Fetch error:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    async function signIn(
-        walletAddress: string,
-        signature: string,
-        message: string,
-        timestamp: number
-    ) {
+    /**
+     * Sign in using Hedera wallet signature
+     *
+     * @param accountId - Hedera account ID (e.g., "0.0.12345")
+     * @param signature - Signature from wallet
+     * @param nonce - Nonce from /api/auth/nonce
+     */
+    async function signIn(accountId: string, signature: string, nonce: string) {
         try {
             setLoading(true)
 
-            const response = await fetch('/api/portfolio/auth', {
+            console.log('🔑 Verifying signature with backend...')
+
+            // Verify signature and get JWT
+            const response = await fetch('/api/auth/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    walletAddress,
+                    accountId,
+                    nonce,
                     signature,
-                    message,
-                    timestamp,
                 }),
             })
 
             const result = await response.json()
-            console.log('🔑 Auth response:', result)
 
             if (result.success) {
-                if (!result.credentials) {
-                    console.error('❌ No credentials in response!')
-                    return { success: false, error: 'No credentials returned' }
-                }
+                console.log('✅ Authentication successful')
 
-                console.log('🔐 Signing in with credentials:', {
-                    email: result.credentials.email,
-                    passwordLength: result.credentials.password?.length,
-                })
-
-                // Sign in with the provided credentials to create client-side session
-                const { data: signInData, error: signInError } =
-                    await supabase.auth.signInWithPassword({
-                        email: result.credentials.email,
-                        password: result.credentials.password,
-                    })
-
-                if (signInError) {
-                    console.error('❌ Error signing in:', signInError)
-                    return {
-                        success: false,
-                        error: 'Failed to establish session',
-                    }
-                }
-
-                console.log(
-                    '✅ Signed in successfully, session:',
-                    signInData.session?.access_token ? 'exists' : 'missing'
-                )
-
-                // Wait a bit for the session to be fully established
-                await new Promise((resolve) => setTimeout(resolve, 100))
-
-                // Verify session is active
-                const { data: sessionData } = await supabase.auth.getSession()
-                console.log(
-                    '🔐 Current session:',
-                    sessionData.session ? 'active' : 'none'
-                )
-
-                // Session is now established, load the user data
-                await checkUser()
-                console.log('👤 User state after checkUser:', {
-                    user,
-                    isAuthenticated,
-                })
+                // JWT is now in HttpOnly cookie
+                // Load user data
+                await loadUser(accountId)
 
                 return { success: true }
             } else {
@@ -271,15 +207,19 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
     async function signOut() {
         try {
             setLoading(true)
-            const { error } = await supabase.auth.signOut()
 
-            if (!error) {
+            const response = await fetch('/api/auth/logout', {
+                method: 'POST',
+            })
+
+            if (response.ok) {
                 setUser(null)
                 setIsAuthenticated(false)
+                console.log('✅ Signed out successfully')
                 return { success: true }
             }
 
-            return { success: false, error: error.message }
+            return { success: false, error: 'Failed to sign out' }
         } catch (error) {
             console.error('Sign out error:', error)
             return { success: false, error: 'Failed to sign out' }

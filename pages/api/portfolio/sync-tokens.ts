@@ -1,11 +1,13 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { getCurrentUser } from '@/services/portfolioAuthService'
+/**
+ * Endpoint para sincronizar tokens de una wallet
+ * Requiere autenticación JWT
+ */
+
+import type { NextApiResponse } from 'next'
+import { type AuthenticatedRequest, withAuth } from '@/lib/auth-middleware'
 import { syncWalletTokens } from '@/services/portfolioWalletService'
 
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse
-) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     if (req.method !== 'POST') {
         return res
             .status(405)
@@ -13,15 +15,7 @@ export default async function handler(
     }
 
     try {
-        // Pass req to getCurrentUser so it can read cookies
-        const userResult = await getCurrentUser(req)
-
-        if (!userResult.success || !userResult.user) {
-            return res.status(401).json({
-                success: false,
-                error: 'Not authenticated',
-            })
-        }
+        // User is authenticated via JWT middleware
 
         const { walletId, walletAddress } = req.body
 
@@ -54,3 +48,5 @@ export default async function handler(
         })
     }
 }
+
+export default withAuth(handler)

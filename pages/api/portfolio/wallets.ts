@@ -1,5 +1,11 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { getCurrentUser } from '@/services/portfolioAuthService'
+/**
+ * Endpoint para gestionar wallets del usuario
+ * Requiere autenticación JWT
+ */
+
+import type { NextApiResponse } from 'next'
+import { type AuthenticatedRequest, withAuth } from '@/lib/auth-middleware'
+import { syncOrCreateUser } from '@/services/portfolioUserService'
 import {
     getUserWallets,
     addWallet,
@@ -7,24 +13,25 @@ import {
     deleteWallet,
 } from '@/services/portfolioWalletService'
 
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse
-) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     try {
-        // Pass req to getCurrentUser so it can read cookies
-        const userResult = await getCurrentUser(req)
+        const accountId = req.user.accountId
 
-        if (!userResult.success || !userResult.user) {
-            return res.status(401).json({
+        // Ensure user exists in database
+        const userResult = await syncOrCreateUser(accountId)
+
+        if (!userResult.success || !userResult.userId) {
+            return res.status(500).json({
                 success: false,
-                error: 'Not authenticated',
+                error: 'Failed to sync user data',
             })
         }
 
+        const userId = userResult.userId
+
         switch (req.method) {
             case 'GET': {
-                const wallets = await getUserWallets(userResult.user.id)
+                const wallets = await getUserWallets(userId)
                 return res.status(200).json({
                     success: true,
                     wallets,
@@ -41,11 +48,7 @@ export default async function handler(
                     })
                 }
 
-                const result = await addWallet(
-                    userResult.user.id,
-                    walletAddress,
-                    label
-                )
+                const result = await addWallet(userId, walletAddress, label)
 
                 if (!result.success) {
                     return res.status(400).json({
@@ -122,3 +125,5 @@ export default async function handler(
         })
     }
 }
+
+export default withAuth(handler)
