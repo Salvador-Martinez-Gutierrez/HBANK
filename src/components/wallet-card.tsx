@@ -14,9 +14,10 @@ import {
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { AssetSections } from './asset-sections'
+import type { WalletWithAssets } from '@/types/portfolio'
 
 interface WalletCardProps {
-    wallet: any // TODO: Update with proper type once Supabase types are regenerated
+    wallet: WalletWithAssets
     syncing: boolean
     isCollapsed: boolean
     onSync: (walletId: string, walletAddress: string) => void
@@ -55,11 +56,19 @@ export function WalletCard({
     const calculateTotalValue = () => {
         let total = 0
 
+        // Add HBAR value
+        const hbarBalance = parseFloat(wallet.hbar_balance || '0')
+        const hbarPrice = parseFloat(wallet.hbar_price_usd || '0')
+        total += hbarBalance * hbarPrice
+
         // Add fungible tokens value
         for (const walletToken of wallet.wallet_tokens || []) {
             const balance = parseFloat(walletToken.balance || '0')
+            const priceUsd = walletToken.tokens_registry?.price_usd
             const price = parseFloat(
-                walletToken.tokens_registry?.price_usd || '0'
+                typeof priceUsd === 'number'
+                    ? priceUsd.toString()
+                    : priceUsd || '0'
             )
             const decimals = walletToken.tokens_registry?.decimals || 0
             const normalizedBalance = balance / Math.pow(10, decimals)
@@ -69,7 +78,12 @@ export function WalletCard({
         // Add LP tokens value
         for (const lpToken of wallet.liquidity_pool_tokens || []) {
             const balance = parseFloat(lpToken.balance || '0')
-            const price = parseFloat(lpToken.tokens_registry?.price_usd || '0')
+            const priceUsd = lpToken.tokens_registry?.price_usd
+            const price = parseFloat(
+                typeof priceUsd === 'number'
+                    ? priceUsd.toString()
+                    : priceUsd || '0'
+            )
             const decimals = lpToken.tokens_registry?.decimals || 0
             const normalizedBalance = balance / Math.pow(10, decimals)
             total += normalizedBalance * price
@@ -79,40 +93,80 @@ export function WalletCard({
     }
 
     const totalValue = calculateTotalValue()
+    const hbarBalance = parseFloat(wallet.hbar_balance || '0')
+    const hbarPriceUsd = parseFloat(wallet.hbar_price_usd || '0')
     const fungibleCount = wallet.wallet_tokens?.length || 0
     const lpCount = wallet.liquidity_pool_tokens?.length || 0
-    const nftCount = wallet.nfts?.length || 0
-    const totalAssets = fungibleCount + lpCount + nftCount
+    const nftCount = wallet.wallet_nfts?.length || 0
+
+    // Count HBAR as a token if it has balance
+    const hbarTokenCount = hbarBalance > 0 ? 1 : 0
+    const totalTokenCount = fungibleCount + lpCount + hbarTokenCount
 
     // Prepare data for AssetSections component
     const fungibleTokens = useMemo(() => {
-        return (wallet.wallet_tokens || []).map((wt: any) => ({
-            id: wt.id,
-            balance: wt.balance,
-            token_name: wt.tokens_registry?.token_name,
-            token_symbol: wt.tokens_registry?.token_symbol,
-            token_address: wt.tokens_registry?.token_address,
-            token_icon: wt.tokens_registry?.token_icon,
-            decimals: wt.tokens_registry?.decimals || 0,
-            price_usd: wt.tokens_registry?.price_usd || '0',
-        }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tokens = (wallet.wallet_tokens || []).map((wt: any) => {
+            const balance = wt.balance
+            const decimals = wt.tokens_registry?.decimals || 0
+            const price_usd = wt.tokens_registry?.price_usd || '0'
+
+            // Calculate value in USD for sorting
+            const normalizedBalance =
+                parseFloat(balance) / Math.pow(10, decimals)
+            const valueUsd = normalizedBalance * parseFloat(price_usd)
+
+            return {
+                id: wt.id,
+                balance: balance,
+                token_name: wt.tokens_registry?.token_name,
+                token_symbol: wt.tokens_registry?.token_symbol,
+                token_address: wt.tokens_registry?.token_address,
+                token_icon: wt.tokens_registry?.token_icon,
+                decimals: decimals,
+                price_usd: price_usd,
+                valueUsd: valueUsd,
+            }
+        })
+
+        // Sort by USD value (descending)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return tokens.sort((a: any, b: any) => b.valueUsd - a.valueUsd)
     }, [wallet.wallet_tokens])
 
     const lpTokens = useMemo(() => {
-        return (wallet.liquidity_pool_tokens || []).map((lp: any) => ({
-            id: lp.id,
-            balance: lp.balance,
-            token_name: lp.tokens_registry?.token_name,
-            token_symbol: lp.tokens_registry?.token_symbol,
-            token_address: lp.tokens_registry?.token_address,
-            token_icon: lp.tokens_registry?.token_icon,
-            decimals: lp.tokens_registry?.decimals || 0,
-            price_usd: lp.tokens_registry?.price_usd || '0',
-        }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const tokens = (wallet.liquidity_pool_tokens || []).map((lp: any) => {
+            const balance = lp.balance
+            const decimals = lp.tokens_registry?.decimals || 0
+            const price_usd = lp.tokens_registry?.price_usd || '0'
+
+            // Calculate value in USD for sorting
+            const normalizedBalance =
+                parseFloat(balance) / Math.pow(10, decimals)
+            const valueUsd = normalizedBalance * parseFloat(price_usd)
+
+            return {
+                id: lp.id,
+                balance: balance,
+                token_name: lp.tokens_registry?.token_name,
+                token_symbol: lp.tokens_registry?.token_symbol,
+                token_address: lp.tokens_registry?.token_address,
+                token_icon: lp.tokens_registry?.token_icon,
+                decimals: decimals,
+                price_usd: price_usd,
+                valueUsd: valueUsd,
+            }
+        })
+
+        // Sort by USD value (descending)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return tokens.sort((a: any, b: any) => b.valueUsd - a.valueUsd)
     }, [wallet.liquidity_pool_tokens])
 
     const nfts = useMemo(() => {
-        return (wallet.nfts || []).map((nft: any) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (wallet.wallet_nfts || []).map((nft: any) => ({
             id: nft.id,
             token_id: nft.token_id,
             serial_number: nft.serial_number,
@@ -120,7 +174,7 @@ export function WalletCard({
             token_name: nft.tokens_registry?.token_name,
             token_icon: nft.tokens_registry?.token_icon,
         }))
-    }, [wallet.nfts])
+    }, [wallet.wallet_nfts])
 
     return (
         <Card
@@ -149,11 +203,6 @@ export function WalletCard({
                         <div className='min-w-0'>
                             <CardTitle className='text-lg'>
                                 {wallet.label || 'Unnamed Wallet'}
-                                {wallet.is_primary && (
-                                    <span className='ml-2 text-xs font-normal bg-primary/10 text-primary px-2 py-0.5 rounded'>
-                                        Primary
-                                    </span>
-                                )}
                             </CardTitle>
                             <p className='text-sm text-muted-foreground font-mono truncate'>
                                 {wallet.wallet_address}
@@ -167,8 +216,7 @@ export function WalletCard({
                                     {formatUsd(totalValue)}
                                 </span>
                                 <span className='text-xs text-muted-foreground'>
-                                    · {fungibleCount + lpCount} tokens ·{' '}
-                                    {nftCount} NFTs
+                                    · {totalTokenCount} tokens · {nftCount} NFTs
                                 </span>
                             </div>
                         )}
@@ -213,19 +261,17 @@ export function WalletCard({
                             />
                         </Button>
 
-                        {/* Delete button (only for non-primary wallets) */}
-                        {!wallet.is_primary && (
-                            <Button
-                                type='button'
-                                variant='ghost'
-                                size='sm'
-                                onClick={() => onDelete(wallet.id)}
-                                title='Remove wallet'
-                                className='text-destructive hover:text-destructive'
-                            >
-                                <Trash2 className='w-4 h-4' />
-                            </Button>
-                        )}
+                        {/* Delete button */}
+                        <Button
+                            type='button'
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => onDelete(wallet.id)}
+                            title='Remove wallet'
+                            className='text-destructive hover:text-destructive'
+                        >
+                            <Trash2 className='w-4 h-4' />
+                        </Button>
                     </div>
                 </div>
             </CardHeader>
@@ -234,6 +280,8 @@ export function WalletCard({
             {!isCollapsed && (
                 <CardContent className='overflow-visible'>
                     <AssetSections
+                        hbarBalance={hbarBalance}
+                        hbarPriceUsd={hbarPriceUsd}
                         fungibleTokens={fungibleTokens}
                         lpTokens={lpTokens}
                         nfts={nfts}

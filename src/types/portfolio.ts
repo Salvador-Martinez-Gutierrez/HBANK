@@ -28,7 +28,9 @@ export interface NFTWithMetadata extends NFT {
 export interface WalletWithAssets extends Wallet {
     wallet_tokens: WalletTokenWithMetadata[]
     liquidity_pool_tokens: LPTokenWithMetadata[]
-    nfts: NFTWithMetadata[]
+    wallet_nfts: NFTWithMetadata[]
+    hbar_balance?: string | null
+    hbar_price_usd?: string | null
 }
 
 // Legacy type alias for backward compatibility

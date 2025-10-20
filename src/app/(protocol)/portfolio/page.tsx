@@ -177,11 +177,19 @@ export default function PortfolioPage() {
     const handleSyncAllWallets = async () => {
         setSyncing(true)
         try {
-            // Sync all wallets in parallel
-            const syncPromises = wallets.map((w) =>
-                syncTokens(w.id, w.wallet_address)
-            )
-            const results = await Promise.all(syncPromises)
+            // Sync all wallets sequentially with delay to avoid rate limiting
+            const results = []
+            for (const wallet of wallets) {
+                const result = await syncTokens(
+                    wallet.id,
+                    wallet.wallet_address
+                )
+                results.push(result)
+                // Add 500ms delay between requests to avoid rate limiting
+                if (wallet !== wallets[wallets.length - 1]) {
+                    await new Promise((resolve) => setTimeout(resolve, 500))
+                }
+            }
 
             const allSuccess = results.every((r) => r.success)
             if (allSuccess) {
@@ -387,8 +395,7 @@ export default function PortfolioPage() {
                             No Wallets Found
                         </h3>
                         <p className='text-muted-foreground mb-4'>
-                            Your primary wallet has been registered. Sync your
-                            tokens to start tracking.
+                            Add a wallet to start tracking your portfolio.
                         </p>
                         <Button
                             type='button'

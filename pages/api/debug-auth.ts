@@ -38,12 +38,6 @@ export default async function handler(
             .eq('wallet_address', walletAddress)
             .single()
 
-        // 3. Try with anon key (to see RLS)
-        const supabaseAnon = createClient(
-            supabaseUrl,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        )
-
         // Set the JWT manually
         const { data: session } = await supabase.auth.admin.createUser({
             email: `wallet-${walletAddress.replace(/\./g, '-')}@hbank.app`,
@@ -59,8 +53,10 @@ export default async function handler(
             publicError: publicError?.message,
             session: session.user?.id,
         })
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Debug auth error:', error)
-        return res.status(500).json({ error: error.message })
+        const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error'
+        return res.status(500).json({ error: errorMessage })
     }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Server-side Portfolio Authentication Service
  * ⚠️ WARNING: This file imports supabase-admin and should ONLY be used in API routes (server-side)
@@ -65,7 +66,7 @@ export async function registerOrGetUser(walletAddress: string) {
             if (existingDbUser) {
                 console.log(
                     'User found in database:',
-                    (existingDbUser as any).id
+                    (existingDbUser as { id: string }).id
                 )
                 return { success: true, user: existingDbUser }
             } else {
@@ -74,18 +75,17 @@ export async function registerOrGetUser(walletAddress: string) {
                     'Auth user exists, creating database record:',
                     existingAuthUser.id
                 )
-                const { data: newDbUser, error: insertError } =
-                    await supabaseAdmin
-                        .from('users')
-                        .upsert(
-                            {
-                                id: existingAuthUser.id,
-                                wallet_address: walletAddress,
-                            } as any,
-                            { onConflict: 'id' }
-                        )
-                        .select()
-                        .maybeSingle()
+                const { data: newDbUser, error: insertError } = await (
+                    supabaseAdmin.from('users').upsert as any
+                )(
+                    {
+                        id: existingAuthUser.id,
+                        wallet_address: walletAddress,
+                    },
+                    { onConflict: 'id' }
+                )
+                    .select()
+                    .maybeSingle()
 
                 if (insertError) {
                     console.error(
@@ -102,14 +102,6 @@ export async function registerOrGetUser(walletAddress: string) {
                             updated_at: new Date().toISOString(),
                         },
                     }
-                }
-
-                // Create primary wallet
-                if (newDbUser) {
-                    await createPrimaryWallet(
-                        (newDbUser as any).id,
-                        walletAddress
-                    )
                 }
 
                 return {
@@ -148,11 +140,14 @@ export async function registerOrGetUser(walletAddress: string) {
         )
 
         // Insert user into our database table using upsert to handle potential duplicates
-        const { data: newUser, error: insertError } = await supabaseAdmin
-            .from('users')
-            .upsert({ id: userId, wallet_address: walletAddress } as any, {
+        const { data: newUser, error: insertError } = await (
+            supabaseAdmin.from('users').upsert as any
+        )(
+            { id: userId, wallet_address: walletAddress },
+            {
                 onConflict: 'id',
-            })
+            }
+        )
             .select()
             .maybeSingle()
 
@@ -173,11 +168,6 @@ export async function registerOrGetUser(walletAddress: string) {
             }
         }
 
-        // Create primary wallet
-        if ((newUser as any)?.id) {
-            await createPrimaryWallet((newUser as any).id, walletAddress)
-        }
-
         return {
             success: true,
             user: newUser || {
@@ -190,22 +180,6 @@ export async function registerOrGetUser(walletAddress: string) {
     } catch (error) {
         console.error('Error in registerOrGetUser:', error)
         return { success: false, error: 'Database error' }
-    }
-}
-
-/**
- * Helper function to create primary wallet
- */
-async function createPrimaryWallet(userId: string, walletAddress: string) {
-    const { error } = await supabaseAdmin.from('wallets').insert({
-        user_id: userId,
-        wallet_address: walletAddress,
-        label: 'Primary Wallet',
-        is_primary: true,
-    } as any)
-
-    if (error) {
-        console.error('Error creating primary wallet:', error)
     }
 }
 
@@ -257,14 +231,25 @@ export async function signOut() {
  * Get current authenticated user from API route (server-side)
  * For use in API routes - reads session from request cookies
  */
-export async function getCurrentUser(req?: any) {
+export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
     try {
         // If called from API route, we need to create a server client that reads cookies
         let authUser = null
 
         if (req) {
             // Server-side: Create client that can read cookies from request
-            const { createServerClient } = require('@supabase/ssr')
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const { createServerClient } = require('@supabase/ssr') as {
+                createServerClient: (
+                    url: string,
+                    key: string,
+                    options: unknown
+                ) => {
+                    auth: {
+                        getUser: () => Promise<{ data: { user: unknown } }>
+                    }
+                }
+            }
 
             const serverClient = createServerClient(
                 process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -310,23 +295,15 @@ export async function getCurrentUser(req?: any) {
 
             const {
                 data: { user },
-                error,
             } = await serverClient.auth.getUser()
-            if (error) {
-                console.error('Error getting user from server:', error)
-                return { success: false, user: null }
-            }
-            authUser = user
+
+            authUser = user as { id: string; email?: string } | null
         } else {
             // Client-side
             const {
                 data: { user },
-                error,
             } = await supabase.auth.getUser()
-            if (error) {
-                console.error('Error getting user from client:', error)
-                return { success: false, user: null }
-            }
+
             authUser = user
         }
 
@@ -335,10 +312,11 @@ export async function getCurrentUser(req?: any) {
             return { success: false, user: null }
         }
 
-        console.log('Auth user found:', authUser.email)
+        const typedAuthUser = authUser as { id: string; email?: string }
+        console.log('Auth user found:', typedAuthUser.email)
 
         // Extract wallet address from email
-        const walletAddress = authUser.email
+        const walletAddress = typedAuthUser.email
             ?.replace('wallet-', '')
             .replace('@hbank.app', '')
             .replace(/-/g, '.')
@@ -375,15 +353,15 @@ export async function getCurrentUser(req?: any) {
                 authUser.id
             )
 
-            const { data: newUser, error: insertError } = await supabaseAdmin
-                .from('users')
-                .upsert(
-                    {
-                        id: authUser.id,
-                        wallet_address: walletAddress,
-                    } as any,
-                    { onConflict: 'id' }
-                )
+            const { data: newUser, error: insertError } = await (
+                supabaseAdmin.from('users').upsert as any
+            )(
+                {
+                    id: authUser.id,
+                    wallet_address: walletAddress,
+                },
+                { onConflict: 'id' }
+            )
                 .select()
                 .maybeSingle()
 
@@ -403,11 +381,6 @@ export async function getCurrentUser(req?: any) {
 
             console.log('User record created successfully:', newUser)
 
-            // Create primary wallet
-            if ((newUser as any)?.id) {
-                await createPrimaryWallet((newUser as any).id, walletAddress)
-            }
-
             return {
                 success: true,
                 user: newUser || {
@@ -419,7 +392,7 @@ export async function getCurrentUser(req?: any) {
             }
         }
 
-        console.log('Database user found:', (dbUser as any).id)
+        console.log('Database user found:', (dbUser as { id: string }).id)
         return { success: true, user: dbUser }
     } catch (error) {
         console.error('Error getting current user:', error)

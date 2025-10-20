@@ -26,12 +26,14 @@ interface NFTDisplay {
     id: string
     token_id: string
     serial_number: number
-    metadata: any
+    metadata: Record<string, unknown>
     token_name?: string
     token_icon?: string | null
 }
 
 interface AssetSectionsProps {
+    hbarBalance: number
+    hbarPriceUsd: number
     fungibleTokens: TokenDisplay[]
     lpTokens: TokenDisplay[]
     nfts: NFTDisplay[]
@@ -40,6 +42,8 @@ interface AssetSectionsProps {
 }
 
 export function AssetSections({
+    hbarBalance,
+    hbarPriceUsd,
     fungibleTokens,
     lpTokens,
     nfts,
@@ -51,7 +55,8 @@ export function AssetSections({
     const fungibleCount = fungibleTokens?.length || 0
     const lpCount = lpTokens?.length || 0
     const nftCount = nfts?.length || 0
-    const totalAssets = fungibleCount + lpCount + nftCount
+    const hasHbar = hbarBalance > 0
+    const totalAssets = fungibleCount + lpCount + nftCount + (hasHbar ? 1 : 0)
 
     if (totalAssets === 0) {
         return (
@@ -67,9 +72,9 @@ export function AssetSections({
                 <TabsTrigger value='tokens' className='flex items-center gap-2'>
                     <Coins className='w-4 h-4' />
                     Tokens
-                    {fungibleCount > 0 && (
+                    {(fungibleCount > 0 || hasHbar) && (
                         <Badge variant='secondary' className='ml-1'>
-                            {fungibleCount}
+                            {fungibleCount + (hasHbar ? 1 : 0)}
                         </Badge>
                     )}
                 </TabsTrigger>
@@ -94,13 +99,41 @@ export function AssetSections({
             </TabsList>
 
             <TabsContent value='tokens' className='mt-4'>
-                {fungibleCount === 0 ? (
+                {!hasHbar && fungibleCount === 0 ? (
                     <div className='text-center py-6 text-muted-foreground'>
                         <Coins className='w-12 h-12 mx-auto mb-2 opacity-50' />
                         <p>No fungible tokens found</p>
                     </div>
                 ) : (
                     <div className='space-y-2'>
+                        {/* HBAR Balance - Always show first if > 0 */}
+                        {hasHbar && (
+                            <div className='flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 hover:from-purple-500/15 hover:to-blue-500/15 transition-colors'>
+                                <div className='flex items-center gap-3'>
+                                    <div className='w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm'>
+                                        ℏ
+                                    </div>
+                                    <div>
+                                        <div className='font-medium'>HBAR</div>
+                                        <div className='text-sm text-muted-foreground'>
+                                            {hbarBalance.toFixed(4)} HBAR
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className='text-right'>
+                                    <div className='font-medium'>
+                                        {formatUsd(hbarBalance * hbarPriceUsd)}
+                                    </div>
+                                    {hbarPriceUsd > 0 && (
+                                        <div className='text-sm text-muted-foreground'>
+                                            @{formatUsd(hbarPriceUsd)}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Fungible Tokens */}
                         {fungibleTokens.map((token) => {
                             const balance = formatBalance(
                                 token.balance,
@@ -225,47 +258,49 @@ export function AssetSections({
                     </div>
                 ) : (
                     <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
-                        {nfts.map((nft) => (
-                            <div
-                                key={nft.id}
-                                className='group relative rounded-lg overflow-hidden bg-muted/50 hover:bg-muted transition-all border border-border/50 hover:border-border'
-                            >
-                                {nft.token_icon || nft.metadata?.image ? (
-                                    <div className='aspect-square relative'>
-                                        <img
-                                            src={
-                                                nft.token_icon ||
-                                                nft.metadata?.image
-                                            }
-                                            alt={
-                                                nft.token_name ||
-                                                `NFT #${nft.serial_number}`
-                                            }
-                                            className='w-full h-full object-cover'
-                                            onError={(e) => {
-                                                e.currentTarget.src = ''
-                                                e.currentTarget.className =
-                                                    'w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20'
-                                            }}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className='aspect-square bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center'>
-                                        <ImageIcon className='w-12 h-12 text-muted-foreground/50' />
-                                    </div>
-                                )}
-                                <div className='p-3'>
-                                    <div className='font-medium text-sm truncate'>
-                                        {nft.metadata?.name ||
-                                            nft.token_name ||
-                                            'Unnamed NFT'}
-                                    </div>
-                                    <div className='text-xs text-muted-foreground'>
-                                        #{nft.serial_number}
+                        {nfts.map((nft) => {
+                            // Get image from metadata or token_icon
+                            const nftImage =
+                                nft.metadata?.image || nft.token_icon
+                            const nftName =
+                                nft.metadata?.name ||
+                                nft.token_name ||
+                                `NFT #${nft.serial_number}`
+
+                            return (
+                                <div
+                                    key={nft.id}
+                                    className='group relative rounded-lg overflow-hidden bg-muted/50 hover:bg-muted transition-all border border-border/50 hover:border-border'
+                                >
+                                    {nftImage ? (
+                                        <div className='aspect-square relative'>
+                                            <img
+                                                src={nftImage}
+                                                alt={nftName}
+                                                className='w-full h-full object-cover'
+                                                onError={(e) => {
+                                                    e.currentTarget.src = ''
+                                                    e.currentTarget.className =
+                                                        'w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20'
+                                                }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className='aspect-square bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center'>
+                                            <ImageIcon className='w-12 h-12 text-muted-foreground/50' />
+                                        </div>
+                                    )}
+                                    <div className='p-3'>
+                                        <div className='font-medium text-sm truncate'>
+                                            {nftName}
+                                        </div>
+                                        <div className='text-xs text-muted-foreground'>
+                                            #{nft.serial_number}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 )}
             </TabsContent>

@@ -13,11 +13,14 @@ import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 export function AuthExample() {
     // Ajusta según tu implementación de wallet
     const wallet = useWallet()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const hashconnect = (wallet as any).hashconnect
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const walletAny = wallet as unknown as {
+        hashconnect?: unknown
+        connectedAccountId?: string
+        accountId?: string
+    }
+    const hashconnect = walletAny.hashconnect
     const connectedAccountId =
-        (wallet as any).connectedAccountId || (wallet as any).accountId
+        walletAny.connectedAccountId || walletAny.accountId || null
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -54,14 +57,17 @@ export function AuthExample() {
 
             console.log('🔐 Starting login process...')
 
-            const result = await signIn(connectedAccountId, async (message) => {
-                console.log('✍️ Requesting signature from wallet...')
-                return await signMessageWithHashPack(
-                    hashconnect,
-                    connectedAccountId,
-                    message
-                )
-            })
+            const result = await signIn(
+                connectedAccountId || '',
+                async (message) => {
+                    console.log('✍️ Requesting signature from wallet...')
+                    return await signMessageWithHashPack(
+                        hashconnect,
+                        connectedAccountId || '',
+                        message
+                    )
+                }
+            )
 
             if (result.success) {
                 console.log('✅ Login successful!')

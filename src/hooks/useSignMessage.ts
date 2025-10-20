@@ -36,17 +36,44 @@ export function useSignMessage() {
                 let resultPublicKey: string | undefined
 
                 // Detectar el tipo de wallet y usar el método apropiado
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const walletAny = wallet as unknown as {
+                    walletType?: string
+                    connector?: {
+                        hashconnect?: {
+                            signMessage?: (
+                                accountId: string,
+                                message: string
+                            ) => Promise<{
+                                signature?: string
+                                signatureMap?: {
+                                    sigPair?: Array<{ ed25519?: string }>
+                                }
+                                publicKey?: string
+                            }>
+                        }
+                    }
+                    hashconnect?: {
+                        signMessage?: (
+                            accountId: string,
+                            message: string
+                        ) => Promise<{
+                            signature?: string
+                            signatureMap?: {
+                                sigPair?: Array<{ ed25519?: string }>
+                            }
+                            publicKey?: string
+                        }>
+                    }
+                }
                 const walletType: string =
-                    (wallet as any).walletType?.toLowerCase() || ''
+                    walletAny.walletType?.toLowerCase() || ''
 
                 if (walletType.includes('hashpack')) {
                     // HashPack wallet
                     // HashPack usa hashconnect
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const hashconnect =
-                        (wallet.connector as any)?.hashconnect ||
-                        (wallet as any).hashconnect
+                        walletAny.connector?.hashconnect ||
+                        walletAny.hashconnect
 
                     if (!hashconnect || !hashconnect.signMessage) {
                         throw new Error(

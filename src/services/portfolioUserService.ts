@@ -2,7 +2,7 @@
  * Servicio para gestionar usuarios de portfolio en Supabase
  * Sincroniza accountId de JWT con la tabla users en Supabase
  */
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { logger } from '@/lib/logger'
 
@@ -72,12 +72,12 @@ export async function syncOrCreateUser(accountId: string) {
         }
 
         // Si no existe, crearlo
-        const { data: newUser, error: insertError } = await supabaseAdmin
-            .from('users')
-            .insert({
-                id: authUserId,
-                wallet_address: accountId,
-            } as any)
+        const { data: newUser, error: insertError } = await (
+            supabaseAdmin.from('users').insert as any
+        )({
+            id: authUserId,
+            wallet_address: accountId,
+        })
             .select()
             .single()
 
@@ -90,9 +90,6 @@ export async function syncOrCreateUser(accountId: string) {
         }
 
         logger.info('User created in database', { userId: authUserId })
-
-        // Crear wallet primaria
-        await createPrimaryWallet(authUserId, accountId)
 
         return { success: true, userId: authUserId, user: newUser }
     } catch (error) {
@@ -122,47 +119,6 @@ export async function getUserByAccountId(accountId: string) {
             accountId,
         })
         return { success: false, error: 'Failed to get user' }
-    }
-}
-
-/**
- * Crear wallet primaria para el usuario
- */
-async function createPrimaryWallet(userId: string, walletAddress: string) {
-    try {
-        // Verificar si ya tiene una wallet primaria
-        const { data: existingPrimary } = await supabaseAdmin
-            .from('wallets')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('is_primary', true)
-            .maybeSingle()
-
-        if (existingPrimary) {
-            logger.info('Primary wallet already exists', { userId })
-            return
-        }
-
-        const { error } = await supabaseAdmin.from('wallets').insert({
-            user_id: userId,
-            wallet_address: walletAddress,
-            label: 'Primary Wallet',
-            is_primary: true,
-        } as any)
-
-        if (error) {
-            logger.error('Error creating primary wallet', {
-                error: error.message,
-                userId,
-            })
-        } else {
-            logger.info('Primary wallet created', { userId, walletAddress })
-        }
-    } catch (error) {
-        logger.error('Error in createPrimaryWallet', {
-            error: error instanceof Error ? error.message : String(error),
-            userId,
-        })
     }
 }
 
