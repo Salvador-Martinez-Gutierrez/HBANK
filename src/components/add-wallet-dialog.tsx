@@ -67,7 +67,9 @@ export function AddWalletDialog({
             )
 
             if (result.success) {
-                toast.success('Wallet added successfully!')
+                toast.success(
+                    'Wallet added successfully! Syncing assets, please wait a moment...'
+                )
                 setOpen(false) // Close modal first
                 setWalletAddress('')
                 setLabel('')

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
 import { AddWalletDialog } from '@/components/add-wallet-dialog'
+import { DeleteWalletDialog } from '@/components/delete-wallet-dialog'
 import { useAccountId } from '@/app/(protocol)/earn/hooks/useAccountID'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -61,6 +62,11 @@ export default function PortfolioPage() {
     const [syncing, setSyncing] = useState(false)
     const [syncingWallets, setSyncingWallets] = useState<Set<string>>(new Set())
     const [isAuthenticating, setIsAuthenticating] = useState(false)
+    const [walletToDelete, setWalletToDelete] = useState<{
+        id: string
+        label?: string
+        address: string
+    } | null>(null)
 
     // Wallet collapse state (localStorage, instant)
     const { isWalletCollapsed, toggleWalletCollapsed } = useWalletCollapse()
@@ -206,18 +212,29 @@ export default function PortfolioPage() {
     }
 
     const handleDeleteWallet = async (walletId: string) => {
-        if (
-            confirm(
-                'Are you sure you want to remove this wallet from your portfolio?'
-            )
-        ) {
-            const result = await deleteWallet(walletId)
-            if (result.success) {
-                toast.success('Wallet removed')
-            } else {
-                toast.error(result.error || 'Failed to remove wallet')
-            }
+        // Find wallet info
+        const wallet = wallets.find((w) => w.id === walletId)
+        if (!wallet) return
+
+        // Open confirmation modal
+        setWalletToDelete({
+            id: walletId,
+            label: wallet.label || undefined,
+            address: wallet.wallet_address,
+        })
+    }
+
+    const confirmDeleteWallet = async () => {
+        if (!walletToDelete) return
+
+        const result = await deleteWallet(walletToDelete.id)
+        if (result.success) {
+            toast.success('Wallet removed')
+        } else {
+            toast.error(result.error || 'Failed to remove wallet')
         }
+
+        setWalletToDelete(null)
     }
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -442,6 +459,15 @@ export default function PortfolioPage() {
                     </SortableContext>
                 </DndContext>
             )}
+
+            {/* Delete Wallet Confirmation Dialog */}
+            <DeleteWalletDialog
+                open={walletToDelete !== null}
+                onOpenChange={(open) => !open && setWalletToDelete(null)}
+                onConfirm={confirmDeleteWallet}
+                walletLabel={walletToDelete?.label}
+                walletAddress={walletToDelete?.address}
+            />
         </div>
     )
 }

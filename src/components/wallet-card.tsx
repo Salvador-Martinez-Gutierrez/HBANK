@@ -287,6 +287,7 @@ export function WalletCard({
                         nfts={nfts}
                         formatUsd={formatUsd}
                         formatBalance={formatBalance}
+                        syncing={syncing}
                     />
                 </CardContent>
             )}

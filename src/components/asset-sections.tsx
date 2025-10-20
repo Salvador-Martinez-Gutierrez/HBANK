@@ -9,7 +9,7 @@
 import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Coins, Droplet, ImageIcon } from 'lucide-react'
+import { Coins, Droplet, ImageIcon, Loader2 } from 'lucide-react'
 
 interface TokenDisplay {
     id: string
@@ -39,6 +39,7 @@ interface AssetSectionsProps {
     nfts: NFTDisplay[]
     formatUsd: (value: number) => string
     formatBalance: (balance: string, decimals: number) => string
+    syncing?: boolean
 }
 
 export function AssetSections({
@@ -49,6 +50,7 @@ export function AssetSections({
     nfts,
     formatUsd,
     formatBalance,
+    syncing = false,
 }: AssetSectionsProps) {
     const [activeTab, setActiveTab] = useState('tokens')
 
@@ -61,7 +63,14 @@ export function AssetSections({
     if (totalAssets === 0) {
         return (
             <div className='text-center py-6 text-muted-foreground'>
-                <p>No assets found. Click sync to load your assets.</p>
+                {syncing ? (
+                    <div className='flex flex-col items-center gap-2'>
+                        <Loader2 className='w-6 h-6 animate-spin' />
+                        <p>Syncing assets, please wait...</p>
+                    </div>
+                ) : (
+                    <p>No assets found. Click sync to load your assets.</p>
+                )}
             </div>
         )
     }
