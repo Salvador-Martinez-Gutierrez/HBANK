@@ -80,29 +80,116 @@ export function usePortfolioWallets(userId: string | null) {
         console.log('💰 Updating token price in wallets:', update.token_address)
 
         setWallets((currentWallets) => {
+            let hasChanges = false
+
             // Crear una copia profunda para evitar mutaciones
-            const updatedWallets = currentWallets.map((wallet) => ({
-                ...wallet,
-                wallet_tokens: (wallet.wallet_tokens || []).map((wt) => {
-                    // Si este token coincide con el actualizado
+            const updatedWallets = currentWallets.map((wallet) => {
+                let walletChanged = false
+                const newWallet = { ...wallet }
+
+                // Check if this is HBAR price update (token_address: 'HBAR' or '0.0.0')
+                if (
+                    update.token_address === 'HBAR' ||
+                    update.token_address === '0.0.0'
+                ) {
+                    const oldPrice = parseFloat(wallet.hbar_price_usd || '0')
+                    const newPrice = parseFloat(update.price_usd)
+                    if (oldPrice !== newPrice) {
+                        newWallet.hbar_price_usd = update.price_usd
+                        walletChanged = true
+                        console.log(
+                            `  📊 HBAR price updated: $${oldPrice.toFixed(
+                                4
+                            )} → $${newPrice.toFixed(4)}`
+                        )
+                    }
+                }
+
+                // Update fungible tokens (wallet_tokens)
+                const updatedWalletTokens = (wallet.wallet_tokens || []).map(
+                    (wt) => {
+                        // Si este token coincide con el actualizado
+                        if (
+                            wt.tokens_registry?.token_address ===
+                            update.token_address
+                        ) {
+                            walletChanged = true
+                            const oldPrice = parseFloat(
+                                String(wt.tokens_registry.price_usd || '0')
+                            )
+                            const newPrice = parseFloat(update.price_usd)
+                            console.log(
+                                `  📊 ${
+                                    wt.tokens_registry.token_symbol
+                                } price updated: $${oldPrice.toFixed(
+                                    4
+                                )} → $${newPrice.toFixed(4)}`
+                            )
+                            return {
+                                ...wt,
+                                tokens_registry: {
+                                    ...wt.tokens_registry,
+                                    price_usd: parseFloat(update.price_usd),
+                                    last_price_update: update.last_price_update,
+                                },
+                            }
+                        }
+                        return wt
+                    }
+                )
+
+                // Update LP tokens (liquidity_pool_tokens)
+                const updatedLpTokens = (
+                    wallet.liquidity_pool_tokens || []
+                ).map((lpt) => {
+                    // Si este LP token coincide con el actualizado
                     if (
-                        wt.tokens_registry?.token_address ===
+                        lpt.tokens_registry?.token_address ===
                         update.token_address
                     ) {
+                        walletChanged = true
+                        const oldPrice = parseFloat(
+                            String(lpt.tokens_registry.price_usd || '0')
+                        )
+                        const newPrice = parseFloat(update.price_usd)
+                        console.log(
+                            `  📊 LP ${
+                                lpt.tokens_registry.token_symbol
+                            } price updated: $${oldPrice.toFixed(
+                                4
+                            )} → $${newPrice.toFixed(4)}`
+                        )
                         return {
-                            ...wt,
+                            ...lpt,
                             tokens_registry: {
-                                ...wt.tokens_registry,
+                                ...lpt.tokens_registry,
                                 price_usd: parseFloat(update.price_usd),
                                 last_price_update: update.last_price_update,
                             },
                         }
                     }
-                    return wt
-                }),
-            }))
+                    return lpt
+                })
 
-            return updatedWallets
+                if (walletChanged) {
+                    hasChanges = true
+                    return {
+                        ...newWallet,
+                        wallet_tokens: updatedWalletTokens,
+                        liquidity_pool_tokens: updatedLpTokens,
+                    }
+                }
+
+                return wallet
+            })
+
+            // Solo actualizar el estado si hubo cambios
+            if (hasChanges) {
+                console.log('✅ Portfolio balance recalculated with new prices')
+                return updatedWallets
+            }
+
+            return currentWallets
         })
 
         // Actualizar timestamp para el indicador UI
@@ -238,6 +325,34 @@ export function usePortfolioWallets(userId: string | null) {
         [fetchWallets]
     )
 
+    const syncAllWallets = useCallback(async () => {
+        try {
+            console.log('🚀 Starting optimized batch sync...')
+            const response = await fetch('/api/portfolio/sync-all-wallets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                await fetchWallets()
+                return {
+                    success: true,
+                    message: result.message,
+                    results: result.results,
+                }
+            } else {
+                return { success: false, error: result.error }
+            }
+        } catch (error) {
+            console.error('Error syncing all wallets:', error)
+            return { success: false, error: 'Failed to sync wallets' }
+        }
+    }, [fetchWallets])
+
     const calculateTotalValue = useCallback(() => {
         let total = 0
 
@@ -278,6 +393,7 @@ export function usePortfolioWallets(userId: string | null) {
         updateWalletLabel,
         deleteWallet,
         syncTokens,
+        syncAllWallets, // 🚀 Optimized batch sync
         refetch: fetchWallets,
         lastPriceUpdate, // Para el indicador de realtime
     }

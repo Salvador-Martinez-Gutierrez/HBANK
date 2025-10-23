@@ -16,9 +16,12 @@ import {
     RefreshCw,
     TrendingUp,
     Shield,
+    LayoutGrid,
+    Layers,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { WalletCard } from '@/components/wallet-card'
+import { AggregatedPortfolioView } from '@/components/aggregated-portfolio-view'
 import { useWalletCollapse } from '@/hooks/useWalletCollapse'
 import { useWalletOrder } from '@/hooks/useWalletOrder'
 import { RealtimePriceIndicator } from '@/components/realtime-price-indicator'
@@ -37,6 +40,7 @@ import {
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export default function PortfolioPage() {
     const { isConnected } = useWallet()
@@ -55,6 +59,7 @@ export default function PortfolioPage() {
         canAddMoreWallets,
         walletsRemaining,
         syncTokens,
+        syncAllWallets,
         addWallet,
         deleteWallet,
         lastPriceUpdate,
@@ -67,6 +72,9 @@ export default function PortfolioPage() {
         label?: string
         address: string
     } | null>(null)
+    const [viewMode, setViewMode] = useState<'individual' | 'aggregated'>(
+        'individual'
+    )
 
     // Wallet collapse state (localStorage, instant)
     const { isWalletCollapsed, toggleWalletCollapsed } = useWalletCollapse()
@@ -182,26 +190,18 @@ export default function PortfolioPage() {
 
     const handleSyncAllWallets = async () => {
         setSyncing(true)
-        try {
-            // Sync all wallets sequentially with delay to avoid rate limiting
-            const results = []
-            for (const wallet of wallets) {
-                const result = await syncTokens(
-                    wallet.id,
-                    wallet.wallet_address
-                )
-                results.push(result)
-                // Add 500ms delay between requests to avoid rate limiting
-                if (wallet !== wallets[wallets.length - 1]) {
-                    await new Promise((resolve) => setTimeout(resolve, 500))
-                }
-            }
 
-            const allSuccess = results.every((r) => r.success)
-            if (allSuccess) {
-                toast.success('All wallets synced successfully')
+        try {
+            // 🚀 Use optimized batch sync that makes only ONE SaucerSwap API call
+            console.log('🚀 Starting optimized batch sync for all wallets...')
+            const result = await syncAllWallets()
+
+            if (result.success) {
+                toast.success(
+                    result.message || 'All wallets synced successfully'
+                )
             } else {
-                toast.error('Some wallets failed to sync')
+                toast.error(result.error || 'Failed to sync wallets')
             }
         } catch (error) {
             console.error('Sync all error:', error)
@@ -381,6 +381,35 @@ export default function PortfolioPage() {
                 </div>
             </div>
 
+            {/* View Mode Toggle */}
+            {wallets.length > 0 && (
+                <div className='mb-4'>
+                    <Tabs
+                        value={viewMode}
+                        onValueChange={(v) =>
+                            setViewMode(v as 'individual' | 'aggregated')
+                        }
+                    >
+                        <TabsList className='grid w-full max-w-md grid-cols-2'>
+                            <TabsTrigger
+                                value='aggregated'
+                                className='flex items-center gap-2'
+                            >
+                                <LayoutGrid className='w-4 h-4' />
+                                Aggregated View
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value='individual'
+                                className='flex items-center gap-2'
+                            >
+                                <Layers className='w-4 h-4' />
+                                By Wallet
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </div>
+            )}
+
             {/* Total Value Card */}
             <Card className='mb-6 bg-card/80 backdrop-blur-sm border-border/50'>
                 <CardHeader>
@@ -396,7 +425,7 @@ export default function PortfolioPage() {
                 </CardContent>
             </Card>
 
-            {/* Wallets */}
+            {/* Content */}
             {walletsLoading ? (
                 <div className='text-center py-12'>
                     <RefreshCw className='w-8 h-8 animate-spin mx-auto text-muted-foreground mb-4' />
@@ -429,6 +458,13 @@ export default function PortfolioPage() {
                         </Button>
                     </CardContent>
                 </Card>
+            ) : viewMode === 'aggregated' ? (
+                <AggregatedPortfolioView
+                    wallets={wallets}
+                    loading={walletsLoading}
+                    formatUsd={formatUsd}
+                    formatBalance={formatBalance}
+                />
             ) : (
                 <DndContext
                     sensors={sensors}
