@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Coins, Droplet, ImageIcon, Loader2 } from 'lucide-react'
@@ -119,8 +120,14 @@ export function AssetSections({
                         {hasHbar && (
                             <div className='flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 hover:from-purple-500/15 hover:to-blue-500/15 transition-colors'>
                                 <div className='flex items-center gap-3'>
-                                    <div className='w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm'>
-                                        ℏ
+                                    <div className='w-8 h-8 rounded-full flex items-center justify-center'>
+                                        <Image
+                                            src='/hedera-hbar-logo.svg'
+                                            alt='HBAR'
+                                            width={32}
+                                            height={32}
+                                            className='rounded-full'
+                                        />
                                     </div>
                                     <div>
                                         <div className='font-medium'>HBAR</div>

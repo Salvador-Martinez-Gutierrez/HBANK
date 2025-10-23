@@ -93,7 +93,7 @@ export function usePortfolioWallets(userId: string | null) {
                             ...wt,
                             tokens_registry: {
                                 ...wt.tokens_registry,
-                                price_usd: update.price_usd,
+                                price_usd: parseFloat(update.price_usd),
                                 last_price_update: update.last_price_update,
                             },
                         }
@@ -242,11 +242,22 @@ export function usePortfolioWallets(userId: string | null) {
         let total = 0
 
         for (const wallet of wallets) {
+            // Include HBAR balance in total value calculation
+            const hbarBalance = parseFloat(wallet.hbar_balance || '0')
+            const hbarPrice = parseFloat(wallet.hbar_price_usd || '0')
+            total += hbarBalance * hbarPrice
+
+            // Include all fungible tokens
             for (const walletToken of wallet.wallet_tokens || []) {
                 const balance = parseFloat(walletToken.balance || '0')
-                const price = parseFloat(
-                    walletToken.tokens_registry?.price_usd || '0'
-                )
+                const price =
+                    typeof walletToken.tokens_registry?.price_usd === 'number'
+                        ? walletToken.tokens_registry.price_usd
+                        : parseFloat(
+                              String(
+                                  walletToken.tokens_registry?.price_usd || '0'
+                              )
+                          )
                 const decimals = walletToken.tokens_registry?.decimals || 0
                 const normalizedBalance = balance / Math.pow(10, decimals)
                 total += normalizedBalance * price
