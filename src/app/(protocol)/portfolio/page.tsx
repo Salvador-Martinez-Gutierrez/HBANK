@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { ConnectWalletButton } from '@/components/connect-wallet-button'
 import { AddWalletDialog } from '@/components/add-wallet-dialog'
@@ -24,6 +24,7 @@ import { WalletCard } from '@/components/wallet-card'
 import { AggregatedPortfolioView } from '@/components/aggregated-portfolio-view'
 import { useWalletCollapse } from '@/hooks/useWalletCollapse'
 import { useWalletOrder } from '@/hooks/useWalletOrder'
+import { useSyncCooldown } from '@/hooks/useSyncCooldown'
 import { RealtimePriceIndicator } from '@/components/realtime-price-indicator'
 import {
     DndContext,
@@ -75,12 +76,33 @@ export default function PortfolioPage() {
     const [viewMode, setViewMode] = useState<'individual' | 'aggregated'>(
         'individual'
     )
+    const [, setTick] = useState(0) // Force re-render for cooldown updates
 
     // Wallet collapse state (localStorage, instant)
     const { isWalletCollapsed, toggleWalletCollapsed } = useWalletCollapse()
 
     // Wallet order state (localStorage, instant)
     const { sortWallets, saveWalletOrder } = useWalletOrder(user?.id || null)
+
+    // Sync cooldown state (localStorage, 1 hour cooldown)
+    const {
+        isSyncAllOnCooldown,
+        isWalletOnCooldown,
+        getSyncAllRemainingTime,
+        getWalletRemainingTime,
+        recordSyncAll,
+        recordWalletSync,
+        formatRemainingTime,
+    } = useSyncCooldown()
+
+    // Update UI every second when there are active cooldowns
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTick((prev) => prev + 1)
+        }, 1000)
+
+        return () => clearInterval(interval)
+    }, [])
 
     // Apply custom order to wallets
     const wallets = sortWallets(rawWallets)
@@ -165,6 +187,17 @@ export default function PortfolioPage() {
         walletId: string,
         walletAddress: string
     ) => {
+        // Check cooldown
+        if (isWalletOnCooldown(walletId)) {
+            const remainingTime = getWalletRemainingTime(walletId)
+            toast.error(
+                `Please wait ${formatRemainingTime(
+                    remainingTime
+                )} before syncing this wallet again`
+            )
+            return
+        }
+
         // Add wallet to syncing set
         setSyncingWallets((prev) => new Set(prev).add(walletId))
 
@@ -172,6 +205,8 @@ export default function PortfolioPage() {
             const result = await syncTokens(walletId, walletAddress)
             if (result.success) {
                 toast.success('Tokens synced successfully')
+                // Record sync time
+                recordWalletSync(walletId)
             } else {
                 toast.error(result.error || 'Failed to sync tokens')
             }
@@ -189,6 +224,17 @@ export default function PortfolioPage() {
     }
 
     const handleSyncAllWallets = async () => {
+        // Check cooldown
+        if (isSyncAllOnCooldown()) {
+            const remainingTime = getSyncAllRemainingTime()
+            toast.error(
+                `Please wait ${formatRemainingTime(
+                    remainingTime
+                )} before syncing all wallets again`
+            )
+            return
+        }
+
         setSyncing(true)
 
         try {
@@ -200,6 +246,9 @@ export default function PortfolioPage() {
                 toast.success(
                     result.message || 'All wallets synced successfully'
                 )
+                // Record sync all time and set cooldown for all individual wallets
+                const walletIds = wallets.map((wallet) => wallet.id)
+                recordSyncAll(walletIds)
             } else {
                 toast.error(result.error || 'Failed to sync wallets')
             }
@@ -369,14 +418,27 @@ export default function PortfolioPage() {
                         type='button'
                         variant='outline'
                         onClick={handleSyncAllWallets}
-                        disabled={syncing || walletsLoading}
+                        disabled={
+                            syncing || walletsLoading || isSyncAllOnCooldown()
+                        }
+                        title={
+                            isSyncAllOnCooldown()
+                                ? `Cooldown: ${formatRemainingTime(
+                                      getSyncAllRemainingTime()
+                                  )}`
+                                : 'Sync all wallets'
+                        }
                     >
                         <RefreshCw
                             className={`w-4 h-4 ${
                                 syncing ? 'animate-spin' : ''
                             }`}
                         />
-                        Sync All
+                        {isSyncAllOnCooldown()
+                            ? `Sync All (${formatRemainingTime(
+                                  getSyncAllRemainingTime()
+                              )})`
+                            : 'Sync All'}
                     </Button>
                 </div>
             </div>
@@ -482,6 +544,10 @@ export default function PortfolioPage() {
                                     wallet={wallet}
                                     syncing={syncingWallets.has(wallet.id)}
                                     isCollapsed={isWalletCollapsed(wallet.id)}
+                                    isOnCooldown={isWalletOnCooldown(wallet.id)}
+                                    cooldownRemainingTime={formatRemainingTime(
+                                        getWalletRemainingTime(wallet.id)
+                                    )}
                                     onSync={handleSyncWallet}
                                     onDelete={handleDeleteWallet}
                                     onToggleCollapse={() =>

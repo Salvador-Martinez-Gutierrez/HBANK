@@ -20,6 +20,8 @@ interface WalletCardProps {
     wallet: WalletWithAssets
     syncing: boolean
     isCollapsed: boolean
+    isOnCooldown?: boolean
+    cooldownRemainingTime?: string
     onSync: (walletId: string, walletAddress: string) => void
     onDelete: (walletId: string) => void
     onToggleCollapse: () => void
@@ -31,6 +33,8 @@ export function WalletCard({
     wallet,
     syncing,
     isCollapsed,
+    isOnCooldown = false,
+    cooldownRemainingTime = '',
     onSync,
     onDelete,
     onToggleCollapse,
@@ -218,8 +222,12 @@ export function WalletCard({
                             onClick={() =>
                                 onSync(wallet.id, wallet.wallet_address)
                             }
-                            disabled={syncing}
-                            title='Sync tokens'
+                            disabled={syncing || isOnCooldown}
+                            title={
+                                isOnCooldown
+                                    ? `Cooldown: ${cooldownRemainingTime}`
+                                    : 'Sync tokens'
+                            }
                         >
                             <RefreshCw
                                 className={`w-4 h-4 ${
