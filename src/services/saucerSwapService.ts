@@ -3,8 +3,8 @@
  * Integrates with SaucerSwap API to fetch token prices and metadata for Hedera mainnet
  */
 
-const SAUCERSWAP_API = 'https://api.saucerswap.finance'
-const SAUCERSWAP_API_KEY = '875e1017-87b8-4b12-8301-6aa1f1aa073b'
+const SAUCERSWAP_API = process.env.SAUCERSWAP_API_URL!
+const SAUCERSWAP_API_KEY = process.env.SAUCERSWAP_API_KEY!
 
 interface SaucerSwapToken {
     id: string

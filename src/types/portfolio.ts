@@ -7,10 +7,17 @@ export type TokenRegistry =
 export type WalletToken = Database['public']['Tables']['wallet_tokens']['Row']
 export type LiquidityPoolToken =
     Database['public']['Tables']['liquidity_pool_tokens']['Row']
-export type NFT = Database['public']['Tables']['nfts']['Row']
+export type NFT = Database['public']['Tables']['wallet_nfts']['Row']
+export type WalletDefi = Database['public']['Tables']['wallet_defi']['Row']
 
 // Token type enum
 export type TokenType = 'FUNGIBLE' | 'NON_FUNGIBLE' | 'LP_TOKEN'
+
+// DeFi position type enum
+export type DefiPositionType =
+    | 'SAUCERSWAP_V1_POOL'
+    | 'SAUCERSWAP_V1_FARM'
+    | 'BONZO_LENDING'
 
 // Extended types for joined queries
 export interface WalletTokenWithMetadata extends WalletToken {
@@ -25,12 +32,15 @@ export interface NFTWithMetadata extends NFT {
     tokens_registry?: TokenRegistry
 }
 
+export interface WalletDefiWithMetadata extends WalletDefi {
+    tokens_registry?: TokenRegistry
+}
+
 export interface WalletWithAssets extends Wallet {
     wallet_tokens: WalletTokenWithMetadata[]
     liquidity_pool_tokens: LPTokenWithMetadata[]
     wallet_nfts: NFTWithMetadata[]
-    hbar_balance?: string | null
-    hbar_price_usd?: string | null
+    wallet_defi: WalletDefiWithMetadata[]
 }
 
 // Legacy type alias for backward compatibility

@@ -75,18 +75,10 @@ export function WalletCard({
             total += normalizedBalance * price
         }
 
-        // Add LP tokens value
-        for (const lpToken of wallet.liquidity_pool_tokens || []) {
-            const balance = parseFloat(lpToken.balance || '0')
-            const priceUsd = lpToken.tokens_registry?.price_usd
-            const price = parseFloat(
-                typeof priceUsd === 'number'
-                    ? priceUsd.toString()
-                    : priceUsd || '0'
-            )
-            const decimals = lpToken.tokens_registry?.decimals || 0
-            const normalizedBalance = balance / Math.pow(10, decimals)
-            total += normalizedBalance * price
+        // Add DeFi positions value
+        for (const defiPosition of wallet.wallet_defi || []) {
+            const valueUsd = parseFloat(defiPosition.value_usd || '0')
+            total += valueUsd
         }
 
         return total
@@ -96,12 +88,12 @@ export function WalletCard({
     const hbarBalance = parseFloat(wallet.hbar_balance || '0')
     const hbarPriceUsd = parseFloat(wallet.hbar_price_usd || '0')
     const fungibleCount = wallet.wallet_tokens?.length || 0
-    const lpCount = wallet.liquidity_pool_tokens?.length || 0
+    const defiCount = wallet.wallet_defi?.length || 0
     const nftCount = wallet.wallet_nfts?.length || 0
 
     // Count HBAR as a token if it has balance
     const hbarTokenCount = hbarBalance > 0 ? 1 : 0
-    const totalTokenCount = fungibleCount + lpCount + hbarTokenCount
+    const totalTokenCount = fungibleCount + hbarTokenCount
 
     // Prepare data for AssetSections component
     const fungibleTokens = useMemo(() => {
@@ -134,35 +126,9 @@ export function WalletCard({
         return tokens.sort((a: any, b: any) => b.valueUsd - a.valueUsd)
     }, [wallet.wallet_tokens])
 
-    const lpTokens = useMemo(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tokens = (wallet.liquidity_pool_tokens || []).map((lp: any) => {
-            const balance = lp.balance
-            const decimals = lp.tokens_registry?.decimals || 0
-            const price_usd = lp.tokens_registry?.price_usd || '0'
-
-            // Calculate value in USD for sorting
-            const normalizedBalance =
-                parseFloat(balance) / Math.pow(10, decimals)
-            const valueUsd = normalizedBalance * parseFloat(price_usd)
-
-            return {
-                id: lp.id,
-                balance: balance,
-                token_name: lp.tokens_registry?.token_name,
-                token_symbol: lp.tokens_registry?.token_symbol,
-                token_address: lp.tokens_registry?.token_address,
-                token_icon: lp.tokens_registry?.token_icon,
-                decimals: decimals,
-                price_usd: price_usd,
-                valueUsd: valueUsd,
-            }
-        })
-
-        // Sort by USD value (descending)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return tokens.sort((a: any, b: any) => b.valueUsd - a.valueUsd)
-    }, [wallet.liquidity_pool_tokens])
+    const defiPositions = useMemo(() => {
+        return wallet.wallet_defi || []
+    }, [wallet.wallet_defi])
 
     const nfts = useMemo(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -216,7 +182,8 @@ export function WalletCard({
                                     {formatUsd(totalValue)}
                                 </span>
                                 <span className='text-xs text-muted-foreground'>
-                                    · {totalTokenCount} tokens · {nftCount} NFTs
+                                    · {totalTokenCount} tokens · {defiCount}{' '}
+                                    DeFi · {nftCount} NFTs
                                 </span>
                             </div>
                         )}
@@ -283,7 +250,7 @@ export function WalletCard({
                         hbarBalance={hbarBalance}
                         hbarPriceUsd={hbarPriceUsd}
                         fungibleTokens={fungibleTokens}
-                        lpTokens={lpTokens}
+                        defiPositions={defiPositions}
                         nfts={nfts}
                         formatUsd={formatUsd}
                         formatBalance={formatBalance}

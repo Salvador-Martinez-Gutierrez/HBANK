@@ -6,7 +6,10 @@
 import { useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AssetSections } from './asset-sections'
-import type { WalletWithAssets } from '@/types/portfolio'
+import type {
+    WalletWithAssets,
+    WalletDefiWithMetadata,
+} from '@/types/portfolio'
 import { Coins, Loader2 } from 'lucide-react'
 
 interface TokenDisplay {
@@ -33,7 +36,7 @@ interface AggregatedAssets {
     totalHbar: number
     hbarPriceUsd: number
     fungibleTokens: TokenDisplay[]
-    lpTokens: TokenDisplay[]
+    defiPositions: WalletDefiWithMetadata[]
     nfts: NFTDisplay[]
     totalValue: number
 }
@@ -56,7 +59,7 @@ export function AggregatedPortfolioView({
         let totalHbar = 0
         let hbarPriceUsd = 0
         const fungibleMap = new Map<string, TokenDisplay>()
-        const lpMap = new Map<string, TokenDisplay>()
+        const defiList: WalletDefiWithMetadata[] = []
         const nftList: NFTDisplay[] = []
         let totalValue = 0
 
@@ -114,48 +117,11 @@ export function AggregatedPortfolioView({
                 totalValue += normalizedBalance * price
             }
 
-            // Aggregate LP tokens
-            for (const lpToken of wallet.liquidity_pool_tokens || []) {
-                const tokenAddress =
-                    lpToken.tokens_registry?.token_address || ''
-                const balance = parseFloat(lpToken.balance || '0')
-                const priceUsd = lpToken.tokens_registry?.price_usd
-                const price = parseFloat(
-                    typeof priceUsd === 'number'
-                        ? priceUsd.toString()
-                        : priceUsd || '0'
-                )
-                const decimals = lpToken.tokens_registry?.decimals || 0
-
-                if (lpMap.has(tokenAddress)) {
-                    // Aggregate balance
-                    const existing = lpMap.get(tokenAddress)!
-                    const newBalance = (
-                        parseFloat(existing.balance) + balance
-                    ).toString()
-                    lpMap.set(tokenAddress, {
-                        ...existing,
-                        balance: newBalance,
-                    })
-                } else {
-                    // Add new token
-                    lpMap.set(tokenAddress, {
-                        id: lpToken.id,
-                        balance: balance.toString(),
-                        token_name:
-                            lpToken.tokens_registry?.token_name || undefined,
-                        token_symbol:
-                            lpToken.tokens_registry?.token_symbol || undefined,
-                        token_address: tokenAddress,
-                        token_icon:
-                            lpToken.tokens_registry?.token_icon || undefined,
-                        decimals: decimals,
-                        price_usd: price.toString(),
-                    })
-                }
-
-                const normalizedBalance = balance / Math.pow(10, decimals)
-                totalValue += normalizedBalance * price
+            // Collect all DeFi positions
+            for (const defiPosition of wallet.wallet_defi || []) {
+                const valueUsd = parseFloat(defiPosition.value_usd || '0')
+                totalValue += valueUsd
+                defiList.push(defiPosition)
             }
 
             // Collect all NFTs (no aggregation for NFTs as they are unique)
@@ -180,7 +146,7 @@ export function AggregatedPortfolioView({
         console.log('🔍 Aggregated Assets Debug:', {
             totalHbar,
             fungibleCount: fungibleMap.size,
-            lpCount: lpMap.size,
+            defiCount: defiList.length,
             nftCount: nftList.length,
             totalValue,
         })
@@ -195,20 +161,11 @@ export function AggregatedPortfolioView({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         fungibleTokens.sort((a: any, b: any) => b.valueUsd - a.valueUsd)
 
-        const lpTokens = Array.from(lpMap.values()).map((token) => {
-            const normalizedBalance =
-                parseFloat(token.balance) / Math.pow(10, token.decimals)
-            const valueUsd = normalizedBalance * parseFloat(token.price_usd)
-            return { ...token, valueUsd }
-        })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        lpTokens.sort((a: any, b: any) => b.valueUsd - a.valueUsd)
-
         return {
             totalHbar,
             hbarPriceUsd,
             fungibleTokens,
-            lpTokens,
+            defiPositions: defiList,
             nfts: nftList,
             totalValue,
         }
@@ -258,7 +215,7 @@ export function AggregatedPortfolioView({
                     hbarBalance={aggregatedAssets.totalHbar}
                     hbarPriceUsd={aggregatedAssets.hbarPriceUsd}
                     fungibleTokens={aggregatedAssets.fungibleTokens}
-                    lpTokens={aggregatedAssets.lpTokens}
+                    defiPositions={aggregatedAssets.defiPositions}
                     nfts={aggregatedAssets.nfts}
                     formatUsd={formatUsd}
                     formatBalance={formatBalance}

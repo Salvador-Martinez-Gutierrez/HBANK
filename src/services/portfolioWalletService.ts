@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createTokenLookupMap, getHbarPrice } from './saucerSwapService'
+import {
+    getLpTokenData,
+    fetchFarmTotals,
+    fetchPoolId,
+    getLpTokenDataByPoolId,
+    getBonzoLendingData,
+    isLpToken,
+} from './defiService'
 import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
 
 /**
@@ -45,6 +53,10 @@ export async function getUserWallets(
                     tokens_registry (*)
                 ),
                 wallet_nfts (
+                    *,
+                    tokens_registry (*)
+                ),
+                wallet_defi (
                     *,
                     tokens_registry (*)
                 )
@@ -623,6 +635,366 @@ export async function syncWalletTokens(
         }
 
         // ========================================
+        // 5. SYNC DEFI POSITIONS
+        // ========================================
+        console.log(`\n💰 Starting DeFi positions sync...`)
+        let defiCount = 0
+
+        // 5a. SaucerSwap V1 Pools (from LP tokens already processed)
+        console.log(`\n🔵 Syncing SaucerSwap V1 Pools...`)
+        const lpTokens = activeTokens.filter((token: any) => {
+            const metadata = tokenMetadataMap.get(token.token_id)
+            return metadata && isLpToken(metadata.name)
+        })
+
+        for (const lpToken of lpTokens) {
+            const tokenAddress = lpToken.token_id
+            const balance = lpToken.balance
+            const metadata = tokenMetadataMap.get(tokenAddress)
+
+            if (!metadata) continue
+
+            try {
+                // Get LP pool data from SaucerSwap
+                const lpData = await getLpTokenData(tokenAddress)
+
+                if (lpData) {
+                    const poolValue =
+                        Number(balance) *
+                        Number(lpData.lpToken.priceUsd) *
+                        Math.pow(10, -lpData.lpToken.decimals)
+
+                    // Get or create token registry entry for this LP token
+                    const { data: registryToken, error: registryError } =
+                        await (
+                            supabaseAdmin.from('tokens_registry').upsert as any
+                        )(
+                            {
+                                token_address: tokenAddress,
+                                token_name: lpData.lpToken.name,
+                                token_symbol: lpData.lpToken.symbol,
+                                token_type: 'LP_TOKEN',
+                                decimals: lpData.lpToken.decimals,
+                                price_usd: lpData.lpToken.priceUsd,
+                                last_price_update: new Date().toISOString(),
+                            },
+                            {
+                                onConflict: 'token_address',
+                                ignoreDuplicates: false,
+                            }
+                        )
+                            .select('id')
+                            .single()
+
+                    if (registryError) {
+                        console.error(
+                            `Error creating registry for LP token ${tokenAddress}:`,
+                            registryError
+                        )
+                        continue
+                    }
+
+                    // Calculate user's share of the pool
+                    const userLpBalance = parseFloat(balance.toString())
+                    const totalLpSupply = parseFloat(lpData.lpTokenReserve)
+                    const userShareRatio = userLpBalance / totalLpSupply
+
+                    // Calculate amounts of each token the user has supplied
+                    const tokenAReserve = parseFloat(lpData.tokenReserveA)
+                    const tokenBReserve = parseFloat(lpData.tokenReserveB)
+                    const userTokenAAmount = tokenAReserve * userShareRatio
+                    const userTokenBAmount = tokenBReserve * userShareRatio
+
+                    // Normalize amounts by decimals for display
+                    const tokenADecimals = lpData.tokenA.decimals
+                    const tokenBDecimals = lpData.tokenB.decimals
+                    const userTokenADisplay =
+                        userTokenAAmount / Math.pow(10, tokenADecimals)
+                    const userTokenBDisplay =
+                        userTokenBAmount / Math.pow(10, tokenBDecimals)
+
+                    // Save DeFi position
+                    const { error: defiError } = await (
+                        supabaseAdmin.from('wallet_defi').upsert as any
+                    )(
+                        {
+                            wallet_id: walletId,
+                            token_id: registryToken.id,
+                            position_type: 'SAUCERSWAP_V1_POOL',
+                            balance: balance.toString(),
+                            value_usd: poolValue.toString(),
+                            defi_metadata: {
+                                poolId: lpData.id,
+                                poolName: `${lpData.tokenA.symbol}/${lpData.tokenB.symbol}`,
+                                lpTokenAddress: tokenAddress,
+                                token0Symbol: lpData.tokenA.symbol,
+                                token1Symbol: lpData.tokenB.symbol,
+                                token0Amount: userTokenADisplay.toString(),
+                                token1Amount: userTokenBDisplay.toString(),
+                                tokenA: {
+                                    id: lpData.tokenA.id,
+                                    symbol: lpData.tokenA.symbol,
+                                    priceUsd: lpData.tokenA.priceUsd,
+                                    decimals: tokenADecimals,
+                                    userAmount: userTokenADisplay.toString(),
+                                },
+                                tokenB: {
+                                    id: lpData.tokenB.id,
+                                    symbol: lpData.tokenB.symbol,
+                                    priceUsd: lpData.tokenB.priceUsd,
+                                    decimals: tokenBDecimals,
+                                    userAmount: userTokenBDisplay.toString(),
+                                },
+                            },
+                            last_synced_at: new Date().toISOString(),
+                        },
+                        {
+                            onConflict: 'wallet_id,position_type,token_id',
+                        }
+                    )
+
+                    if (defiError) {
+                        console.error(
+                            `Error syncing LP pool ${tokenAddress}:`,
+                            defiError
+                        )
+                    } else {
+                        defiCount++
+                        console.log(
+                            `✅ Synced SaucerSwap V1 Pool: ${
+                                lpData.lpToken.symbol
+                            } ($${poolValue.toFixed(2)})`
+                        )
+                    }
+                }
+            } catch (error) {
+                console.error(
+                    `Error processing LP token ${tokenAddress}:`,
+                    error
+                )
+            }
+        }
+
+        // 5b. SaucerSwap V1 Farms
+        console.log(`\n🌾 Syncing SaucerSwap V1 Farms...`)
+        try {
+            const farms = await fetchFarmTotals(walletAddress)
+
+            for (const farm of farms) {
+                try {
+                    const poolId = await fetchPoolId(farm.id)
+                    if (!poolId) continue
+
+                    const lpData = await getLpTokenDataByPoolId(poolId)
+                    if (!lpData) continue
+
+                    const farmValue =
+                        Number(farm.total) *
+                        Number(lpData.lpToken.priceUsd) *
+                        1e-8
+
+                    // Get or create token registry entry
+                    const { data: registryToken, error: registryError } =
+                        await (
+                            supabaseAdmin.from('tokens_registry').upsert as any
+                        )(
+                            {
+                                token_address: lpData.lpToken.id,
+                                token_name: lpData.lpToken.name,
+                                token_symbol: lpData.lpToken.symbol,
+                                token_type: 'LP_TOKEN',
+                                decimals: lpData.lpToken.decimals,
+                                price_usd: lpData.lpToken.priceUsd,
+                                last_price_update: new Date().toISOString(),
+                            },
+                            {
+                                onConflict: 'token_address',
+                                ignoreDuplicates: false,
+                            }
+                        )
+                            .select('id')
+                            .single()
+
+                    if (registryError) {
+                        console.error(
+                            `Error creating registry for farm LP token:`,
+                            registryError
+                        )
+                        continue
+                    }
+
+                    // Calculate user's share of the pool for farms
+                    const userLpBalance = parseFloat(farm.total)
+                    const totalLpSupply = parseFloat(lpData.lpTokenReserve)
+                    const userShareRatio = userLpBalance / totalLpSupply
+
+                    // Calculate amounts of each token the user has staked
+                    const tokenAReserve = parseFloat(lpData.tokenReserveA)
+                    const tokenBReserve = parseFloat(lpData.tokenReserveB)
+                    const userTokenAAmount = tokenAReserve * userShareRatio
+                    const userTokenBAmount = tokenBReserve * userShareRatio
+
+                    // Normalize amounts by decimals for display
+                    const tokenADecimals = lpData.tokenA.decimals
+                    const tokenBDecimals = lpData.tokenB.decimals
+                    const userTokenADisplay =
+                        userTokenAAmount / Math.pow(10, tokenADecimals)
+                    const userTokenBDisplay =
+                        userTokenBAmount / Math.pow(10, tokenBDecimals)
+
+                    // Save farm position
+                    const { error: farmError } = await (
+                        supabaseAdmin.from('wallet_defi').upsert as any
+                    )(
+                        {
+                            wallet_id: walletId,
+                            token_id: registryToken.id,
+                            position_type: 'SAUCERSWAP_V1_FARM',
+                            balance: farm.total,
+                            value_usd: farmValue.toString(),
+                            defi_metadata: {
+                                farmId: farm.id,
+                                farmName: `${lpData.tokenA.symbol}/${lpData.tokenB.symbol}`,
+                                poolId: poolId,
+                                lpTokenAddress: lpData.lpToken.id,
+                                stakedAmount: farm.total,
+                                token0Symbol: lpData.tokenA.symbol,
+                                token1Symbol: lpData.tokenB.symbol,
+                                token0Amount: userTokenADisplay.toString(),
+                                token1Amount: userTokenBDisplay.toString(),
+                                tokenA: {
+                                    id: lpData.tokenA.id,
+                                    symbol: lpData.tokenA.symbol,
+                                    priceUsd: lpData.tokenA.priceUsd,
+                                    decimals: tokenADecimals,
+                                    userAmount: userTokenADisplay.toString(),
+                                },
+                                tokenB: {
+                                    id: lpData.tokenB.id,
+                                    symbol: lpData.tokenB.symbol,
+                                    priceUsd: lpData.tokenB.priceUsd,
+                                    decimals: tokenBDecimals,
+                                    userAmount: userTokenBDisplay.toString(),
+                                },
+                            },
+                            last_synced_at: new Date().toISOString(),
+                        },
+                        {
+                            onConflict: 'wallet_id,position_type,token_id',
+                        }
+                    )
+
+                    if (farmError) {
+                        console.error(
+                            `Error syncing farm ${farm.id}:`,
+                            farmError
+                        )
+                    } else {
+                        defiCount++
+                        console.log(
+                            `✅ Synced SaucerSwap V1 Farm: ${
+                                lpData.lpToken.symbol
+                            } ($${farmValue.toFixed(2)})`
+                        )
+                    }
+                } catch (error) {
+                    console.error(`Error processing farm ${farm.id}:`, error)
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching farms:', error)
+        }
+
+        // 5c. Bonzo Finance Lending
+        console.log(`\n🏦 Syncing Bonzo Finance Lending...`)
+        try {
+            const bonzoData = await getBonzoLendingData(walletAddress)
+
+            if (bonzoData && bonzoData.positions.length > 0) {
+                for (const position of bonzoData.positions) {
+                    try {
+                        // Get or create token registry entry
+                        const { data: registryToken, error: registryError } =
+                            await (
+                                supabaseAdmin.from('tokens_registry')
+                                    .upsert as any
+                            )(
+                                {
+                                    token_address: position.tokenId,
+                                    token_name: position.asset,
+                                    token_symbol: position.asset,
+                                    token_type: 'FUNGIBLE',
+                                    last_price_update: new Date().toISOString(),
+                                },
+                                {
+                                    onConflict: 'token_address',
+                                    ignoreDuplicates: false,
+                                }
+                            )
+                                .select('id')
+                                .single()
+
+                        if (registryError) {
+                            console.error(
+                                `Error creating registry for Bonzo token:`,
+                                registryError
+                            )
+                            continue
+                        }
+
+                        // Save lending position
+                        const { error: bonzoError } = await (
+                            supabaseAdmin.from('wallet_defi').upsert as any
+                        )(
+                            {
+                                wallet_id: walletId,
+                                token_id: registryToken.id,
+                                position_type: 'BONZO_LENDING',
+                                balance: position.tokenAmount,
+                                value_usd: position.valueUsd
+                                    .replace('$', '')
+                                    .replace(',', ''),
+                                defi_metadata: {
+                                    asset: position.asset,
+                                    apy: position.apy,
+                                    tokenId: position.tokenId,
+                                    tokenAmount: position.tokenAmount,
+                                },
+                                last_synced_at: new Date().toISOString(),
+                            },
+                            {
+                                onConflict: 'wallet_id,position_type,token_id',
+                            }
+                        )
+
+                        if (bonzoError) {
+                            console.error(
+                                `Error syncing Bonzo position ${position.asset}:`,
+                                bonzoError
+                            )
+                        } else {
+                            defiCount++
+                            console.log(
+                                `✅ Synced Bonzo Lending: ${
+                                    position.asset
+                                } (${position.apy.toFixed(2)}% APY)`
+                            )
+                        }
+                    } catch (error) {
+                        console.error(
+                            `Error processing Bonzo position ${position.asset}:`,
+                            error
+                        )
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching Bonzo data:', error)
+        }
+
+        console.log(`✅ DeFi sync completed: ${defiCount} positions synced\n`)
+
+        // ========================================
         // 4. SAVE HBAR BALANCE TO WALLET
         // ========================================
         console.log(`💎 Updating HBAR Balance: ${hbarBalanceActual}`)
@@ -658,6 +1030,7 @@ export async function syncWalletTokens(
    📦 ${fungibleCount} fungible tokens
    💧 ${lpCount} LP tokens  
    🎨 ${nftCount} NFTs
+   💰 ${defiCount} DeFi positions
         `)
 
         return {
@@ -668,6 +1041,7 @@ export async function syncWalletTokens(
                 fungibleTokens: fungibleCount,
                 lpTokens: lpCount,
                 nfts: nftCount,
+                defiPositions: defiCount,
             },
         }
     } catch (error) {
