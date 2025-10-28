@@ -5,9 +5,26 @@ import { useState, useCallback, useEffect } from 'react'
 const STORAGE_KEY = 'portfolio_wallet_order'
 
 export function useWalletOrder(userId: string | null) {
-    const [walletOrder, setWalletOrder] = useState<string[]>([])
+    // Load order from localStorage on mount and when userId changes
+    const [walletOrder, setWalletOrder] = useState<string[]>(() => {
+        if (!userId) return []
 
-    // Load order from localStorage on mount and clear when userId changes
+        try {
+            const stored = localStorage.getItem(STORAGE_KEY)
+            if (stored) {
+                const allOrders = JSON.parse(stored) as Record<string, string[]>
+                return allOrders[userId] || []
+            }
+        } catch (error) {
+            console.error(
+                'Failed to load wallet order from localStorage:',
+                error
+            )
+        }
+        return []
+    })
+
+    // Update order when userId changes
     useEffect(() => {
         if (!userId) {
             console.log('🧹 Clearing wallet order (no userId)')
@@ -19,7 +36,14 @@ export function useWalletOrder(userId: string | null) {
             const stored = localStorage.getItem(STORAGE_KEY)
             if (stored) {
                 const allOrders = JSON.parse(stored) as Record<string, string[]>
-                setWalletOrder(allOrders[userId] || [])
+                const userOrder = allOrders[userId] || []
+                setWalletOrder(prev => {
+                    // Only update if order actually changed to avoid unnecessary re-renders
+                    if (JSON.stringify(prev) !== JSON.stringify(userOrder)) {
+                        return userOrder
+                    }
+                    return prev
+                })
             }
         } catch (error) {
             console.error(

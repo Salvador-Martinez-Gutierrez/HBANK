@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 const SYNC_COOLDOWN_KEY = 'portfolio_sync_cooldown'
 const COOLDOWN_DURATION = 60 * 60 * 1000 // 1 hour in milliseconds
@@ -9,17 +9,12 @@ interface SyncCooldownData {
 }
 
 export function useSyncCooldown() {
-    const [cooldownData, setCooldownData] = useState<SyncCooldownData>({
-        wallets: {},
-    })
-
-    // Load cooldown data from localStorage on mount
-    useEffect(() => {
+    // Load cooldown data from localStorage on mount using lazy initialization
+    const [cooldownData, setCooldownData] = useState<SyncCooldownData>(() => {
         try {
             const stored = localStorage.getItem(SYNC_COOLDOWN_KEY)
             if (stored) {
-                const parsed = JSON.parse(stored)
-                setCooldownData(parsed)
+                return JSON.parse(stored)
             }
         } catch (error) {
             console.error(
@@ -27,7 +22,8 @@ export function useSyncCooldown() {
                 error
             )
         }
-    }, [])
+        return { wallets: {} }
+    })
 
     // Save to localStorage whenever cooldown data changes
     const saveToLocalStorage = useCallback((data: SyncCooldownData) => {

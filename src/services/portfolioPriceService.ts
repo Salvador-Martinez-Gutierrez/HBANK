@@ -89,7 +89,7 @@ export async function updateAllTokenPrices() {
         for (const [tokenAddress, price] of Object.entries(prices)) {
             const { error: updateError } = await supabase
                 .from('tokens')
-                // @ts-ignore - Supabase type issue with dynamic table name
+                // @ts-expect-error - Supabase type issue with dynamic table name
                 .update({
                     price_usd: price.toString(),
                     updated_at: new Date().toISOString(),
@@ -131,7 +131,7 @@ export async function updateTokenPrice(tokenAddress: string) {
 
         const { error } = await supabase
             .from('tokens')
-            // @ts-ignore - Supabase type issue with dynamic table name
+            // @ts-expect-error - Supabase type issue with dynamic table name
             .update({
                 price_usd: price.toString(),
                 updated_at: new Date().toISOString(),

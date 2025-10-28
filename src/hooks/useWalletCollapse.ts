@@ -1,19 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 const COLLAPSED_WALLETS_KEY = 'portfolio_collapsed_wallets'
 
 export function useWalletCollapse() {
-    const [collapsedWallets, setCollapsedWallets] = useState<Set<string>>(
-        new Set()
-    )
-
-    // Load collapsed state from localStorage on mount
-    useEffect(() => {
+    // Load collapsed state from localStorage on mount using lazy initialization
+    const [collapsedWallets, setCollapsedWallets] = useState<Set<string>>(() => {
         try {
             const stored = localStorage.getItem(COLLAPSED_WALLETS_KEY)
             if (stored) {
                 const parsed = JSON.parse(stored)
-                setCollapsedWallets(new Set(parsed))
+                return new Set(parsed)
             }
         } catch (error) {
             console.error(
@@ -21,7 +17,8 @@ export function useWalletCollapse() {
                 error
             )
         }
-    }, [])
+        return new Set()
+    })
 
     // Save to localStorage whenever collapsed state changes
     const saveToLocalStorage = useCallback((walletIds: Set<string>) => {

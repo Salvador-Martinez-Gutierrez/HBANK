@@ -132,7 +132,7 @@ export function AggregatedPortfolioView({
                 nftList.push({
                     id:
                         nftData.id ||
-                        `${wallet.id}-${nftData.token_id || Math.random()}`,
+                        `${wallet.id}-${nftData.token_id || ''}-${nftData.serial_number || 0}`,
                     token_id: nftData.token_id || '',
                     serial_number: nftData.serial_number || 0,
                     metadata: nftData.metadata || {},
