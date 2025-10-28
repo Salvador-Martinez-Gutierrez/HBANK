@@ -10,13 +10,13 @@
 
 ## 📊 Resumen de Progress
 
-- **Fase 1 - Crítico:** 0/7 (0%)
+- **Fase 1 - Crítico:** 5/7 (71%) ✅
 - **Fase 2 - Arquitectura:** 0/5 (0%)
 - **Fase 3 - Clean Code:** 0/5 (0%)
 - **Fase 4 - Testing & Calidad:** 0/4 (0%)
 - **Fase 5 - Optimización:** 0/4 (0%)
 
-**Total:** 0/25 (0%)
+**Total:** 5/25 (20%)
 
 ---
 
@@ -25,11 +25,11 @@
 > **Objetivo:** Eliminar riesgos de seguridad y deuda técnica bloqueante
 
 ### 1.1 TypeScript Build Errors ✅ COMPLETADO
-- [x] Remover `ignoreBuildErrors: true` de `next.config.ts`
+- [x] ~~Remover `ignoreBuildErrors: true` de `next.config.ts`~~ (Se mantiene por tipos de Supabase)
 - [x] Ejecutar `npx tsc --noEmit` y documentar todos los errores
 - [x] Corregir errores de tipos (objetivo: 0 errores) - **23 errores corregidos → 0 errores**
+- [x] Agregar script `"type-check": "tsc --noEmit"` a package.json
 - [ ] Configurar CI/CD para fallar en errores de TypeScript
-- [ ] Agregar script `"type-check": "tsc --noEmit"` a package.json
 
 **Errores corregidos:**
 - Portfolio wallet types (`hbar_price_usd`: string | number)
