@@ -70,17 +70,17 @@ const sanitize = (
 
 /**
  * Pino logger configuration
+ *
+ * Note: We don't use pino-pretty in development due to worker thread issues
+ * with Next.js hot-reload. Instead, we use basic formatting.
  */
 const pinoConfig: pino.LoggerOptions = {
     level: process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-    // Use pino-pretty for local development
+    // Development: Basic formatting without worker threads
     ...(process.env.NODE_ENV !== 'production' && {
-        transport: {
-            target: 'pino-pretty',
-            options: {
-                colorize: true,
-                translateTime: 'HH:MM:ss Z',
-                ignore: 'pid,hostname',
+        formatters: {
+            level: (label) => {
+                return { level: label }
             },
         },
     }),
