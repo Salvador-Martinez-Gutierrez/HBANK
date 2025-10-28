@@ -8,15 +8,6 @@ import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import type { AuthPayload, AuthResponse } from '@/types/portfolio'
 
-/**
- * Database user row type
- */
-interface DbUser {
-    id: string
-    wallet_address: string
-    created_at?: string
-    updated_at?: string
-}
 
 /**
  * Verify the signature and authenticate the user
@@ -84,9 +75,9 @@ export async function registerOrGetUser(walletAddress: string) {
                     'Auth user exists, creating database record:',
                     existingAuthUser.id
                 )
-                // @ts-expect-error - Supabase type inference limitation with upsert operation
                 const { data: newDbUser, error: insertError } = await supabaseAdmin
                     .from('users')
+                    // @ts-expect-error - Supabase admin client type inference returns never for schema
                     .upsert(
                         {
                             id: existingAuthUser.id,
@@ -152,9 +143,8 @@ export async function registerOrGetUser(walletAddress: string) {
         )
 
         // Insert user into our database table using upsert to handle potential duplicates
-        const { data: newUser, error: insertError} = await (
-            supabaseAdmin.from('users').upsert as UpsertFunction<DbUser>
-        )(
+        // @ts-expect-error - Supabase admin type inference issue
+        const { data: newUser, error: insertError} = await supabaseAdmin.from('users').upsert(
             {
                 id: userId,
                 wallet_address: walletAddress,
@@ -370,9 +360,8 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
                 authUser.id
             )
 
-            const { data: newUser, error: insertError } = await (
-                supabaseAdmin.from('users').upsert as UpsertFunction<DbUser>
-            )(
+            // @ts-expect-error - Supabase admin type inference issue
+            const { data: newUser, error: insertError } = await supabaseAdmin.from('users').upsert(
                 {
                     id: authUser.id,
                     wallet_address: walletAddress,

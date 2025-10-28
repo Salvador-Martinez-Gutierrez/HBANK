@@ -26,7 +26,7 @@ const badgeVariants = cva(
 )
 
 const Badge = React.forwardRef<
-    HTMLElement,
+    HTMLSpanElement,
     React.ComponentProps<'span'> &
         VariantProps<typeof badgeVariants> & { asChild?: boolean }
 >(({ className, variant, asChild = false, ...props }, ref) => {
@@ -34,7 +34,8 @@ const Badge = React.forwardRef<
 
     return (
         <Comp
-            ref={ref as React.Ref<HTMLElement>}
+            // @ts-expect-error - Radix Slot ref type mismatch with span
+            ref={ref}
             data-slot='badge'
             className={cn(badgeVariants({ variant }), className)}
             {...props}

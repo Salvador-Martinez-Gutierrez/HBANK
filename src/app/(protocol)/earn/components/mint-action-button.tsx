@@ -279,17 +279,8 @@ export function MintActionButton({
                 )
 
             // Freeze with signer
-            interface HederaSigner {
-                freezeWithSigner?: (signer: unknown) => Promise<unknown>
-                signWithSigner?: (signer: unknown) => Promise<unknown>
-                executeWithSigner?: (signer: unknown) => Promise<unknown>
-                getReceiptWithSigner?: (signer: unknown) => Promise<unknown>
-                [key: string]: unknown
-            }
-
-            const frozenScheduleTx = await scheduleSignTx.freezeWithSigner(
-                signer as unknown as HederaSigner
-            )
+            // @ts-expect-error - Hedera SDK signer type inference issue
+            const frozenScheduleTx = await scheduleSignTx.freezeWithSigner(signer)
 
             let signedScheduleTx
             let userSignResponse
@@ -297,16 +288,14 @@ export function MintActionButton({
             try {
                 // User signs the schedule
                 console.log('Requesting user signature...')
-                signedScheduleTx = await (frozenScheduleTx as HederaSigner).signWithSigner?.(
-                    signer as unknown as HederaSigner
-                )
+                // @ts-expect-error - Hedera SDK signer type inference issue
+                signedScheduleTx = await frozenScheduleTx.signWithSigner(signer)
                 console.log('✅ User signature completed successfully')
 
                 // Execute the user's signature
                 console.log('Executing signed transaction...')
-                userSignResponse = await (signedScheduleTx as HederaSigner).executeWithSigner?.(
-                    signer as unknown as HederaSigner
-                )
+                // @ts-expect-error - Hedera SDK signer type inference issue
+                userSignResponse = await signedScheduleTx.executeWithSigner(signer)
                 console.log(
                     'User signature executed:',
                     userSignResponse.transactionId?.toString()
@@ -379,9 +368,8 @@ export function MintActionButton({
             }
 
             // Get receipt to confirm user signature
-            const userSignReceipt = await (userSignResponse as HederaSigner).getReceiptWithSigner?.(
-                signer as unknown as HederaSigner
-            )
+            // @ts-expect-error - Hedera SDK signer type inference issue
+            const userSignReceipt = await userSignResponse.getReceiptWithSigner(signer)
             console.log(
                 'User signature receipt:',
                 userSignReceipt.status.toString()

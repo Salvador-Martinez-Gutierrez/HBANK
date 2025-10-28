@@ -202,15 +202,16 @@ export function useSignMessage() {
                             typeof signResult === 'object'
                         ) {
                             // It's an object, look for the signature inside
-                            if (signResult.signature instanceof Uint8Array) {
-                                signatureBytes = signResult.signature
-                            } else if (signResult.bytes instanceof Uint8Array) {
-                                signatureBytes = signResult.bytes
+                            const signObj = signResult as Record<string, unknown>
+                            if (signObj.signature instanceof Uint8Array) {
+                                signatureBytes = signObj.signature
+                            } else if (signObj.bytes instanceof Uint8Array) {
+                                signatureBytes = signObj.bytes
                             } else if (
-                                typeof signResult.signature === 'string'
+                                typeof signObj.signature === 'string'
                             ) {
                                 // Already a hex string
-                                resultSignature = signResult.signature
+                                resultSignature = signObj.signature
                             }
                         }
 

@@ -71,9 +71,9 @@ export async function syncOrCreateUser(accountId: string) {
         }
 
         // If it doesn't exist, create it
-        // @ts-expect-error - Supabase type inference limitation with insert operation
         const { data: newUser, error: insertError } = await supabaseAdmin
             .from('users')
+            // @ts-expect-error - Supabase admin type inference issue
             .insert({
                 id: authUserId,
                 wallet_address: accountId,
