@@ -18,12 +18,17 @@
   - ✅ 1.5 Eliminar Tipos `any` (COMPLETADO)
   - ✅ 1.6 Pre-commit Hooks (COMPLETADO)
   - ✅ 1.7 Scripts de Calidad (COMPLETADO)
-- **Fase 2 - Arquitectura:** 5/5 (100%) ✅ COMPLETADA
-- **Fase 3 - Clean Code:** 0/5 (0%)
-- **Fase 4 - Testing & Calidad:** 0/4 (0%)
-- **Fase 5 - Optimización:** 0/4 (0%)
+- **Fase 2 - Arquitectura:** 2/5 (40%) 🔄 EN PROGRESO
+  - ✅ 2.1 Migrar APIs a App Router (COMPLETADO)
+  - ⏸️ 2.2 Implementar DI (10% - Solo configuración, no implementado)
+  - ⏸️ 2.3 Repository Pattern (50% - Solo Hedera, falta Supabase)
+  - ⏸️ 2.4 Refactorizar Servicios Gigantes (5% - Solo validation services)
+  - ✅ 2.5 Implementar Domain Models (COMPLETADO)
+- **Fase 3 - Clean Code:** 0/5 (0%) ⏸️ PENDIENTE
+- **Fase 4 - Testing & Calidad:** 0/4 (0%) ⏸️ PENDIENTE
+- **Fase 5 - Optimización:** 0/4 (0%) ⏸️ PENDIENTE
 
-**Total:** 12/25 (48%)
+**Total:** 9/25 (36%)
 
 ---
 
@@ -437,13 +442,13 @@ export const POST = withApiHandler(
 
 ---
 
-### 2.2 Implementar Inyección de Dependencias ✅ COMPLETADO
+### 2.2 Implementar Inyección de Dependencias ⏸️ CONFIGURADO (10%)
 - [x] Instalar InversifyJS: `npm install inversify reflect-metadata`
 - [x] Configurar `tsconfig.json` para decorators
 - [x] Crear `src/core/di/types.ts` (símbolos de DI)
 - [x] Crear `src/core/di/container.ts` (contenedor IoC)
-- [ ] Crear interfaces para todos los servicios
-- [ ] Migrar servicios a usar DI:
+- [ ] Crear interfaces para todos los servicios (PENDIENTE)
+- [ ] Migrar servicios a usar DI (PENDIENTE):
   - [ ] HederaService
   - [ ] DepositService
   - [ ] WithdrawService
@@ -452,8 +457,10 @@ export const POST = withApiHandler(
   - [ ] PortfolioAuthService
   - [ ] TelegramService
   - [ ] RateService
-- [ ] Actualizar API routes para usar contenedor
-- [ ] Actualizar tests para mockear dependencias
+- [ ] Actualizar API routes para usar contenedor (PENDIENTE)
+- [ ] Actualizar tests para mockear dependencias (PENDIENTE)
+
+**Estado Actual:** Infraestructura configurada pero NO implementada. Todos los bindings están comentados en container.ts. Los servicios NO usan decorators @injectable ni @inject.
 
 **Estructura propuesta:**
 ```typescript
@@ -526,19 +533,21 @@ export const POST = async (req: NextRequest) => {
 
 ---
 
-### 2.3 Implementar Repository Pattern ✅ COMPLETADO
+### 2.3 Implementar Repository Pattern ⏸️ PARCIAL (50%)
 - [x] Crear interfaces de repositorios en `src/core/repositories/`
 - [x] Implementar repositorios para Hedera:
   - [x] `IDepositRepository` / `HederaDepositRepository`
   - [x] `IWithdrawRepository` / `HederaWithdrawRepository`
   - [x] `IRateRepository` / `HederaRateRepository`
-- [ ] Implementar repositorios para Supabase:
+- [ ] Implementar repositorios para Supabase (PENDIENTE):
   - [ ] `IUserRepository` / `SupabaseUserRepository`
   - [ ] `IWalletRepository` / `SupabaseWalletRepository`
   - [ ] `ITokenRepository` / `SupabaseTokenRepository`
-- [ ] Mover toda la lógica de acceso a datos de servicios a repositorios
-- [ ] Actualizar servicios para usar repositorios
-- [ ] Crear tests unitarios para repositorios
+- [ ] Mover toda la lógica de acceso a datos de servicios a repositorios (PENDIENTE)
+- [ ] Actualizar servicios para usar repositorios (PENDIENTE)
+- [ ] Crear tests unitarios para repositorios (PENDIENTE)
+
+**Estado Actual:** Interfaces y repositorios de Hedera creados pero NO se usan en los servicios. Los servicios siguen accediendo directamente a Hedera sin pasar por repositories. Falta implementar Supabase repositories.
 
 **Estructura propuesta:**
 ```typescript
@@ -614,32 +623,32 @@ export class DepositService implements IDepositService {
 
 ---
 
-### 2.4 Refactorizar Servicios Gigantes (PARCIAL - Servicios de Validación Creados) ✅
+### 2.4 Refactorizar Servicios Gigantes ⏸️ MÍNIMO (5%)
 - [x] Crear servicios de validación focalizados:
   - [x] `DepositValidationService.ts` (validación de depósitos)
   - [x] `WithdrawValidationService.ts` (validación de retiros)
   - [x] `RateValidationService.ts` (validación de tasas)
-- [ ] Dividir `HederaService.ts` (984 líneas) (pendiente):
+- [ ] Dividir `HederaService.ts` (984 líneas) (PENDIENTE):
   - [ ] Crear `HederaClientService.ts` (client management)
   - [ ] Crear `HederaBalanceService.ts` (balance queries)
   - [ ] Crear `HederaTransactionService.ts` (generic transactions)
   - [ ] Crear `HederaMirrorNodeService.ts` (mirror node queries)
   - [ ] Actualizar servicios que dependen de HederaService
-- [ ] Dividir `PortfolioWalletService.ts` (1,219 líneas):
+- [ ] Dividir `PortfolioWalletService.ts` (1,219 líneas) (PENDIENTE):
   - [ ] Crear `WalletRegistryService.ts` (CRUD de wallets)
   - [ ] Crear `WalletSyncService.ts` (sincronización)
   - [ ] Crear `WalletBalanceService.ts` (balances)
   - [ ] Crear `WalletTokenService.ts` (tokens)
   - [ ] Crear `WalletDefiService.ts` (DeFi positions)
   - [ ] Crear `WalletNftService.ts` (NFTs)
-- [ ] Dividir `InstantWithdrawService.ts` (675 líneas):
-  - [ ] Crear `WithdrawValidationService.ts`
+- [ ] Dividir `InstantWithdrawService.ts` (675 líneas) (PENDIENTE):
   - [ ] Crear `WithdrawExecutionService.ts`
   - [ ] Crear `WithdrawFeeService.ts`
-- [ ] Dividir `DepositService.ts` (380 líneas):
-  - [ ] Crear `DepositValidationService.ts`
+- [ ] Dividir `DepositService.ts` (380 líneas) (PENDIENTE):
   - [ ] Crear `DepositExecutionService.ts`
   - [ ] Crear `DepositScheduleService.ts`
+
+**Estado Actual:** Solo se crearon 3 servicios de validación pequeños. Los servicios gigantes (HederaService 984L, PortfolioWalletService 1219L, InstantWithdrawService 675L) siguen intactos sin dividir.
 
 **Ejemplo de refactor:**
 ```typescript
@@ -2468,30 +2477,35 @@ export class DepositService {
 
 ## 📊 ESTADO ACTUAL DEL PROYECTO
 
-### ✅ Completado (7 tareas):
-- **Fase 1:**
-  - TypeScript Build Errors corregidos
-  - Seguridad de claves privadas verificada
-- **Fase 2 (100% COMPLETA):**
-  - 29 APIs migradas a App Router
-  - Dependency Injection configurado (InversifyJS)
-  - Repository Pattern implementado
-  - Domain Models creados (Value Objects & Entities)
-  - Servicios de Validación creados
+### ✅ Completado (9 tareas):
+- **Fase 1 (100%):**
+  - 1.1 TypeScript Build Errors corregidos
+  - 1.2 Seguridad de claves privadas verificada
+  - 1.3 Sistema de Logging Estructurado (Pino)
+  - 1.4 ESLint Configuración Estricta
+  - 1.5 Eliminar Tipos `any`
+  - 1.6 Pre-commit Hooks (Husky + lint-staged)
+  - 1.7 Scripts de Calidad
+- **Fase 2 (40% - Parcial):**
+  - 2.1 APIs migradas a App Router (29 rutas)
+  - 2.5 Domain Models creados (Value Objects & Entities)
 
 ### 🔄 En Progreso (0 tareas):
 - Ninguna tarea actualmente en progreso
 
-### ⏸️ Pendiente (18 tareas):
-- **Fase 1:** 5 tareas restantes (logging, eslint, any, hooks, scripts)
+### ⏸️ Pendiente (16 tareas):
+- **Fase 2:** 3 tareas restantes
+  - 2.2 Implementar DI completamente (10% hecho)
+  - 2.3 Repository Pattern para Supabase (50% hecho)
+  - 2.4 Refactorizar servicios gigantes (5% hecho)
 - **Fase 3:** 5 tareas (componentes, hooks, tipos, docs, folders)
 - **Fase 4:** 4 tareas (tests, coverage, CI/CD)
 - **Fase 5:** 4 tareas (events, cache, optimization, monitoring)
 
 ---
 
-**Última actualización:** 2025-10-28 (Phase 2 completed - Progreso corregido)
-**Versión:** 1.2.1
+**Última actualización:** 2025-10-28 (Phase 2 progress updated - Real status: 40%)
+**Versión:** 1.3.0
 
 ---
 
