@@ -127,7 +127,7 @@ export function AssetSections({
                     <div className='space-y-2'>
                         {/* HBAR Balance - Always show first if > 0 */}
                         {hasHbar && (
-                            <div className='flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 hover:from-purple-500/15 hover:to-blue-500/15 transition-colors'>
+                            <div className='flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-500/20 to-zink-500/20 transition-colors'>
                                 <div className='flex items-center gap-3'>
                                     <div className='w-8 h-8 rounded-full flex items-center justify-center'>
                                         <Image
@@ -141,17 +141,17 @@ export function AssetSections({
                                     <div>
                                         <div className='font-medium'>HBAR</div>
                                         <div className='text-sm text-muted-foreground'>
-                                            {hbarBalance.toFixed(4)} HBAR
+                                            {formatUsd(hbarPriceUsd)}
                                         </div>
                                     </div>
                                 </div>
                                 <div className='text-right'>
                                     <div className='font-medium'>
-                                        {formatUsd(hbarBalance * hbarPriceUsd)}
+                                        {hbarBalance.toFixed(4)}
                                     </div>
                                     {hbarPriceUsd > 0 && (
                                         <div className='text-sm text-muted-foreground'>
-                                            @{formatUsd(hbarPriceUsd)}
+                                            {formatUsd(hbarBalance * hbarPriceUsd)}
                                         </div>
                                     )}
                                 </div>
@@ -170,7 +170,7 @@ export function AssetSections({
                             return (
                                 <div
                                     key={token.id}
-                                    className='flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors'
+                                    className='flex items-center justify-between p-3 rounded-lg bg-muted/50 transition-colors'
                                 >
                                     <div className='flex items-center gap-3'>
                                         {token.token_icon ? (
@@ -198,18 +198,17 @@ export function AssetSections({
                                                     token.token_address}
                                             </div>
                                             <div className='text-sm text-muted-foreground'>
-                                                {balance}{' '}
-                                                {token.token_symbol || 'tokens'}
+                                              {formatUsd(priceUsd)}
                                             </div>
                                         </div>
                                     </div>
                                     <div className='text-right'>
                                         <div className='font-medium'>
-                                            {formatUsd(valueUsd)}
+                                            {balance}
                                         </div>
                                         {priceUsd > 0 && (
                                             <div className='text-sm text-muted-foreground'>
-                                                @{formatUsd(priceUsd)}
+                                              {formatUsd(valueUsd)}
                                             </div>
                                         )}
                                     </div>
@@ -245,7 +244,7 @@ export function AssetSections({
                                             height={24}
                                             className='rounded'
                                         />
-                                        <h3 className='font-bold text-lg text-blue-500'>
+                                        <h3 className='font-bold text-lg'>
                                             SaucerSwap V1 Pools
                                         </h3>
                                         <Badge
@@ -255,17 +254,17 @@ export function AssetSections({
                                             {pools.length}
                                         </Badge>
                                     </div>
-                                    <div className='rounded-lg border border-blue-500/20 overflow-hidden'>
+                                    <div className='rounded-lg border overflow-hidden'>
                                         <Table>
                                             <TableHeader>
-                                                <TableRow className='bg-blue-500/5 hover:bg-blue-500/5'>
-                                                    <TableHead className='text-blue-500'>
+                                                <TableRow className='bg-muted/50'>
+                                                    <TableHead>
                                                         Pool
                                                     </TableHead>
-                                                    <TableHead className='text-blue-500'>
+                                                    <TableHead>
                                                         Supplied
                                                     </TableHead>
-                                                    <TableHead className='text-blue-500 text-right'>
+                                                    <TableHead className='text-right'>
                                                         Value
                                                     </TableHead>
                                                 </TableRow>
@@ -307,7 +306,6 @@ export function AssetSections({
                                                     return (
                                                         <TableRow
                                                             key={position.id}
-                                                            className='hover:bg-blue-500/5'
                                                         >
                                                             <TableCell className='font-medium'>
                                                                 {poolName ||
@@ -383,7 +381,7 @@ export function AssetSections({
                                             height={24}
                                             className='rounded'
                                         />
-                                        <h3 className='font-bold text-lg text-green-500'>
+                                        <h3 className='font-bold text-lg'>
                                             SaucerSwap V1 Farms
                                         </h3>
                                         <Badge
@@ -393,17 +391,17 @@ export function AssetSections({
                                             {farms.length}
                                         </Badge>
                                     </div>
-                                    <div className='rounded-lg border border-green-500/20 overflow-hidden'>
+                                    <div className='rounded-lg border overflow-hidden'>
                                         <Table>
                                             <TableHeader>
-                                                <TableRow className='bg-green-500/5 hover:bg-green-500/5'>
-                                                    <TableHead className='text-green-500'>
+                                                <TableRow className='bg-muted/50'>
+                                                    <TableHead>
                                                         Farm
                                                     </TableHead>
-                                                    <TableHead className='text-green-500'>
+                                                    <TableHead>
                                                         Staked
                                                     </TableHead>
-                                                    <TableHead className='text-green-500 text-right'>
+                                                    <TableHead className='text-right'>
                                                         Value
                                                     </TableHead>
                                                 </TableRow>
@@ -445,7 +443,7 @@ export function AssetSections({
                                                     return (
                                                         <TableRow
                                                             key={position.id}
-                                                            className='hover:bg-green-500/5'
+                                                            className='hover:bg-muted/50'
                                                         >
                                                             <TableCell className='font-medium'>
                                                                 {farmName ||
@@ -521,8 +519,8 @@ export function AssetSections({
                                             height={24}
                                             className='rounded'
                                         />
-                                        <h3 className='font-bold text-lg text-purple-500'>
-                                            Bonzo Finance (Lending)
+                                        <h3 className='font-bold text-lg'>
+                                            Bonzo Finance
                                         </h3>
                                         <Badge
                                             variant='secondary'
@@ -531,20 +529,20 @@ export function AssetSections({
                                             {lending.length}
                                         </Badge>
                                     </div>
-                                    <div className='rounded-lg border border-purple-500/20 overflow-hidden'>
+                                    <div className='rounded-lg border border-border overflow-hidden'>
                                         <Table>
                                             <TableHeader>
-                                                <TableRow className='bg-purple-500/5 hover:bg-purple-500/5'>
-                                                    <TableHead className='text-purple-500'>
+                                                <TableRow className='bg-muted/50'>
+                                                    <TableHead>
                                                         Asset
                                                     </TableHead>
-                                                    <TableHead className='text-purple-500'>
+                                                    <TableHead>
                                                         Supplied
                                                     </TableHead>
-                                                    <TableHead className='text-purple-500'>
+                                                    <TableHead>
                                                         APY
                                                     </TableHead>
-                                                    <TableHead className='text-purple-500 text-right'>
+                                                    <TableHead className='text-right'>
                                                         Value
                                                     </TableHead>
                                                 </TableRow>
@@ -574,7 +572,7 @@ export function AssetSections({
                                                     return (
                                                         <TableRow
                                                             key={position.id}
-                                                            className='hover:bg-purple-500/5'
+                                                            className='hover:bg-muted/50'
                                                         >
                                                             <TableCell className='font-medium'>
                                                                 {asset ||
@@ -595,7 +593,7 @@ export function AssetSections({
                                                             </TableCell>
                                                             <TableCell>
                                                                 {apy ? (
-                                                                    <span className='text-sm text-green-600'>
+                                                                    <span className='text-sm'>
                                                                         {apy.toFixed(
                                                                             2
                                                                         )}
@@ -656,12 +654,12 @@ export function AssetSections({
                                                 onError={(e) => {
                                                     e.currentTarget.src = ''
                                                     e.currentTarget.className =
-                                                        'w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20'
+                                                        'w-full h-full bg-gradient-to-br from-blue-500/20 to-zink-500/20'
                                                 }}
                                             />
                                         </div>
                                     ) : (
-                                        <div className='aspect-square bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center'>
+                                        <div className='aspect-square bg-gradient-to-br from-blue-500/20 to-zink-500/20 flex items-center justify-center'>
                                             <ImageIcon className='w-12 h-12 text-muted-foreground/50' />
                                         </div>
                                     )}

@@ -102,10 +102,10 @@ export function AddWalletDialog({
                     <DialogTitle>Add Wallet to Portfolio</DialogTitle>
                     <DialogDescription>
                         {canAddMore
-                            ? `You can add ${walletsRemaining} more wallet${
+                            ? `You can add up to 5 Mainnet Wallets${
                                   walletsRemaining !== 1 ? 's' : ''
-                              } (max 5 total).`
-                            : 'You have reached the maximum of 5 wallets per account.'}
+                              } (${walletsRemaining} remaining).`
+                            : 'You have reached the maximum of 5 Wallets per account.'}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit}>

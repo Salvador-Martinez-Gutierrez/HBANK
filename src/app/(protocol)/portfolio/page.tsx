@@ -25,7 +25,6 @@ import { AggregatedPortfolioView } from '@/components/aggregated-portfolio-view'
 import { useWalletCollapse } from '@/hooks/useWalletCollapse'
 import { useWalletOrder } from '@/hooks/useWalletOrder'
 import { useSyncCooldown } from '@/hooks/useSyncCooldown'
-import { RealtimePriceIndicator } from '@/components/realtime-price-indicator'
 import {
     DndContext,
     closestCenter,
@@ -305,7 +304,7 @@ export default function PortfolioPage() {
         return value.toLocaleString(undefined, {
             style: 'currency',
             currency: 'USD',
-            maximumFractionDigits: 2,
+            maximumFractionDigits: 4,
         })
     }
 
@@ -396,15 +395,10 @@ export default function PortfolioPage() {
                         <h1 className='text-3xl font-bold text-foreground'>
                             Portfolio
                         </h1>
-                        <RealtimePriceIndicator
-                            enabled={wallets.length > 0}
-                            lastUpdate={lastPriceUpdate}
-                        />
                     </div>
                     <p className='text-muted-foreground mt-1'>
                         {wallets.length}{' '}
-                        {wallets.length === 1 ? 'wallet' : 'wallets'} tracked •
-                        Mainnet • Prices update in real-time
+                        {wallets.length === 1 ? 'Mainnet Wallet' : 'Mainnet Wallets'} Tracked 
                     </p>
                 </div>
                 <div className='flex items-center gap-2'>
@@ -454,18 +448,18 @@ export default function PortfolioPage() {
                     >
                         <TabsList className='grid w-full max-w-md grid-cols-2'>
                             <TabsTrigger
-                                value='aggregated'
-                                className='flex items-center gap-2'
-                            >
-                                <LayoutGrid className='w-4 h-4' />
-                                Aggregated View
-                            </TabsTrigger>
-                            <TabsTrigger
                                 value='individual'
                                 className='flex items-center gap-2'
                             >
                                 <Layers className='w-4 h-4' />
                                 By Wallet
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value='aggregated'
+                                className='flex items-center gap-2'
+                            >
+                                <LayoutGrid className='w-4 h-4' />
+                                Aggregated View
                             </TabsTrigger>
                         </TabsList>
                     </Tabs>
