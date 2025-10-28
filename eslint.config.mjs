@@ -9,6 +9,9 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
+// Note: The Next.js plugin warning is a known issue with ESLint 9 flat config.
+// The plugin IS included via "next/core-web-vitals" but Next.js doesn't detect it properly.
+// See: https://github.com/vercel/next.js/issues/64114
 const eslintConfig = [
   {
     ignores: [
