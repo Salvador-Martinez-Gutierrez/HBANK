@@ -188,7 +188,7 @@ export class HederaRateRepository implements IRateRepository {
      *
      * @private
      */
-    // private parseHCSMessage(message: any): Rate {
+    // private parseHCSMessage(message: unknown): Rate {
     //     // TODO: Implement parsing logic
     //     throw new Error('Not implemented')
     // }

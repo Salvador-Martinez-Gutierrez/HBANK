@@ -17,7 +17,7 @@ interface ToastConfig {
 export const useToast = () => {
     const success = (message: string, config?: ToastConfig) => {
         return toast.success(message, {
-            duration: config?.duration || 4000,
+            duration: config?.duration ?? 4000,
             style: {
                 background: '#1f2937',
                 color: '#10b981',
@@ -37,7 +37,7 @@ export const useToast = () => {
 
     const error = (message: string, config?: ToastConfig) => {
         return toast.error(message, {
-            duration: config?.duration || 5000,
+            duration: config?.duration ?? 5000,
             style: {
                 background: '#1f2937',
                 color: '#ef4444',
@@ -72,7 +72,7 @@ export const useToast = () => {
 
     const info = (message: string, config?: ToastConfig) => {
         return toast(message, {
-            duration: config?.duration || 4000,
+            duration: config?.duration ?? 4000,
             icon: 'ℹ️',
             style: {
                 background: '#1f2937',
@@ -89,7 +89,7 @@ export const useToast = () => {
 
     const warning = (message: string, config?: ToastConfig) => {
         return toast(message, {
-            duration: config?.duration || 4000,
+            duration: config?.duration ?? 4000,
             icon: '⚠️',
             style: {
                 background: '#1f2937',

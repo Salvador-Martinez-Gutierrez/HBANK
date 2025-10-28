@@ -47,7 +47,7 @@ export function useWalletBalances() {
     }
 
     useEffect(() => {
-        fetchWalletBalances()
+        void fetchWalletBalances()
     }, [])
 
     const refreshWalletBalances = () => fetchWalletBalances()

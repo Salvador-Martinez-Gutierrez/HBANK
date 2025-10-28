@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { logger } from '@/lib/logger'
+
 
 const STORAGE_KEY = 'portfolio_wallet_order'
 
@@ -16,7 +18,7 @@ export function useWalletOrder(userId: string | null) {
                 return allOrders[userId] || []
             }
         } catch (error) {
-            console.error(
+            logger.error(
                 'Failed to load wallet order from localStorage:',
                 error
             )
@@ -27,8 +29,11 @@ export function useWalletOrder(userId: string | null) {
     // Update order when userId changes
     useEffect(() => {
         if (!userId) {
-            console.log('🧹 Clearing wallet order (no userId)')
-            setWalletOrder([])
+            logger.info('🧹 Clearing wallet order (no userId)')
+            // Use timeout to avoid synchronous setState
+            setTimeout(() => {
+                setWalletOrder([])
+            }, 0)
             return
         }
 
@@ -37,16 +42,19 @@ export function useWalletOrder(userId: string | null) {
             if (stored) {
                 const allOrders = JSON.parse(stored) as Record<string, string[]>
                 const userOrder = allOrders[userId] || []
-                setWalletOrder(prev => {
-                    // Only update if order actually changed to avoid unnecessary re-renders
-                    if (JSON.stringify(prev) !== JSON.stringify(userOrder)) {
-                        return userOrder
-                    }
-                    return prev
-                })
+                // Use timeout to avoid synchronous setState
+                setTimeout(() => {
+                    setWalletOrder(prev => {
+                        // Only update if order actually changed to avoid unnecessary re-renders
+                        if (JSON.stringify(prev) !== JSON.stringify(userOrder)) {
+                            return userOrder
+                        }
+                        return prev
+                    })
+                }, 0)
             }
         } catch (error) {
-            console.error(
+            logger.error(
                 'Failed to load wallet order from localStorage:',
                 error
             )
@@ -66,7 +74,7 @@ export function useWalletOrder(userId: string | null) {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(allOrders))
                 setWalletOrder(walletIds)
             } catch (error) {
-                console.error(
+                logger.error(
                     'Failed to save wallet order to localStorage:',
                     error
                 )

@@ -11,6 +11,8 @@ import type {
     WalletDefiWithMetadata,
 } from '@/types/portfolio'
 import { Coins, Loader2 } from 'lucide-react'
+import { logger } from '@/lib/logger'
+
 
 interface TokenDisplay {
     id: string
@@ -65,49 +67,51 @@ export function AggregatedPortfolioView({
 
         for (const wallet of wallets) {
             // Aggregate HBAR
-            const hbarBalance = parseFloat(String(wallet.hbar_balance || '0'))
+            const hbarBalance = parseFloat(String(wallet.hbar_balance ?? '0'))
             totalHbar += hbarBalance
             const priceUsd = wallet.hbar_price_usd
-            hbarPriceUsd = parseFloat(typeof priceUsd === 'number' ? priceUsd.toString() : String(priceUsd || '0'))
+            hbarPriceUsd = parseFloat(typeof priceUsd === 'number' ? priceUsd.toString() : String(priceUsd ?? '0'))
             totalValue += hbarBalance * hbarPriceUsd
 
             // Aggregate fungible tokens
-            for (const walletToken of wallet.wallet_tokens || []) {
+            for (const walletToken of wallet.wallet_tokens ?? []) {
                 const tokenAddress =
-                    walletToken.tokens_registry?.token_address || ''
-                const balance = parseFloat(walletToken.balance || '0')
+                    walletToken.tokens_registry?.token_address ?? ''
+                const balance = parseFloat(walletToken.balance ?? '0')
                 const priceUsd = walletToken.tokens_registry?.price_usd
                 const price = parseFloat(
                     typeof priceUsd === 'number'
                         ? priceUsd.toString()
-                        : priceUsd || '0'
+                        : priceUsd ?? '0'
                 )
-                const decimals = walletToken.tokens_registry?.decimals || 0
+                const decimals = walletToken.tokens_registry?.decimals ?? 0
 
                 if (fungibleMap.has(tokenAddress)) {
                     // Aggregate balance
-                    const existing = fungibleMap.get(tokenAddress)!
-                    const newBalance = (
-                        parseFloat(existing.balance) + balance
-                    ).toString()
-                    fungibleMap.set(tokenAddress, {
-                        ...existing,
-                        balance: newBalance,
-                    })
+                    const existing = fungibleMap.get(tokenAddress)
+                    if (existing) {
+                        const newBalance = (
+                            parseFloat(existing.balance) + balance
+                        ).toString()
+                        fungibleMap.set(tokenAddress, {
+                            ...existing,
+                            balance: newBalance,
+                        })
+                    }
                 } else {
                     // Add new token
                     fungibleMap.set(tokenAddress, {
                         id: walletToken.id,
                         balance: balance.toString(),
                         token_name:
-                            walletToken.tokens_registry?.token_name ||
+                            walletToken.tokens_registry?.token_name ??
                             undefined,
                         token_symbol:
-                            walletToken.tokens_registry?.token_symbol ||
+                            walletToken.tokens_registry?.token_symbol ??
                             undefined,
                         token_address: tokenAddress,
                         token_icon:
-                            walletToken.tokens_registry?.token_icon ||
+                            walletToken.tokens_registry?.token_icon ??
                             undefined,
                         decimals: decimals,
                         price_usd: price.toString(),
@@ -119,32 +123,30 @@ export function AggregatedPortfolioView({
             }
 
             // Collect all DeFi positions
-            for (const defiPosition of wallet.wallet_defi || []) {
-                const valueUsd = parseFloat(defiPosition.value_usd || '0')
+            for (const defiPosition of wallet.wallet_defi ?? []) {
+                const valueUsd = parseFloat(defiPosition.value_usd ?? '0')
                 totalValue += valueUsd
                 defiList.push(defiPosition)
             }
 
             // Collect all NFTs (no aggregation for NFTs as they are unique)
-            for (const nft of wallet.wallet_nfts || []) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const nftData = nft as any
+            for (const nft of wallet.wallet_nfts ?? []) {
                 nftList.push({
                     id:
-                        nftData.id ||
-                        `${wallet.id}-${nftData.token_id || ''}-${nftData.serial_number || 0}`,
-                    token_id: nftData.token_id || '',
-                    serial_number: nftData.serial_number || 0,
-                    metadata: nftData.metadata || {},
+                        nft.id ??
+                        `${wallet.id}-${nft.token_id ?? ''}-${nft.serial_number ?? 0}`,
+                    token_id: nft.token_id ?? '',
+                    serial_number: nft.serial_number ?? 0,
+                    metadata: nft.metadata ?? {},
                     token_name:
-                        nftData.tokens_registry?.token_name || undefined,
+                        nft.tokens_registry?.token_name ?? undefined,
                     token_icon:
-                        nftData.tokens_registry?.token_icon || undefined,
+                        nft.tokens_registry?.token_icon ?? undefined,
                 })
             }
         }
 
-        console.log('🔍 Aggregated Assets Debug:', {
+        logger.info('🔍 Aggregated Assets Debug:', {
             totalHbar,
             fungibleCount: fungibleMap.size,
             defiCount: defiList.length,
@@ -159,8 +161,7 @@ export function AggregatedPortfolioView({
             const valueUsd = normalizedBalance * parseFloat(token.price_usd)
             return { ...token, valueUsd }
         })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        fungibleTokens.sort((a: any, b: any) => b.valueUsd - a.valueUsd)
+        fungibleTokens.sort((a, b) => b.valueUsd - a.valueUsd)
 
         return {
             totalHbar,

@@ -343,7 +343,7 @@ export class RateValidationService {
 
         // Validate deviation from previous rate if provided
         if (params.previousRate) {
-            const newRate = Rate.create(params.rateValue, params.sequenceNumber || 'temp')
+            const newRate = Rate.create(params.rateValue, params.sequenceNumber ?? 'temp')
             this.validateRateDeviation(newRate, params.previousRate)
         }
 
@@ -363,7 +363,7 @@ export class RateValidationService {
      * })
      *
      * if (!result.isValid) {
-     *   console.log(result.error)
+     *   logger.info(result.error)
      * }
      * ```
      */

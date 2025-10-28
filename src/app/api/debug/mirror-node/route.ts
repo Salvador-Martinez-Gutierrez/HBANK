@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:debug:mirror-node')
 
 interface TokenTransfer {
     token_id: string
@@ -38,27 +41,29 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         const husdTokenId = process.env.HUSD_TOKEN_ID
         const treasuryId = process.env.HEDERA_ACCOUNT_ID
 
-        console.log(`🔍 Debug Mirror Node Query:`)
-        console.log(`   User Account: ${userAccountId}`)
-        console.log(`   Treasury: ${treasuryId}`)
-        console.log(`   HUSD Token: ${husdTokenId}`)
-        console.log(`   Since: ${since}`)
+        logger.info('Debug Mirror Node Query', {
+            userAccount: userAccountId,
+            treasury: treasuryId,
+            husdToken: husdTokenId,
+            since,
+        })
 
         // Query Mirror Node for token transfers
         const mirrorNodeUrl =
-            process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+            process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
             'https://testnet.mirrornode.hedera.com'
         const sinceTimestamp = new Date(since).getTime() / 1000
 
         const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=50`
-        console.log(`🔍 Mirror Node URL:`, queryUrl)
+        logger.info('Mirror Node URL', { queryUrl })
 
         const response = await fetch(queryUrl)
 
         if (!response.ok) {
-            console.log(
-                `❌ Mirror Node API Error: ${response.status} ${response.statusText}`
-            )
+            logger.error('Mirror Node API Error', {
+                status: response.status,
+                statusText: response.statusText,
+            })
             return NextResponse.json(
                 {
                     error: 'Mirror Node API error',
@@ -71,9 +76,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         }
 
         const data = (await response.json()) as MirrorNodeResponse
-        const transactions = data.transactions || []
+        const transactions = data.transactions ?? []
 
-        console.log(`📋 Found ${transactions.length} transactions`)
+        logger.info('Found transactions', { count: transactions.length })
 
         // Process and analyze transactions
         const analysis = {
@@ -95,11 +100,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                     tx.token_transfers?.map((tt: TokenTransfer) => ({
                         token_id: tt.token_id,
                         transfers: tt.transfers,
-                    })) || [],
+                    })) ?? [],
                 hasHUSDTransfers:
                     tx.token_transfers?.some(
                         (tt: TokenTransfer) => tt.token_id === husdTokenId
-                    ) || false,
+                    ) ?? false,
             })),
         }
 
@@ -110,7 +115,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             )
         )
 
-        console.log(`📋 HUSD transactions found: ${husdTransactions.length}`)
+        logger.info('HUSD transactions found', {
+            count: husdTransactions.length,
+        })
 
         return NextResponse.json({
             success: true,
@@ -122,13 +129,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 return {
                     transaction_id: tx.transaction_id,
                     consensus_timestamp: tx.consensus_timestamp,
-                    husd_transfers: husdTransfer?.transfers || [],
+                    husd_transfers: husdTransfer?.transfers ?? [],
                 }
             }),
             rawData: data,
         })
     } catch (error) {
-        console.error('❌ Debug API Error:', error)
+        logger.error('Debug API Error', {
+            error: error instanceof Error ? error.message : String(error),
+        })
         return NextResponse.json(
             {
                 error: 'Internal server error',

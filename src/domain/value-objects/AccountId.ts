@@ -10,6 +10,7 @@
 
 import { InvalidAccountError } from '@/domain/errors/DomainError'
 
+
 /**
  * Regex pattern for validating Hedera account IDs
  * Format: shard.realm.num (e.g., 0.0.12345)
@@ -25,10 +26,10 @@ const ACCOUNT_ID_PATTERN = /^(\d+)\.(\d+)\.(\d+)$/
  * @example
  * ```typescript
  * const accountId = AccountId.from('0.0.12345')
- * console.log(accountId.toString()) // "0.0.12345"
- * console.log(accountId.shard)      // 0
- * console.log(accountId.realm)      // 0
- * console.log(accountId.num)        // 12345
+ * logger.info(accountId.toString()) // "0.0.12345"
+ * logger.info(accountId.shard)      // 0
+ * logger.info(accountId.realm)      // 0
+ * logger.info(accountId.num)        // 12345
  * ```
  */
 export class AccountId {
@@ -104,7 +105,7 @@ export class AccountId {
      * @example
      * ```typescript
      * const accountId = AccountId.fromComponents(0, 0, 12345)
-     * console.log(accountId.toString()) // "0.0.12345"
+     * logger.info(accountId.toString()) // "0.0.12345"
      * ```
      */
     static fromComponents(shard: number, realm: number, num: number): AccountId {
@@ -130,9 +131,9 @@ export class AccountId {
      * ```typescript
      * const accountId = AccountId.tryFrom('0.0.12345')
      * if (accountId) {
-     *   console.log('Valid account ID')
+     *   logger.info('Valid account ID')
      * } else {
-     *   console.log('Invalid account ID')
+     *   logger.info('Invalid account ID')
      * }
      * ```
      */
@@ -173,7 +174,7 @@ export class AccountId {
      * @example
      * ```typescript
      * const accountId = AccountId.from('0.0.12345')
-     * console.log(accountId.toString()) // "0.0.12345"
+     * logger.info(accountId.toString()) // "0.0.12345"
      * ```
      */
     toString(): string {
@@ -213,7 +214,7 @@ export class AccountId {
      * ```typescript
      * const id1 = AccountId.from('0.0.12345')
      * const id2 = AccountId.from('0.0.12345')
-     * console.log(id1.equals(id2)) // true
+     * logger.info(id1.equals(id2)) // true
      * ```
      */
     equals(other: AccountId): boolean {
@@ -233,8 +234,8 @@ export class AccountId {
      * @example
      * ```typescript
      * const accountId = AccountId.from('0.0.12345')
-     * console.log(accountId.matches('0.0.12345')) // true
-     * console.log(accountId.matches('0.0.67890')) // false
+     * logger.info(accountId.matches('0.0.12345')) // true
+     * logger.info(accountId.matches('0.0.67890')) // false
      * ```
      */
     matches(value: string): boolean {
@@ -270,7 +271,7 @@ export class AccountId {
      * @example
      * ```typescript
      * const accountId = AccountId.from('0.0.12345')
-     * console.log(accountId.isTestnet()) // true
+     * logger.info(accountId.isTestnet()) // true
      * ```
      */
     isTestnet(): boolean {
@@ -285,7 +286,7 @@ export class AccountId {
      * @example
      * ```typescript
      * const accountId = AccountId.from('0.0.12345')
-     * console.log(accountId.toShortString()) // "12345"
+     * logger.info(accountId.toShortString()) // "12345"
      * ```
      */
     toShortString(): string {
@@ -301,8 +302,8 @@ export class AccountId {
      * @example
      * ```typescript
      * const accountId = AccountId.from('0.0.12345')
-     * console.log(accountId.toDisplayString()) // "Account 0.0.12345"
-     * console.log(accountId.toDisplayString('User ')) // "User 0.0.12345"
+     * logger.info(accountId.toDisplayString()) // "Account 0.0.12345"
+     * logger.info(accountId.toDisplayString('User ')) // "User 0.0.12345"
      * ```
      */
     toDisplayString(prefix: string = 'Account '): string {

@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     webpack: (config, { isServer }) => {
         // Add polyfills for Node.js APIs in the browser
         if (!isServer) {
+            /* eslint-disable @typescript-eslint/no-require-imports */
             config.resolve.fallback = {
                 ...config.resolve.fallback,
                 buffer: require.resolve('buffer'),
@@ -17,6 +18,7 @@ const nextConfig: NextConfig = {
                 net: false,
                 tls: false,
             }
+            /* eslint-enable @typescript-eslint/no-require-imports */
         }
         return config
     },

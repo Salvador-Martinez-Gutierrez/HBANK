@@ -3,6 +3,8 @@ import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { useAccountId } from './useAccountID'
 import { TOKENS } from '@/app/constants'
 import { formatCurrency } from '@/lib/formatters'
+import { logger } from '@/lib/logger'
+
 
 interface TokenBalance {
     USDC: string
@@ -26,12 +28,12 @@ export function useTokenBalances() {
     const accountId = useAccountId()
 
     const fetchBalances = useCallback(async () => {
-        console.log('🔍 [useTokenBalances] Starting fetch...')
-        console.log('🔍 [useTokenBalances] isConnected:', isConnected)
-        console.log('🔍 [useTokenBalances] accountId:', accountId)
+        logger.info('🔍 [useTokenBalances] Starting fetch...')
+        logger.info('🔍 [useTokenBalances] isConnected:', isConnected)
+        logger.info('🔍 [useTokenBalances] accountId:', accountId)
 
         if (!isConnected || !accountId) {
-            console.log(
+            logger.info(
                 '⚠️ [useTokenBalances] Not connected or no accountId, resetting balances'
             )
             setBalances({
@@ -46,17 +48,17 @@ export function useTokenBalances() {
             // Fetch token balances from Hedera mirror node
             const mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
             const url = `${mirrorNodeUrl}/api/v1/accounts/${accountId}/tokens`
-            console.log('🌐 [useTokenBalances] Fetching from:', url)
+            logger.info('🌐 [useTokenBalances] Fetching from:', url)
 
             const response = await fetch(url)
-            console.log(
+            logger.info(
                 '📡 [useTokenBalances] Response status:',
                 response.status
             )
 
             if (response.ok) {
                 const data = await response.json()
-                console.log('📦 [useTokenBalances] Raw API response:', data)
+                logger.info('📦 [useTokenBalances] Raw API response:', data)
 
                 const tokenBalances: TokenBalance = {
                     USDC: '0',
@@ -65,7 +67,7 @@ export function useTokenBalances() {
 
                 // Parse token balances from the response
                 if (data.tokens && Array.isArray(data.tokens)) {
-                    console.log(
+                    logger.info(
                         `📋 [useTokenBalances] Found ${data.tokens.length} tokens`
                     )
 
@@ -79,7 +81,7 @@ export function useTokenBalances() {
                             },
                             index: number
                         ) => {
-                            console.log(`  Token ${index + 1}:`, {
+                            logger.info(`  Token ${index + 1}:`, {
                                 token_id: token.token_id,
                                 balance: token.balance,
                                 decimals: token.decimals,
@@ -96,7 +98,7 @@ export function useTokenBalances() {
                                 token.balance / divisor,
                                 6
                             )
-                            console.log(
+                            logger.info(
                                 `✅ [useTokenBalances] Found USDC: ${balance} (balance: ${token.balance}, decimals: ${decimals})`
                             )
                             tokenBalances.USDC = balance
@@ -109,7 +111,7 @@ export function useTokenBalances() {
                                 token.balance / divisor,
                                 6
                             )
-                            console.log(
+                            logger.info(
                                 `✅ [useTokenBalances] Found hUSD: ${balance} (balance: ${token.balance}, decimals: ${decimals})`
                             )
                             tokenBalances.hUSD = balance
@@ -121,40 +123,40 @@ export function useTokenBalances() {
                         tokenBalances.USDC === '0' &&
                         tokenBalances.hUSD === '0'
                     ) {
-                        console.warn(
+                        logger.warn(
                             '⚠️ [useTokenBalances] No matching tokens found!'
                         )
-                        console.warn('   Looking for USDC:', TOKEN_IDS.USDC)
-                        console.warn('   Looking for hUSD:', TOKEN_IDS.hUSD)
+                        logger.warn('   Looking for USDC:', TOKEN_IDS.USDC)
+                        logger.warn('   Looking for hUSD:', TOKEN_IDS.hUSD)
                     }
                 } else {
-                    console.warn(
+                    logger.warn(
                         '⚠️ [useTokenBalances] No tokens array in response'
                     )
                 }
 
-                console.log(
+                logger.info(
                     '💰 [useTokenBalances] Final balances:',
                     tokenBalances
                 )
-                console.log(
+                logger.info(
                     '📊 [useTokenBalances] USDC balance updated to:',
                     tokenBalances.USDC
                 )
-                console.log(
+                logger.info(
                     '📊 [useTokenBalances] hUSD balance updated to:',
                     tokenBalances.hUSD
                 )
 
                 // Log previous vs new balances for comparison
-                console.log('🔄 [useTokenBalances] Balance comparison:')
-                console.log(
+                logger.info('🔄 [useTokenBalances] Balance comparison:')
+                logger.info(
                     '   Previous USDC:',
                     balances.USDC,
                     '→ New USDC:',
                     tokenBalances.USDC
                 )
-                console.log(
+                logger.info(
                     '   Previous hUSD:',
                     balances.hUSD,
                     '→ New hUSD:',
@@ -162,44 +164,44 @@ export function useTokenBalances() {
                 )
 
                 setBalances(tokenBalances)
-                console.log('✅ [useTokenBalances] State updated successfully')
+                logger.info('✅ [useTokenBalances] State updated successfully')
             } else {
                 // If API fails, use mock data for demonstration
-                console.warn(
+                logger.warn(
                     `❌ [useTokenBalances] API request failed with status: ${response.status}`
                 )
                 const responseText = await response.text()
-                console.warn('   Response:', responseText)
+                logger.warn('   Response:', responseText)
             }
         } catch (error) {
-            console.error(
+            logger.error(
                 '❌ [useTokenBalances] Error fetching token balances:',
                 error
             )
         } finally {
             setLoading(false)
-            console.log('✨ [useTokenBalances] Fetch complete')
+            logger.info('✨ [useTokenBalances] Fetch complete')
         }
     }, [isConnected, accountId, balances.USDC, balances.hUSD])
 
     // Refresh function that can be called externally
     const refreshBalances = useCallback(async () => {
-        console.log('🔄 [useTokenBalances] Manual refresh requested')
-        console.log('🔄 [useTokenBalances] Current isConnected:', isConnected)
-        console.log('🔄 [useTokenBalances] Current accountId:', accountId)
+        logger.info('🔄 [useTokenBalances] Manual refresh requested')
+        logger.info('🔄 [useTokenBalances] Current isConnected:', isConnected)
+        logger.info('🔄 [useTokenBalances] Current accountId:', accountId)
 
         // Force a fresh fetch regardless of current state
         if (isConnected && accountId) {
             await fetchBalances()
         } else {
-            console.warn(
+            logger.warn(
                 '⚠️ [useTokenBalances] Cannot refresh: not connected or no accountId'
             )
         }
     }, [fetchBalances, isConnected, accountId])
 
     useEffect(() => {
-        fetchBalances()
+        void fetchBalances()
     }, [fetchBalances])
 
     return { balances, loading, refreshBalances }

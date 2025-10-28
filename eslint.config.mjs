@@ -21,11 +21,25 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "*.config.js",
-      "*.config.mjs"
+      "*.config.mjs",
+      "*.config.ts",
+      "next.config.ts",
+      "migrate-console-to-logger.js",
+      ".backup/**",
+      "dist/**",
+      "coverage/**",
+      "**/*.bak"
     ]
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    files: ["**/*.ts", "**/*.tsx"],
+    languageOptions: {
+      parserOptions: {
+        project: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
     rules: {
       // TypeScript - Strict rules
       "@typescript-eslint/no-explicit-any": "error",
@@ -34,18 +48,34 @@ const eslintConfig = [
         varsIgnorePattern: "^_",
         caughtErrorsIgnorePattern: "^_"
       }],
+      "@typescript-eslint/explicit-function-return-type": "off", // Too strict for React components
+      "@typescript-eslint/no-non-null-assertion": "warn",
+      "@typescript-eslint/prefer-nullish-coalescing": "warn",
+      "@typescript-eslint/prefer-optional-chain": "warn",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/no-misused-promises": "error",
 
-      // Code Quality - All warnings to not block builds
-      "no-console": "off", // Too many to fix now, will address in Phase 2
-      "complexity": "off", // Will refactor complex functions in Phase 2
-      "max-lines-per-function": "off", // Will split large functions in Phase 2
-      "max-depth": "off", // Will reduce nesting in Phase 2
-      "max-params": "off",
+      // Code Quality - Strict rules enabled
+      "no-console": "error", // ✅ Phase 1.3 complete - all console calls migrated to logger
+      "no-debugger": "error",
+      "no-alert": "error",
+      "no-var": "error",
+      "prefer-const": "error",
+      "prefer-arrow-callback": "warn",
+      "no-duplicate-imports": "error",
+      "no-unused-expressions": "error",
+      "eqeqeq": ["error", "always"],
+
+      // Complexity rules - warnings for now, will refactor in Phase 3
+      "complexity": ["warn", 20],
+      "max-lines-per-function": ["warn", 150],
+      "max-depth": ["warn", 4],
+      "max-params": ["warn", 5],
 
       // React Hooks
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
-      "react-hooks/set-state-in-effect": "off", // Too strict, causes false positives
 
       // Next.js specific
       "@next/next/no-html-link-for-pages": "off",

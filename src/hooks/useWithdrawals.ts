@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { WithdrawStatus } from '@/types/withdrawal'
+import { logger } from '@/lib/logger'
 import {
     WITHDRAW_TOPIC_ID,
     TESTNET_MIRROR_NODE_ENDPOINT,
@@ -38,11 +39,11 @@ export function useWithdrawals({
     // Fetch user withdrawals from API
     const fetchWithdrawals = useCallback(async () => {
         if (!userAccountId || !enabled) {
-            console.log(`🚫 useWithdrawals: Skipping fetch - userAccountId: ${userAccountId}, enabled: ${enabled}`)
+            logger.info(`🚫 useWithdrawals: Skipping fetch - userAccountId: ${userAccountId}, enabled: ${enabled}`)
             return
         }
 
-        console.log(`🔄 useWithdrawals: Fetching withdrawals for user: ${userAccountId}`)
+        logger.info(`🔄 useWithdrawals: Fetching withdrawals for user: ${userAccountId}`)
         setIsLoading(true)
         setError(null)
 
@@ -62,10 +63,10 @@ export function useWithdrawals({
             if (data.success) {
                 setWithdrawals(data.withdrawals)
             } else {
-                throw new Error(data.error || 'Failed to fetch withdrawals')
+                throw new Error(data.error ?? 'Failed to fetch withdrawals')
             }
         } catch (err) {
-            console.error('Error fetching withdrawals:', err)
+            logger.error('Error fetching withdrawals:', err)
             setError(err instanceof Error ? err.message : 'Unknown error')
         } finally {
             setIsLoading(false)
@@ -106,20 +107,20 @@ export function useWithdrawals({
 
                 if (response.ok && data.success) {
                     // Refresh withdrawals to show the new one
-                    fetchWithdrawals()
+                    void fetchWithdrawals()
                     return {
                         success: true,
                         requestId: data.requestId,
-                        scheduleId: data.transferTxId || data.scheduleId,
+                        scheduleId: data.transferTxId ?? data.scheduleId,
                     }
                 } else {
                     return {
                         success: false,
-                        error: data.error || 'Failed to submit withdrawal',
+                        error: data.error ?? 'Failed to submit withdrawal',
                     }
                 }
             } catch (err) {
-                console.error('Error submitting withdrawal:', err)
+                logger.error('Error submitting withdrawal:', err)
                 return {
                     success: false,
                     error: err instanceof Error ? err.message : 'Unknown error',
@@ -146,7 +147,7 @@ export function useWithdrawals({
                 ws = new WebSocket(`${wsUrl}/subscribe`)
 
                 ws.onopen = () => {
-                    console.log('📡 WebSocket connected for withdrawals')
+                    logger.info('📡 WebSocket connected for withdrawals')
 
                     // Subscribe to withdrawal topic
                     const subscribeMessage = {
@@ -168,7 +169,7 @@ export function useWithdrawals({
                             ).toString('utf8')
                             const withdrawMessage = JSON.parse(decodedMessage)
 
-                            console.log('📝 Parsed message:', {
+                            logger.info('📝 Parsed message:', {
                                 type: withdrawMessage.type,
                                 requestId: withdrawMessage.requestId,
                                 user: withdrawMessage.user,
@@ -182,18 +183,18 @@ export function useWithdrawals({
                                 (withdrawMessage.type === 'withdraw_result' &&
                                     withdrawMessage.user === userAccountId)
                             ) {
-                                console.log(
+                                logger.info(
                                     '🔄 Received withdrawal update for our user, refreshing...'
                                 )
-                                fetchWithdrawals()
+                                void fetchWithdrawals()
                             } else {
-                                console.log(
+                                logger.info(
                                     '⏭️ Message not for our user, ignoring...'
                                 )
                             }
                         }
                     } catch (parseError) {
-                        console.warn(
+                        logger.warn(
                             'Failed to parse WebSocket message:',
                             parseError
                         )
@@ -201,11 +202,11 @@ export function useWithdrawals({
                 }
 
                 ws.onerror = (error) => {
-                    console.error('WebSocket error:', error)
+                    logger.error('WebSocket error:', error)
                 }
 
                 ws.onclose = () => {
-                    console.log(
+                    logger.info(
                         '📡 WebSocket disconnected, attempting to reconnect...'
                     )
 
@@ -215,7 +216,7 @@ export function useWithdrawals({
                     }, 5000)
                 }
             } catch (error) {
-                console.error('Failed to connect WebSocket:', error)
+                logger.error('Failed to connect WebSocket:', error)
 
                 // Fallback to polling if WebSocket fails
                 reconnectTimeout = setTimeout(() => {
@@ -241,10 +242,10 @@ export function useWithdrawals({
     // Initial fetch and periodic refresh
     useEffect(() => {
         if (enabled && userAccountId) {
-            fetchWithdrawals()
+            void fetchWithdrawals()
 
             // Set up periodic refresh every 30 seconds as fallback
-            const interval = setInterval(fetchWithdrawals, 30000)
+            const interval = setInterval(() => void fetchWithdrawals(), 30000)
 
             return () => clearInterval(interval)
         }
@@ -254,7 +255,7 @@ export function useWithdrawals({
         withdrawals,
         isLoading,
         error,
-        refresh: fetchWithdrawals,
+        refresh: () => void fetchWithdrawals(),
         submitWithdrawal,
     }
 }

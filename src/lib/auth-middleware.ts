@@ -55,7 +55,7 @@ export function withAuth(handler: AuthenticatedHandler) {
             // Verify JWT
             const payload = await verifyJWT(token)
 
-            if (!payload || !payload.sub) {
+            if (!payload?.sub) {
                 logger.warn('Invalid JWT token')
                 return res
                     .status(401)
@@ -97,7 +97,7 @@ export function withOptionalAuth(handler: AuthenticatedHandler) {
                 // Verify JWT
                 const payload = await verifyJWT(token)
 
-                if (payload && payload.sub) {
+                if (payload?.sub) {
                     // Add user to request
                     const authenticatedReq = req as AuthenticatedRequest
                     authenticatedReq.user = {

@@ -10,7 +10,7 @@ export class PinoLogger implements ILogger {
 
     constructor(context?: string, baseContext?: LogContext) {
         const isDevelopment = process.env.NODE_ENV === 'development'
-        const logLevel = (process.env.LOG_LEVEL as pino.Level) || 'info'
+        const logLevel = (process.env.LOG_LEVEL as pino.Level) ?? 'info'
 
         this.logger = pino({
             level: logLevel,
@@ -36,15 +36,15 @@ export class PinoLogger implements ILogger {
     }
 
     debug(message: string, meta?: Record<string, unknown>): void {
-        this.logger.debug(meta || {}, message)
+        this.logger.debug(meta ?? {}, message)
     }
 
     info(message: string, meta?: Record<string, unknown>): void {
-        this.logger.info(meta || {}, message)
+        this.logger.info(meta ?? {}, message)
     }
 
     warn(message: string, meta?: Record<string, unknown>): void {
-        this.logger.warn(meta || {}, message)
+        this.logger.warn(meta ?? {}, message)
     }
 
     error(message: string, error?: Error, meta?: Record<string, unknown>): void {

@@ -230,8 +230,8 @@ const TransactionCard: React.FC<{ transaction: HistoryTransaction }> = ({
                                     </div>
                                     <div className='text-lg font-bold text-gray-900 dark:text-gray-100'>
                                         {formatAmount(
-                                            transaction.grossUSDC ||
-                                                transaction.netUSDC ||
+                                            transaction.grossUSDC ??
+                                                transaction.netUSDC ??
                                                 0
                                         )}
                                     </div>
@@ -339,7 +339,7 @@ const TransactionCard: React.FC<{ transaction: HistoryTransaction }> = ({
                                             <span>
                                                 -
                                                 {formatAmount(
-                                                    transaction.fee || 0
+                                                    transaction.fee ?? 0
                                                 )}
                                             </span>
                                         </div>
@@ -347,7 +347,7 @@ const TransactionCard: React.FC<{ transaction: HistoryTransaction }> = ({
                                             <span>Net USDC:</span>
                                             <span className='text-green-600 dark:text-green-400'>
                                                 {formatAmount(
-                                                    transaction.netUSDC || 0
+                                                    transaction.netUSDC ?? 0
                                                 )}
                                             </span>
                                         </div>
@@ -438,7 +438,7 @@ export const HistoryCards: React.FC<HistoryCardsProps> = ({
                     </p>
                 </div>
                 <Button
-                    onClick={refresh}
+                    onClick={() => void refresh()}
                     disabled={isRefreshDisabled || isLoading}
                     variant='outline'
                     size='sm'
@@ -488,7 +488,7 @@ export const HistoryCards: React.FC<HistoryCardsProps> = ({
             {hasMore && (
                 <div className='flex justify-center pt-4'>
                     <Button
-                        onClick={loadMore}
+                        onClick={() => void loadMore()}
                         disabled={isLoading}
                         variant='outline'
                         className='flex items-center space-x-2'

@@ -311,7 +311,7 @@ export class DepositValidationService {
      * })
      *
      * if (!result.isValid) {
-     *   console.log(result.error)
+     *   logger.info(result.error)
      * }
      * ```
      */

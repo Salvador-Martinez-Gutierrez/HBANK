@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TelegramService } from '@/services/telegramService'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:test:telegram')
 
 export async function POST(_req: NextRequest): Promise<NextResponse> {
     try {
-        console.log('🧪 Testing Telegram bot integration...')
+        logger.info('Testing Telegram bot integration')
 
         const telegramService = new TelegramService()
 
@@ -27,13 +30,13 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
 
         // Get bot information for debugging
         const botInfo = await telegramService.getBotInfo()
-        console.log('🤖 Bot info:', botInfo)
+        logger.info('Bot info retrieved', { botInfo })
 
         // Send test message
         const testSuccess = await telegramService.sendTestMessage()
 
         if (testSuccess) {
-            console.log('✅ Telegram test message sent successfully')
+            logger.info('Telegram test message sent successfully')
 
             // Also send a sample withdrawal notification
             await telegramService.sendWithdrawNotification({
@@ -80,7 +83,9 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
             )
         }
     } catch (error) {
-        console.error('❌ Error testing Telegram bot:', error)
+        logger.error('Error testing Telegram bot', {
+            error: error instanceof Error ? error.message : String(error),
+        })
         return NextResponse.json(
             {
                 success: false,

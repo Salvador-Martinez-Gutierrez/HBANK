@@ -8,6 +8,8 @@ import {
     KabilaConnector,
 } from '@buidlerlabs/hashgraph-react-wallets/connectors'
 import { HederaTestnet } from '@buidlerlabs/hashgraph-react-wallets/chains'
+import { logger } from '@/lib/logger'
+
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
     // Get projectId from environment variables
@@ -15,13 +17,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
     // IMPORTANTE: No usar fallback hardcodeado en producción
     if (!projectId) {
-        console.error('❌ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set')
+        logger.error('❌ NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID is not set')
         throw new Error(
             'WalletConnect Project ID is required. Please set NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID in your environment variables.'
         )
     }
 
-    console.log(
+    logger.info(
         '🔍 Using WalletConnect Project ID:',
         projectId.substring(0, 8) + '...'
     )
@@ -31,11 +33,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
             return window.location.origin
         }
 
-        return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     }
 
     const appUrl = getAppUrl()
-    console.log('🌐 Using App URL:', appUrl)
+    logger.info('🌐 Using App URL:', appUrl)
 
     const metadata = {
         name: 'Hbank Protocol',

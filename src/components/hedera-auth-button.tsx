@@ -48,7 +48,7 @@ export function HederaAuthButton() {
             } else {
                 showError(
                     `❌ Authentication failed: ${
-                        result.error || 'Please try again'
+                        result.error ?? 'Please try again'
                     }`
                 )
             }
@@ -86,7 +86,7 @@ export function HederaAuthButton() {
     if (isAuthenticated && accountId) {
         return (
             <Button
-                onClick={handleLogout}
+                onClick={() => void handleLogout()}
                 disabled={isAuthenticating}
                 variant='outline'
                 size='sm'
@@ -111,7 +111,7 @@ export function HederaAuthButton() {
     // Si no está autenticado, mostrar botón de login
     return (
         <Button
-            onClick={handleLogin}
+            onClick={() => void handleLogin()}
             disabled={isAuthenticating || !isReady}
             size='sm'
             className='gap-2'

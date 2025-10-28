@@ -160,7 +160,7 @@ export class Withdrawal {
      * @example
      * ```typescript
      * const withdrawal = Withdrawal.createInstant('0.0.12345', 50, rate)
-     * console.log(`Fee: ${withdrawal.feeAmount?.toDisplayString()}`)
+     * logger.info(`Fee: ${withdrawal.feeAmount?.toDisplayString()}`)
      * ```
      */
     static createInstant(
@@ -317,7 +317,7 @@ export class Withdrawal {
      * ```typescript
      * const withdrawal = Withdrawal.createInstant('0.0.12345', 100, rate)
      * const usdc = withdrawal.calculateUsdcAmount()
-     * console.log(usdc.toDisplayString()) // Net amount after fee
+     * logger.info(usdc.toDisplayString()) // Net amount after fee
      * ```
      */
     calculateUsdcAmount(): Money {
@@ -338,7 +338,7 @@ export class Withdrawal {
      * @returns Fee amount or zero for standard withdrawals
      */
     calculateFeeAmount(): Money {
-        return this.feeAmount || Money.zero('HUSD')
+        return this.feeAmount ?? Money.zero('HUSD')
     }
 
     /**
@@ -426,7 +426,7 @@ export class Withdrawal {
      * @returns New Withdrawal instance with failed status
      */
     fail(reason?: string): Withdrawal {
-        const failMemo = reason ? `${this.memo || ''} [Failed: ${reason}]` : this.memo
+        const failMemo = reason ? `${this.memo ?? ''} [Failed: ${reason}]` : this.memo
 
         return new Withdrawal(
             this.id,

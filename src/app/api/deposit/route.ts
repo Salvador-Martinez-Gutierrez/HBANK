@@ -19,14 +19,18 @@ import {
     PrivateKey,
 } from '@hashgraph/sdk'
 import { HederaRateService } from '@/services/hederaRateService'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:deposit:route.ts')
+
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-    console.log('=== DEPOSIT ENDPOINT CALLED ===')
-    console.log('Method:', req.method)
+    logger.info('=== DEPOSIT ENDPOINT CALLED ===')
+    logger.info('Method:', req.method)
 
     try {
         const body = await req.json()
-        console.log('Body:', body)
+        logger.info('Body:', body)
 
         const {
             userAccountId,
@@ -45,7 +49,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             !expectedRate ||
             !rateSequenceNumber
         ) {
-            console.error('Missing fields:', {
+            logger.error('Missing fields:', {
                 userAccountId: !!userAccountId,
                 amount: !!amount,
                 depositTxId: !!depositTxId,
@@ -67,7 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             )
         }
 
-        console.log('Processing deposit:', {
+        logger.info('Processing deposit:', {
             user: userAccountId,
             amount: amount,
             depositTx: depositTxId,
@@ -77,7 +81,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         })
 
         // STEP 1: Validate the rate against Hedera topic
-        console.log('Validating rate against Hedera topic...')
+        logger.info('Validating rate against Hedera topic...')
         const rateService = new HederaRateService()
         const latestRate = await rateService.getLatestRate()
 
@@ -97,7 +101,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             Math.abs(latestRate.rate - expectedRate) < 0.0001 // Allow small floating point differences
 
         if (!rateMatches) {
-            console.log('Rate validation failed:', {
+            logger.info('Rate validation failed:', {
                 expected: {
                     rate: expectedRate,
                     sequenceNumber: rateSequenceNumber,
@@ -128,7 +132,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             )
         }
 
-        console.log('✅ Rate validation successful:', {
+        logger.info('✅ Rate validation successful:', {
             rate: latestRate.rate,
             sequenceNumber: latestRate.sequenceNumber,
         })
@@ -138,7 +142,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const depositWalletKey = process.env.DEPOSIT_WALLET_KEY
 
         if (!depositWalletId || !depositWalletKey) {
-            console.error('Missing environment variables:', {
+            logger.error('Missing environment variables:', {
                 DEPOSIT_WALLET_ID: !!depositWalletId,
                 DEPOSIT_WALLET_KEY: !!depositWalletKey,
             })
@@ -157,7 +161,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const depositWalletPrivateKey = PrivateKey.fromString(depositWalletKey)
 
         client.setOperator(depositWalletAccountId, depositWalletPrivateKey)
-        console.log(
+        logger.info(
             'Client configured for deposit wallet:',
             depositWalletAccountId.toString()
         )
@@ -167,14 +171,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             .replace('@', '-')
             .replace(/(\d+)\.(\d+)$/, '$1-$2')
         const mirrorUrl = `https://testnet.mirrornode.hedera.com/api/v1/transactions/${mirrorTxId}`
-        console.log('Verifying deposit on mirror node:', mirrorUrl)
+        logger.info('Verifying deposit on mirror node:', mirrorUrl)
 
         let mirrorVerified = false
         for (let i = 0; i < 3; i++) {
             try {
                 const mirrorResponse = await fetch(mirrorUrl)
                 const mirrorData = await mirrorResponse.json()
-                console.log('Mirror node response:', mirrorData)
+                logger.info('Mirror node response:', mirrorData)
 
                 if (
                     mirrorData.transactions &&
@@ -187,13 +191,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                 }
             } catch (error) {
                 // Ignore error, retry
-                console.warn('Mirror node retry failed:', error)
+                logger.warn('Mirror node retry failed:', error)
             }
             // Wait 2 seconds before retrying
             await new Promise((resolve) => setTimeout(resolve, 2000))
         }
         if (!mirrorVerified) {
-            console.warn(
+            logger.warn(
                 'Mirror node verification could not confirm deposit. Continuing anyway.'
             )
         }
@@ -217,7 +221,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             actualHUSDAmount * Math.pow(10, husdDecimals)
         )
 
-        console.log('Amount calculation:', {
+        logger.info('Amount calculation:', {
             usdcMinimumUnits: amountInUSDC,
             actualUSDC: actualUSDCAmount,
             rate: latestRate.rate,
@@ -226,38 +230,39 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         })
 
         // Create hUSD transfer (from emissions wallet to user)
-        const emissionsWalletId = process.env.EMISSIONS_ID!
+        const emissionsWalletId = process.env.EMISSIONS_ID ?? ''
+        const husdTokenId = process.env.HUSD_TOKEN_ID ?? ''
         const hUSDTransfer = new TransferTransaction()
             .addTokenTransfer(
-                process.env.HUSD_TOKEN_ID!,
+                husdTokenId,
                 AccountId.fromString(emissionsWalletId),
                 -amountToTransfer
             )
             .addTokenTransfer(
-                process.env.HUSD_TOKEN_ID!,
+                husdTokenId,
                 AccountId.fromString(userAccountId),
                 amountToTransfer
             )
             .setTransactionMemo(`hUSD for deposit ${depositTxId}`)
 
         // Freeze and sign with emissions wallet key
-        const emissionsWalletKey = process.env.EMISSIONS_KEY!
+        const emissionsWalletKey = process.env.EMISSIONS_KEY ?? ''
         const emissionsPrivateKey = PrivateKey.fromString(emissionsWalletKey)
         const frozenTx = hUSDTransfer.freezeWith(client)
         const signedTx = await frozenTx.sign(emissionsPrivateKey)
 
-        console.log('Executing hUSD transfer...')
+        logger.info('Executing hUSD transfer...')
 
         // Execute
         const response = await signedTx.execute(client)
-        console.log(
+        logger.info(
             'Transaction submitted:',
             response.transactionId?.toString()
         )
 
         // Get receipt
         const receipt = await response.getReceipt(client)
-        console.log('Receipt status:', receipt.status.toString())
+        logger.info('Receipt status:', receipt.status.toString())
 
         if (receipt.status.toString() !== 'SUCCESS') {
             throw new Error(`Transaction failed with status: ${receipt.status}`)
@@ -272,15 +277,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             status: receipt.status.toString(),
         }
 
-        console.log('=== DEPOSIT SUCCESSFUL ===', result)
+        logger.info('=== DEPOSIT SUCCESSFUL ===', result)
         return NextResponse.json(result)
     } catch (error: unknown) {
-        console.error('=== DEPOSIT ERROR ===')
+        logger.error('=== DEPOSIT ERROR ===')
         const errorMessage =
             error instanceof Error ? error.message : 'Unknown error'
         const errorStack = error instanceof Error ? error.stack : undefined
-        console.error('Error message:', errorMessage)
-        console.error('Error stack:', errorStack)
+        logger.error('Error message:', errorMessage)
+        logger.error('Error stack:', errorStack)
 
         return NextResponse.json(
             {

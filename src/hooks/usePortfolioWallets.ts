@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { WalletWithTokens } from '@/types/portfolio'
 import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
+import { logger } from '@/lib/logger'
 import {
     useTokenPriceRealtime,
     type TokenPriceUpdate,
@@ -21,7 +22,7 @@ export function usePortfolioWallets(userId: string | null) {
     // Clear wallets immediately when userId changes or becomes null
     useEffect(() => {
         if (!userId) {
-            console.log('🧹 Clearing wallets data (no userId)')
+            logger.info('🧹 Clearing wallets data (no userId)')
             setWallets([])
             setError(null)
         }
@@ -38,7 +39,7 @@ export function usePortfolioWallets(userId: string | null) {
             setLoading(true)
             setError(null)
 
-            console.log('📡 Fetching wallets from API for userId:', userId)
+            logger.info('📡 Fetching wallets from API for userId:', userId)
 
             // Use API endpoint instead of direct Supabase query
             // JWT is automatically sent via HttpOnly cookie
@@ -46,13 +47,13 @@ export function usePortfolioWallets(userId: string | null) {
 
             if (!response.ok) {
                 const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to fetch wallets')
+                throw new Error(errorData.error ?? 'Failed to fetch wallets')
             }
 
             const result = await response.json()
 
             if (result.success && result.wallets) {
-                console.log(
+                logger.info(
                     '✅ Wallets fetched successfully:',
                     result.wallets.length
                 )
@@ -61,7 +62,7 @@ export function usePortfolioWallets(userId: string | null) {
                 throw new Error('Invalid response from server')
             }
         } catch (err) {
-            console.error('❌ Error fetching wallets:', err)
+            logger.error('❌ Error fetching wallets:', err)
             setError(
                 err instanceof Error ? err.message : 'Failed to load wallets'
             )
@@ -71,13 +72,13 @@ export function usePortfolioWallets(userId: string | null) {
     }, [userId])
 
     useEffect(() => {
-        fetchWallets()
+        void fetchWallets()
     }, [fetchWallets])
 
     // REALTIME: Update token prices automatically
     // SECURITY: Read-only, public data, no auth required
     const handlePriceUpdate = useCallback((update: TokenPriceUpdate) => {
-        console.log('💰 Updating token price in wallets:', update.token_address)
+        logger.info('💰 Updating token price in wallets:', update.token_address)
 
         setWallets((currentWallets) => {
             let hasChanges = false
@@ -92,12 +93,12 @@ export function usePortfolioWallets(userId: string | null) {
                     update.token_address === 'HBAR' ||
                     update.token_address === '0.0.0'
                 ) {
-                    const oldPrice = parseFloat(String(wallet.hbar_price_usd || '0'))
+                    const oldPrice = parseFloat(String(wallet.hbar_price_usd ?? '0'))
                     const newPrice = parseFloat(update.price_usd)
                     if (oldPrice !== newPrice) {
                         newWallet.hbar_price_usd = parseFloat(update.price_usd)
                         walletChanged = true
-                        console.log(
+                        logger.info(
                             `  📊 HBAR price updated: $${oldPrice.toFixed(
                                 4
                             )} → $${newPrice.toFixed(4)}`
@@ -106,7 +107,7 @@ export function usePortfolioWallets(userId: string | null) {
                 }
 
                 // Update fungible tokens (wallet_tokens)
-                const updatedWalletTokens = (wallet.wallet_tokens || []).map(
+                const updatedWalletTokens = (wallet.wallet_tokens ?? []).map(
                     (wt) => {
                         // If this token matches the updated one
                         if (
@@ -115,10 +116,10 @@ export function usePortfolioWallets(userId: string | null) {
                         ) {
                             walletChanged = true
                             const oldPrice = parseFloat(
-                                String(wt.tokens_registry.price_usd || '0')
+                                String(wt.tokens_registry.price_usd ?? '0')
                             )
                             const newPrice = parseFloat(update.price_usd)
-                            console.log(
+                            logger.info(
                                 `  📊 ${
                                     wt.tokens_registry.token_symbol
                                 } price updated: $${oldPrice.toFixed(
@@ -140,7 +141,7 @@ export function usePortfolioWallets(userId: string | null) {
 
                 // Update LP tokens (liquidity_pool_tokens)
                 const updatedLpTokens = (
-                    wallet.liquidity_pool_tokens || []
+                    wallet.liquidity_pool_tokens ?? []
                 ).map((lpt) => {
                     // If this LP token matches the updated one
                     if (
@@ -149,10 +150,10 @@ export function usePortfolioWallets(userId: string | null) {
                     ) {
                         walletChanged = true
                         const oldPrice = parseFloat(
-                            String(lpt.tokens_registry.price_usd || '0')
+                            String(lpt.tokens_registry.price_usd ?? '0')
                         )
                         const newPrice = parseFloat(update.price_usd)
-                        console.log(
+                        logger.info(
                             `  📊 LP ${
                                 lpt.tokens_registry.token_symbol
                             } price updated: $${oldPrice.toFixed(
@@ -185,7 +186,7 @@ export function usePortfolioWallets(userId: string | null) {
 
             // Only update state if there were changes
             if (hasChanges) {
-                console.log('✅ Portfolio balance recalculated with new prices')
+                logger.info('✅ Portfolio balance recalculated with new prices')
                 return updatedWallets
             }
 
@@ -238,7 +239,7 @@ export function usePortfolioWallets(userId: string | null) {
                     return { success: false, error: result.error }
                 }
             } catch (error) {
-                console.error('Error adding wallet:', error)
+                logger.error('Error adding wallet:', error)
                 return { success: false, error: 'Failed to add wallet' }
             }
         },
@@ -265,7 +266,7 @@ export function usePortfolioWallets(userId: string | null) {
                     return { success: false, error: result.error }
                 }
             } catch (error) {
-                console.error('Error updating wallet:', error)
+                logger.error('Error updating wallet:', error)
                 return { success: false, error: 'Failed to update wallet' }
             }
         },
@@ -291,7 +292,7 @@ export function usePortfolioWallets(userId: string | null) {
                     return { success: false, error: result.error }
                 }
             } catch (error) {
-                console.error('Error deleting wallet:', error)
+                logger.error('Error deleting wallet:', error)
                 return { success: false, error: 'Failed to delete wallet' }
             }
         },
@@ -318,7 +319,7 @@ export function usePortfolioWallets(userId: string | null) {
                     return { success: false, error: result.error }
                 }
             } catch (error) {
-                console.error('Error syncing tokens:', error)
+                logger.error('Error syncing tokens:', error)
                 return { success: false, error: 'Failed to sync tokens' }
             }
         },
@@ -327,7 +328,7 @@ export function usePortfolioWallets(userId: string | null) {
 
     const syncAllWallets = useCallback(async () => {
         try {
-            console.log('🚀 Starting optimized batch sync...')
+            logger.info('🚀 Starting optimized batch sync...')
             const response = await fetch('/api/portfolio/sync-all-wallets', {
                 method: 'POST',
                 headers: {
@@ -348,7 +349,7 @@ export function usePortfolioWallets(userId: string | null) {
                 return { success: false, error: result.error }
             }
         } catch (error) {
-            console.error('Error syncing all wallets:', error)
+            logger.error('Error syncing all wallets:', error)
             return { success: false, error: 'Failed to sync wallets' }
         }
     }, [fetchWallets])
@@ -358,23 +359,23 @@ export function usePortfolioWallets(userId: string | null) {
 
         for (const wallet of wallets) {
             // Include HBAR balance in total value calculation
-            const hbarBalance = parseFloat(String(wallet.hbar_balance || '0'))
+            const hbarBalance = parseFloat(String(wallet.hbar_balance ?? '0'))
             const priceValue = wallet.hbar_price_usd
-            const hbarPrice = parseFloat(typeof priceValue === 'number' ? priceValue.toString() : String(priceValue || '0'))
+            const hbarPrice = parseFloat(typeof priceValue === 'number' ? priceValue.toString() : String(priceValue ?? '0'))
             total += hbarBalance * hbarPrice
 
             // Include all fungible tokens
-            for (const walletToken of wallet.wallet_tokens || []) {
-                const balance = parseFloat(walletToken.balance || '0')
+            for (const walletToken of wallet.wallet_tokens ?? []) {
+                const balance = parseFloat(walletToken.balance ?? '0')
                 const price =
                     typeof walletToken.tokens_registry?.price_usd === 'number'
                         ? walletToken.tokens_registry.price_usd
                         : parseFloat(
                               String(
-                                  walletToken.tokens_registry?.price_usd || '0'
+                                  walletToken.tokens_registry?.price_usd ?? '0'
                               )
                           )
-                const decimals = walletToken.tokens_registry?.decimals || 0
+                const decimals = walletToken.tokens_registry?.decimals ?? 0
                 const normalizedBalance = balance / Math.pow(10, decimals)
                 total += normalizedBalance * price
             }

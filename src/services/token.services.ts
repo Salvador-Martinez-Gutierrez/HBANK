@@ -1,6 +1,10 @@
 'use client'
 
 import { TOKENS } from '@/app/constants'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:token.services')
+
 
 interface TokenRelationship {
     automatic_association: boolean
@@ -38,7 +42,7 @@ export async function checkTokenAssociation(
         })
 
         if (!response.ok) {
-            console.error(
+            logger.error(
                 `Failed to fetch token relationships: ${response.status} ${response.statusText}`
             )
             return false
@@ -53,7 +57,7 @@ export async function checkTokenAssociation(
 
         return hasTokenAssociation
     } catch (error) {
-        console.error('Error checking token association:', error)
+        logger.error('Error checking token association:', error)
         return false
     }
 }

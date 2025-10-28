@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { logger } from '@/lib/logger'
+
 
 interface TVLData {
     tvl: number
@@ -30,7 +32,7 @@ export function useTVL(): UseTVLReturn {
         setError(null)
 
         try {
-            console.log('📊 Fetching TVL data...')
+            logger.info('📊 Fetching TVL data...')
             const response = await fetch('/api/tvl')
 
             if (!response.ok) {
@@ -39,12 +41,12 @@ export function useTVL(): UseTVLReturn {
 
             const data: TVLData = await response.json()
             setTVLData(data)
-            console.log('✅ TVL data updated:', data.tvl)
+            logger.info('✅ TVL data updated:', data.tvl)
         } catch (err) {
             const errorMessage =
                 err instanceof Error ? err.message : 'Failed to fetch TVL'
             setError(errorMessage)
-            console.error('❌ Error fetching TVL:', err)
+            logger.error('❌ Error fetching TVL:', err)
         } finally {
             setLoading(false)
         }
@@ -71,14 +73,14 @@ export function useTVL(): UseTVLReturn {
 
     // Auto-fetch on mount
     useEffect(() => {
-        fetchTVL()
+        void fetchTVL()
     }, [fetchTVL])
 
     return {
-        tvl: tvlData?.tvl || 0,
+        tvl: tvlData?.tvl ?? 0,
         formattedTVL,
-        breakdown: tvlData?.breakdown || null,
-        lastUpdated: tvlData?.lastUpdated || null,
+        breakdown: tvlData?.breakdown ?? null,
+        lastUpdated: tvlData?.lastUpdated ?? null,
         loading,
         error,
         refreshTVL: fetchTVL,

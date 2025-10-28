@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { HederaRateService } from '@/services/hederaRateService'
 
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:get-latest-rate')
 export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
         const hederaService = new HederaRateService()
@@ -42,7 +45,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             },
         })
     } catch (error) {
-        console.error('Error fetching latest rate:', error)
+        logger.error('Error fetching latest rate:', error)
         return NextResponse.json(
             {
                 error: 'Failed to fetch latest rate',

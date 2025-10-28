@@ -1,4 +1,8 @@
 import TelegramBot from 'node-telegram-bot-api'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:telegramService')
+
 
 export interface WithdrawNotification {
     type: 'instant' | 'standard'
@@ -26,7 +30,7 @@ export class TelegramService {
         const chatId = process.env.TELEGRAM_CHAT_ID
 
         if (!botToken || !chatId) {
-            console.log(
+            logger.info(
                 '⚠️ Telegram service disabled. Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID environment variables'
             )
             return
@@ -36,9 +40,9 @@ export class TelegramService {
             this.bot = new TelegramBot(botToken, { polling: false })
             this.chatId = chatId
             this.isEnabled = true
-            console.log('✅ Telegram service initialized successfully')
+            logger.info('✅ Telegram service initialized successfully')
         } catch (error) {
-            console.error('❌ Failed to initialize Telegram bot:', error)
+            logger.error('❌ Failed to initialize Telegram bot:', error)
         }
     }
 
@@ -49,7 +53,7 @@ export class TelegramService {
         notification: WithdrawNotification
     ): Promise<void> {
         if (!this.isEnabled || !this.bot || !this.chatId) {
-            console.log('📱 Telegram notification skipped (service disabled)')
+            logger.info('📱 Telegram notification skipped (service disabled)')
             return
         }
 
@@ -59,9 +63,9 @@ export class TelegramService {
                 parse_mode: 'Markdown',
                 disable_web_page_preview: true,
             })
-            console.log('✅ Withdrawal notification sent to Telegram')
+            logger.info('✅ Withdrawal notification sent to Telegram')
         } catch (error) {
-            console.error('❌ Failed to send Telegram notification:', error)
+            logger.error('❌ Failed to send Telegram notification:', error)
             // Don't throw error to avoid breaking the withdrawal process
         }
     }
@@ -139,12 +143,12 @@ export class TelegramService {
      */
     async sendTestMessage(): Promise<boolean> {
         if (!this.isEnabled || !this.bot || !this.chatId) {
-            console.log('📱 Telegram test message skipped (service disabled)')
+            logger.info('📱 Telegram test message skipped (service disabled)')
             return false
         }
 
         try {
-            console.log(
+            logger.info(
                 `🔍 Attempting to send test message to Chat ID: ${this.chatId}`
             )
 
@@ -164,32 +168,32 @@ export class TelegramService {
             await this.bot.sendMessage(this.chatId, message, {
                 parse_mode: 'Markdown',
             })
-            console.log('✅ Test message sent to Telegram successfully')
+            logger.info('✅ Test message sent to Telegram successfully')
             return true
         } catch (error) {
-            console.error('❌ Failed to send test message to Telegram:', error)
+            logger.error('❌ Failed to send test message to Telegram:', error)
 
             // Provide helpful error messages
             if (error instanceof Error) {
                 if (error.message.includes('chat not found')) {
-                    console.error(
+                    logger.error(
                         '💡 SOLUTION: The Chat ID might be incorrect or the bot is not added to the channel'
                     )
-                    console.error(
+                    logger.error(
                         '💡 TIP: Use /api/get-telegram-chat-id to find the correct Chat ID'
                     )
                 } else if (error.message.includes('Forbidden')) {
-                    console.error(
+                    logger.error(
                         "💡 SOLUTION: The bot might be blocked or doesn't have permission to send messages"
                     )
-                    console.error(
+                    logger.error(
                         '💡 TIP: Make sure the bot is added as administrator to your channel'
                     )
                 } else if (error.message.includes('Unauthorized')) {
-                    console.error(
+                    logger.error(
                         '💡 SOLUTION: The bot token might be incorrect'
                     )
-                    console.error(
+                    logger.error(
                         '💡 TIP: Verify your TELEGRAM_BOT_TOKEN is correct'
                     )
                 }
@@ -235,7 +239,7 @@ export class TelegramService {
                 }),
             }
         } catch (error) {
-            console.error('❌ Error getting bot info:', error)
+            logger.error('❌ Error getting bot info:', error)
             return null
         }
     }
@@ -258,14 +262,14 @@ export class TelegramService {
             const updates = await this.bot.getUpdates({ limit: 5 })
             return updates
                 .map((update) => {
-                    const message = update.message || update.channel_post
+                    const message = update.message ?? update.channel_post
                     return message
                         ? {
                               chat_id: message.chat.id,
                               chat_type: message.chat.type,
                               chat_title:
-                                  message.chat.title ||
-                                  message.chat.first_name ||
+                                  message.chat.title ??
+                                  message.chat.first_name ??
                                   'N/A',
                           }
                         : null
@@ -274,7 +278,7 @@ export class TelegramService {
                     (item): item is NonNullable<typeof item> => item !== null
                 )
         } catch (error) {
-            console.error('❌ Error getting updates:', error)
+            logger.error('❌ Error getting updates:', error)
             return []
         }
     }

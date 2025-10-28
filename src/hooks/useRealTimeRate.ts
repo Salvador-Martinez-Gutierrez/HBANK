@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { TOPICS } from '@/app/constants'
+import { logger } from '@/lib/logger'
+
 
 export interface RateData {
     rate: number
@@ -54,19 +56,19 @@ class RateManager {
 
     static getInstance(): RateManager {
         if (!RateManager.instance) {
-            console.log(
+            logger.info(
                 '🏗️ [Singleton] Creating NEW RateManager instance',
                 new Date().toISOString()
             )
             RateManager.instance = new RateManager()
         } else {
-            console.log('🔄 [Singleton] Reusing existing RateManager instance')
+            logger.info('🔄 [Singleton] Reusing existing RateManager instance')
         }
         return RateManager.instance
     }
 
     subscribe(callback: (data: RateState) => void) {
-        console.log(
+        logger.info(
             `📝 [Singleton] New subscriber added. Total: ${
                 this.subscribers.size + 1
             }`
@@ -88,7 +90,7 @@ class RateManager {
 
         return () => {
             this.subscribers.delete(callback)
-            console.log(
+            logger.info(
                 `📝 [Singleton] Subscriber removed. Total: ${this.subscribers.size}`
             )
             // Stop polling if no more subscribers
@@ -128,7 +130,7 @@ class RateManager {
 
             return null
         } catch (err) {
-            console.error('Error parsing rate message:', err)
+            logger.error('Error parsing rate message:', err)
             return null
         }
     }
@@ -151,7 +153,7 @@ class RateManager {
                 MAX_INTERVAL,
                 this.currentInterval * 2
             )
-            console.warn(
+            logger.warn(
                 `🚫 [Singleton] Rate limit detected! Backing off to ${
                     this.currentInterval / 1000
                 }s`
@@ -166,7 +168,7 @@ class RateManager {
                 MAX_INTERVAL,
                 this.currentInterval * 1.5
             )
-            console.warn(
+            logger.warn(
                 `⚠️ [Singleton] Server error detected. Increasing interval to ${
                     this.currentInterval / 1000
                 }s`
@@ -178,7 +180,7 @@ class RateManager {
                 MAX_INTERVAL,
                 this.currentInterval * 1.2
             )
-            console.warn(
+            logger.warn(
                 `❌ [Singleton] Error detected. Adjusting interval to ${
                     this.currentInterval / 1000
                 }s`
@@ -195,7 +197,7 @@ class RateManager {
         // Recuperarse gradualmente de rate limits
         if (this.rateLimitDetected && this.consecutiveSuccesses >= 3) {
             this.rateLimitDetected = false
-            console.log('✅ [Singleton] Recovered from rate limit')
+            logger.info('✅ [Singleton] Recovered from rate limit')
         }
 
         // Reducir intervalo gradualmente en éxitos consecutivos
@@ -207,7 +209,7 @@ class RateManager {
                 MIN_INTERVAL,
                 this.currentInterval * 0.9
             )
-            console.log(
+            logger.info(
                 `⚡ [Singleton] Performance good, reducing interval to ${
                     this.currentInterval / 1000
                 }s`
@@ -223,7 +225,7 @@ class RateManager {
             this.abortController = controller
 
             this.error = null
-            console.log(
+            logger.info(
                 '🔍 [Singleton] Fetching latest rate from Mirror Node...'
             )
 
@@ -253,7 +255,7 @@ class RateManager {
             const result = await response.json()
 
             if (!result.messages || result.messages.length === 0) {
-                console.log('📨 [Singleton] No messages found in topic')
+                logger.info('📨 [Singleton] No messages found in topic')
                 if (!this.lastSequence) {
                     const fallbackRate: RateData = {
                         rate: 1.0,
@@ -262,7 +264,7 @@ class RateManager {
                         lastUpdated: new Date(),
                     }
                     this.lastSequence = fallbackRate.sequenceNumber
-                    console.log(
+                    logger.info(
                         '📊 [Singleton] Using fallback rate:',
                         fallbackRate.rate
                     )
@@ -271,7 +273,7 @@ class RateManager {
                 return null
             }
 
-            console.log(
+            logger.info(
                 `📨 [Singleton] Found ${result.messages.length} messages in topic`
             )
 
@@ -281,7 +283,7 @@ class RateManager {
                     if (this.lastSequence !== msg.sequence_number.toString()) {
                         this.lastSequence = msg.sequence_number.toString()
                         rateData.sequenceNumber = msg.sequence_number.toString()
-                        console.log(
+                        logger.info(
                             '📊 [Singleton] New rate found:',
                             rateData.rate
                         )
@@ -289,13 +291,13 @@ class RateManager {
                     } else if (!this.lastSequence) {
                         this.lastSequence = msg.sequence_number.toString()
                         rateData.sequenceNumber = msg.sequence_number.toString()
-                        console.log(
+                        logger.info(
                             '📊 [Singleton] Initial rate loaded:',
                             rateData.rate
                         )
                         return rateData
                     } else {
-                        console.log(
+                        logger.info(
                             '📊 [Singleton] Rate data unchanged, skipping update'
                         )
                         return null
@@ -303,17 +305,17 @@ class RateManager {
                 }
             }
 
-            console.log('📊 [Singleton] No valid rate messages found')
+            logger.info('📊 [Singleton] No valid rate messages found')
             return null
         } catch (err) {
             if (err instanceof Error && err.name === 'AbortError') {
-                console.log('🚫 [Singleton] Request aborted')
+                logger.info('🚫 [Singleton] Request aborted')
                 return null
             }
 
             // Handle error with adaptive system
             this.handleError(err, response)
-            console.error('Mirror Node fetch failed:', err)
+            logger.error('Mirror Node fetch failed:', err)
             const errorMessage =
                 err instanceof Error ? err.message : String(err)
             this.error = `Failed to fetch from Mirror Node: ${errorMessage}`
@@ -325,7 +327,7 @@ class RateManager {
         if (!this.isPolling || this.isPollingInProgress) return
 
         this.isPollingInProgress = true
-        console.log(
+        logger.info(
             `🔄 [Singleton] Starting poll cycle (interval: ${
                 this.currentInterval / 1000
             }s)`
@@ -346,7 +348,7 @@ class RateManager {
                 this.notifySubscribers()
             }
         } catch (err) {
-            console.error('Polling failed:', err)
+            logger.error('Polling failed:', err)
             this.retryCount++
 
             if (this.retryCount >= MAX_RETRIES) {
@@ -362,10 +364,10 @@ class RateManager {
 
         if (this.isPolling) {
             this.pollingTimeout = setTimeout(
-                () => this.poll(),
+                () => void this.poll(),
                 this.currentInterval
             )
-            console.log(
+            logger.info(
                 `⏰ [Singleton] Next poll scheduled in ${
                     this.currentInterval / 1000
                 }s`
@@ -377,12 +379,12 @@ class RateManager {
         if (this.isPolling) return
 
         this.isPolling = true
-        console.log(
+        logger.info(
             '🚀 [Singleton] Starting Mirror Node polling for topic',
             TOPIC_ID,
             `(${this.currentInterval / 1000}s interval)`
         )
-        this.poll()
+        void this.poll()
     }
 
     private stopPolling() {
@@ -396,7 +398,7 @@ class RateManager {
         }
         this.abortController = null
         this.isPollingInProgress = false
-        console.log('🛑 [Singleton] Stopped polling')
+        logger.info('🛑 [Singleton] Stopped polling')
     }
 
     async refetch(): Promise<void> {
@@ -412,7 +414,7 @@ class RateManager {
                 this.handleSuccess()
             }
         } catch (err) {
-            console.error('Manual refetch failed:', err)
+            logger.error('Manual refetch failed:', err)
             this.error = `Refetch failed: ${err}`
         } finally {
             this.isLoading = false

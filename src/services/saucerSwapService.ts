@@ -1,10 +1,15 @@
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:saucerSwapService')
+
 /**
  * SaucerSwap Service
  * Integrates with SaucerSwap API to fetch token prices and metadata for Hedera mainnet
  */
 
-const SAUCERSWAP_API = process.env.SAUCERSWAP_API_URL!
-const SAUCERSWAP_API_KEY = process.env.SAUCERSWAP_API_KEY!
+// Environment variables - will fail at runtime if not set
+const SAUCERSWAP_API = process.env.SAUCERSWAP_API_URL ?? ''
+const SAUCERSWAP_API_KEY = process.env.SAUCERSWAP_API_KEY ?? ''
 
 interface SaucerSwapToken {
     id: string
@@ -49,7 +54,7 @@ export async function getAllSaucerSwapTokens(): Promise<{
     const now = Date.now()
     if (cachedTokensMap && now - cacheTimestamp < CACHE_TTL) {
         const cacheAge = Math.round((now - cacheTimestamp) / 1000)
-        console.log(
+        logger.info(
             `🔄 Using cached SaucerSwap tokens (age: ${cacheAge}s, TTL: ${
                 CACHE_TTL / 1000
             }s)`
@@ -63,11 +68,11 @@ export async function getAllSaucerSwapTokens(): Promise<{
     // 🚀 REQUEST COALESCING: If there's already a pending request, wait for it
     // This ensures that multiple simultaneous calls share the same API request
     if (pendingRequest) {
-        console.log('⏳ Request already in progress, waiting for result...')
+        logger.info('⏳ Request already in progress, waiting for result...')
         return pendingRequest
     }
 
-    console.log(
+    logger.info(
         `🔄 Cache ${
             cachedTokensMap ? 'expired' : 'empty'
         }, fetching fresh data from SaucerSwap...`
@@ -76,7 +81,7 @@ export async function getAllSaucerSwapTokens(): Promise<{
     // Create a new pending request that other calls can await
     pendingRequest = (async () => {
         try {
-            console.log('📡 Fetching tokens from SaucerSwap API...')
+            logger.info('📡 Fetching tokens from SaucerSwap API...')
 
             // Add retry logic for 429 errors
             let retries = 0
@@ -95,7 +100,7 @@ export async function getAllSaucerSwapTokens(): Promise<{
                     retries++
                     if (retries < maxRetries) {
                         const waitTime = 2000 * retries // Exponential backoff: 2s, 4s, 6s
-                        console.warn(
+                        logger.warn(
                             `⚠️ Rate limited (429). Retrying in ${waitTime}ms... (${retries}/${maxRetries})`
                         )
                         await new Promise((resolve) =>
@@ -109,9 +114,9 @@ export async function getAllSaucerSwapTokens(): Promise<{
                 break
             }
 
-            if (!response || !response.ok) {
+            if (!response?.ok) {
                 throw new Error(
-                    `SaucerSwap API error: ${response?.status || 'unknown'}`
+                    `SaucerSwap API error: ${response?.status ?? 'unknown'}`
                 )
             }
 
@@ -121,14 +126,14 @@ export async function getAllSaucerSwapTokens(): Promise<{
             cachedTokensMap = new Map(tokens.map((t) => [t.id, t]))
             cacheTimestamp = now
 
-            console.log(`✅ Loaded ${tokens.length} tokens from SaucerSwap`)
+            logger.info(`✅ Loaded ${tokens.length} tokens from SaucerSwap`)
 
             return {
                 success: true,
                 tokens,
             }
         } catch (error) {
-            console.error('Error fetching SaucerSwap tokens:', error)
+            logger.error('Error fetching SaucerSwap tokens:', error)
             return {
                 success: false,
                 error:
@@ -165,7 +170,15 @@ export async function getTokenInfo(tokenId: string): Promise<{
         }
     }
 
-    const token = cachedTokensMap!.get(tokenId)
+    // Safe to use - cache loaded above or error returned
+    if (!cachedTokensMap) {
+        return {
+            success: false,
+            error: 'Token cache not available',
+        }
+    }
+
+    const token = cachedTokensMap.get(tokenId)
 
     if (!token) {
         return {
@@ -204,7 +217,7 @@ export async function getTokenPrice(tokenId: string): Promise<{
             error: 'Price not available for this token',
         }
     } catch (error) {
-        console.error(`Error fetching token ${tokenId} price:`, error)
+        logger.error(`Error fetching token ${tokenId} price:`, error)
         return {
             success: false,
             priceUsd: 0,
@@ -230,7 +243,7 @@ export async function getBatchTokenPrices(
         const result = await getTokenPrice(tokenId)
         prices.push({
             tokenId,
-            priceUsd: result.priceUsd || 0,
+            priceUsd: result.priceUsd ?? 0,
             timestamp,
         })
     }

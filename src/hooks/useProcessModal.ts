@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react'
 import { ProcessType, ProcessStep } from '@/components/process-modal'
 import { formatProcessError } from '@/lib/process-error'
+import { logger } from '@/lib/logger'
+
 
 export interface UseProcessModalProps {
     onComplete?: () => void | Promise<void>
@@ -32,7 +34,7 @@ export function useProcessModal({
                 toToken?: string
             }
         ) => {
-            console.log(
+            logger.info(
                 '🚀 Starting process:',
                 type,
                 'with steps:',
@@ -43,10 +45,10 @@ export function useProcessModal({
             const stepsWithFirstActive = initialSteps.map((step, index) =>
                 index === 0 ? { ...step, status: 'active' as const } : step
             )
-            console.log('📝 Steps with first active:', stepsWithFirstActive)
+            logger.info('📝 Steps with first active:', stepsWithFirstActive)
             setSteps(stepsWithFirstActive)
             setCurrentStep(initialSteps[0]?.id || '')
-            console.log('✅ Current step set to:', initialSteps[0]?.id)
+            logger.info('✅ Current step set to:', initialSteps[0]?.id)
             setAmount(options?.amount)
             setFromToken(options?.fromToken)
             setToToken(options?.toToken)
@@ -76,9 +78,9 @@ export function useProcessModal({
     )
 
     const nextStep = useCallback(() => {
-        console.log('⏭️ nextStep called, currentStep:', currentStep)
+        logger.info('⏭️ nextStep called, currentStep:', currentStep)
         setSteps((prev) => {
-            console.log(
+            logger.info(
                 '📊 Current steps before nextStep:',
                 prev.map((s) => ({ id: s.id, status: s.status }))
             )
@@ -97,7 +99,7 @@ export function useProcessModal({
             const indexToUse =
                 currentIndex !== -1 ? currentIndex : fallbackIndex
 
-            console.log(
+            logger.info(
                 '🔍 Active step index:',
                 currentIndex,
                 'fallback index:',
@@ -107,7 +109,7 @@ export function useProcessModal({
             )
 
             if (indexToUse === -1) {
-                console.warn('⚠️ No active step found to advance from')
+                logger.warn('⚠️ No active step found to advance from')
                 return prev
             }
 
@@ -125,7 +127,7 @@ export function useProcessModal({
                     ...updatedSteps[nextIndex],
                     status: 'active',
                 }
-                console.log(
+                logger.info(
                     '✅ Moving to next step:',
                     prev[nextIndex].id,
                     'at index:',
@@ -134,10 +136,10 @@ export function useProcessModal({
                 // Update currentStep state after updating steps
                 setTimeout(() => setCurrentStep(prev[nextIndex].id), 0)
             } else {
-                console.log('🏁 No more steps to advance to')
+                logger.info('🏁 No more steps to advance to')
             }
 
-            console.log(
+            logger.info(
                 '📊 Updated steps after nextStep:',
                 updatedSteps.map((s) => ({ id: s.id, status: s.status }))
             )
@@ -161,20 +163,22 @@ export function useProcessModal({
 
     const completeProcess = useCallback(() => {
         // Close modal after a delay and execute callback
-        setTimeout(async () => {
-            console.log(
-                'ProcessModal completing process with callback:',
-                !!onComplete
-            )
-            setIsOpen(false)
-            if (onComplete) {
-                console.log('Executing onComplete callback')
-                try {
-                    await onComplete()
-                } catch (error) {
-                    console.error('Error in onComplete callback:', error)
+        setTimeout(() => {
+            void (async () => {
+                logger.info(
+                    'ProcessModal completing process with callback:',
+                    !!onComplete
+                )
+                setIsOpen(false)
+                if (onComplete) {
+                    logger.info('Executing onComplete callback')
+                    try {
+                        await onComplete()
+                    } catch (error) {
+                        logger.error('Error in onComplete callback:', error)
+                    }
                 }
-            }
+            })()
         }, 2000)
     }, [onComplete])
 

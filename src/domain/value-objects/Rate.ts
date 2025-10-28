@@ -11,6 +11,7 @@
 import { InvalidValueError, ExpiredRateError } from '@/domain/errors/DomainError'
 import { Currency } from './Money'
 
+
 /**
  * Rate validity duration in milliseconds (5 minutes)
  */
@@ -26,8 +27,8 @@ const RATE_VALIDITY_DURATION = 5 * 60 * 1000
  * @example
  * ```typescript
  * const rate = Rate.create(1.005, '123456')
- * console.log(`Rate: ${rate.value}`)
- * console.log(`Expires: ${rate.validUntil}`)
+ * logger.info(`Rate: ${rate.value}`)
+ * logger.info(`Expires: ${rate.validUntil}`)
  *
  * if (!rate.isExpired()) {
  *   const husd = rate.convert(100, 'USDC', 'HUSD')
@@ -84,7 +85,7 @@ export class Rate {
      * ```
      */
     static create(value: number, sequenceNumber: string, timestamp?: Date): Rate {
-        const now = timestamp || new Date()
+        const now = timestamp ?? new Date()
         const validUntil = new Date(now.getTime() + RATE_VALIDITY_DURATION)
         return new Rate(value, sequenceNumber, now, validUntil)
     }
@@ -238,7 +239,7 @@ export class Rate {
      * ```
      */
     isExpired(now?: Date): boolean {
-        const currentTime = now || new Date()
+        const currentTime = now ?? new Date()
         return currentTime > this.validUntil
     }
 
@@ -288,7 +289,7 @@ export class Rate {
      * @example
      * ```typescript
      * const remaining = rate.getRemainingValidity()
-     * console.log(`Rate expires in ${remaining / 1000} seconds`)
+     * logger.info(`Rate expires in ${remaining / 1000} seconds`)
      * ```
      */
     getRemainingValidity(): number {
@@ -326,7 +327,7 @@ export class Rate {
      * @example
      * ```typescript
      * const rate = Rate.create(1.005, '123')
-     * console.log(rate.toDisplayString())
+     * logger.info(rate.toDisplayString())
      * // "1.00500 USDC/HUSD (seq: 123, expires: 2025-10-28 10:05:00)"
      * ```
      */

@@ -68,7 +68,7 @@ export function TokenInput({
             </div>
             <div className='flex justify-between items-center'>
                 <div className='text-xs text-muted-foreground'>
-                    {usdValue || '$0.0000'}
+                    {usdValue ?? '$0.0000'}
                 </div>
                 {showBalance && (
                     <div className='text-xs text-muted-foreground'>

@@ -24,6 +24,8 @@ import {
 } from '@/hooks/useInstantWithdraw'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { formatCurrency } from '@/lib/formatters'
+import { logger } from '@/lib/logger'
+
 
 export function HCFTradingInterface() {
     // State management
@@ -72,7 +74,7 @@ export function HCFTradingInterface() {
 
     // Debug effect to track maxInstantWithdrawable changes
     useEffect(() => {
-        console.log(
+        logger.info(
             '🔍 [HCFTradingInterface] maxInstantWithdrawable updated:',
             maxInstantWithdrawable
         )
@@ -215,7 +217,7 @@ export function HCFTradingInterface() {
                 <RedeemActionButton
                     fromAmount={fromAmount}
                     hUSDBalance={parseFloat(balances.hUSD || '0') || 0}
-                    onBalanceRefresh={enhancedRefreshBalances}
+                    onBalanceRefresh={() => void enhancedRefreshBalances()}
                     onInputClear={handleInputClear}
                     rateData={rateData}
                     redeemType={redeemType}

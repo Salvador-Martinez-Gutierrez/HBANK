@@ -10,6 +10,7 @@
 
 import { Deposit } from '@/domain/entities/Deposit'
 
+
 /**
  * Pagination options for querying deposits
  */
@@ -73,7 +74,7 @@ export interface IDepositRepository {
      * ```typescript
      * const deposit = await repository.findById('0.0.123456@1234567890.000000000')
      * if (deposit) {
-     *   console.log(`Found deposit: ${deposit.id}`)
+     *   logger.info(`Found deposit: ${deposit.id}`)
      * }
      * ```
      */
@@ -133,7 +134,7 @@ export interface IDepositRepository {
      * ```typescript
      * const deposit = Deposit.create('0.0.12345', 100, rate)
      * const saved = await repository.save(deposit)
-     * console.log(`Deposit saved with ID: ${saved.id}`)
+     * logger.info(`Deposit saved with ID: ${saved.id}`)
      * ```
      */
     save(deposit: Deposit): Promise<Deposit>
@@ -174,7 +175,7 @@ export interface IDepositRepository {
      * @example
      * ```typescript
      * const count = await repository.count({ status: 'completed' })
-     * console.log(`Total completed deposits: ${count}`)
+     * logger.info(`Total completed deposits: ${count}`)
      * ```
      */
     count(filters?: DepositFilterOptions): Promise<number>

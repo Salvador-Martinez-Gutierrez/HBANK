@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
+import { logger } from '@/lib/logger'
+
 
 interface HistoryTransaction {
     timestamp: string
@@ -55,11 +57,11 @@ export function useHistory({
     const fetchHistory = useCallback(
         async (cursor?: string, append = false) => {
             if (!userAccountId || !enabled) {
-                console.log(`🚫 useHistory: Skipping fetch - userAccountId: ${userAccountId}, enabled: ${enabled}`)
+                logger.info(`🚫 useHistory: Skipping fetch - userAccountId: ${userAccountId}, enabled: ${enabled}`)
                 return
             }
 
-            console.log(`🔄 useHistory: Fetching history for user: ${userAccountId}`)
+            logger.info(`🔄 useHistory: Fetching history for user: ${userAccountId}`)
             setIsLoading(true)
             setError(null)
 
@@ -83,17 +85,17 @@ export function useHistory({
 
                 if (data.success && data.history) {
                     if (append) {
-                        setHistory(prev => [...prev, ...data.history!])
+                        setHistory(prev => [...prev, ...(data.history ?? [])])
                     } else {
                         setHistory(data.history)
                     }
-                    setHasMore(data.hasMore || false)
+                    setHasMore(data.hasMore ?? false)
                     setNextCursor(data.nextCursor)
                 } else {
-                    throw new Error(data.error || 'Failed to fetch history')
+                    throw new Error(data.error ?? 'Failed to fetch history')
                 }
             } catch (err) {
-                console.error('Error fetching history:', err)
+                logger.error('Error fetching history:', err)
                 setError(err instanceof Error ? err.message : 'Unknown error')
             } finally {
                 setIsLoading(false)
@@ -122,6 +124,8 @@ export function useHistory({
                 return prev - 1
             })
         }, 1000)
+
+        return () => clearInterval(timer)
     }, [fetchHistory, isRefreshDisabled])
 
     // Load more history
@@ -133,7 +137,7 @@ export function useHistory({
     // Initial fetch when component mounts or userAccountId changes
     useEffect(() => {
         if (enabled && userAccountId) {
-            fetchHistory()
+            void fetchHistory()
         }
     }, [fetchHistory, enabled, userAccountId])
 
@@ -142,8 +146,8 @@ export function useHistory({
         isLoading,
         error,
         hasMore,
-        refresh,
-        loadMore,
+        refresh: () => void refresh(),
+        loadMore: () => void loadMore(),
         isRefreshDisabled,
         refreshTimeRemaining,
     }

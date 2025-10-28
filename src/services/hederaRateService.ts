@@ -1,5 +1,9 @@
 import { Client } from '@hashgraph/sdk'
 import axios from 'axios'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:hederaRateService')
+
 
 export interface RateMessage {
     rate: number
@@ -46,7 +50,7 @@ export class HederaRateService {
             const response = await axios.get(url, { headers })
 
             if (!response.data.messages || response.data.messages.length === 0) {
-                console.log('No messages found in topic:', this.topicId)
+                logger.info('No messages found in topic:', this.topicId)
                 return null
             }
 
@@ -62,8 +66,8 @@ export class HederaRateService {
 
                     // Look for the rate field in the message
                     const rate =
-                        parsedMessage.rate ||
-                        parsedMessage.valor ||
+                        parsedMessage.rate ??
+                        parsedMessage.valor ??
                         parsedMessage.value
 
                     if (rate !== undefined && rate !== null) {
@@ -75,18 +79,18 @@ export class HederaRateService {
                         }
                     }
                 } catch (e) {
-                    console.error('Error parsing message:', e)
+                    logger.error('Error parsing message:', e)
                     // Try with the next message
                 }
             }
 
-            console.log('No valid rate messages found in the retrieved messages')
+            logger.info('No valid rate messages found in the retrieved messages')
             return null
         } catch (error) {
-            console.error('Error in getLatestRate:', error)
+            logger.error('Error in getLatestRate:', error)
             if (axios.isAxiosError(error)) {
-                console.error('API Response:', error.response?.data)
-                console.error('API Status:', error.response?.status)
+                logger.error('API Response:', error.response?.data)
+                logger.error('API Status:', error.response?.status)
             }
             throw error
         }
@@ -119,8 +123,8 @@ export class HederaRateService {
                     const parsedMessage = JSON.parse(decodedMessage)
 
                     const rate =
-                        parsedMessage.rate ||
-                        parsedMessage.valor ||
+                        parsedMessage.rate ??
+                        parsedMessage.valor ??
                         parsedMessage.value
 
                     if (rate !== undefined && rate !== null) {
@@ -132,13 +136,13 @@ export class HederaRateService {
                         })
                     }
                 } catch (e) {
-                    console.error('Error parsing message:', e)
+                    logger.error('Error parsing message:', e)
                 }
             }
 
             return rates
         } catch (error) {
-            console.error('Error in getRecentRates:', error)
+            logger.error('Error in getRecentRates:', error)
             return []
         }
     }
@@ -176,7 +180,7 @@ export class HederaRateService {
                 }
             })
         } catch (error) {
-            console.error('Error in debugTopicMessages:', error)
+            logger.error('Error in debugTopicMessages:', error)
             return []
         }
     }

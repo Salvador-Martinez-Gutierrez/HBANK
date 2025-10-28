@@ -13,6 +13,8 @@
 
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
+
 
 export interface TokenPriceUpdate {
     token_address: string
@@ -33,7 +35,7 @@ export function useTokenPriceRealtime(
     useEffect(() => {
         if (!enabled) return
 
-        console.log('🔴 Subscribing to token price updates...')
+        logger.info('🔴 Subscribing to token price updates...')
 
         // Create channel to listen for changes in tokens_registry
         const channel = supabase
@@ -47,7 +49,7 @@ export function useTokenPriceRealtime(
                     // Solo escuchar cambios en price_usd
                 },
                 (payload) => {
-                    console.log('💰 Token price update:', payload)
+                    logger.info('💰 Token price update:', payload)
 
                     // Extract updated token data
                     if (payload.new && 'token_address' in payload.new) {
@@ -63,13 +65,13 @@ export function useTokenPriceRealtime(
                 }
             )
             .subscribe((status) => {
-                console.log('📡 Realtime subscription status:', status)
+                logger.info('📡 Realtime subscription status:', status)
             })
 
         // Cleanup: desuscribirse cuando el componente se desmonte
         return () => {
-            console.log('🔴 Unsubscribing from token price updates...')
-            channel.unsubscribe()
+            logger.info('🔴 Unsubscribing from token price updates...')
+            void channel.unsubscribe()
         }
     }, [onPriceUpdate, enabled])
 }
@@ -87,7 +89,7 @@ export function useAllTokenPricesRealtime(
     useEffect(() => {
         if (!enabled) return
 
-        console.log('🔴 Subscribing to all token prices...')
+        logger.info('🔴 Subscribing to all token prices...')
 
         const priceMap = new Map<string, string>()
 
@@ -111,7 +113,7 @@ export function useAllTokenPricesRealtime(
                         // Notify with updated map
                         onUpdate(new Map(priceMap))
 
-                        console.log(
+                        logger.info(
                             `💰 Price updated: ${tokenAddress} = $${priceUsd}`
                         )
                     }
@@ -120,8 +122,8 @@ export function useAllTokenPricesRealtime(
             .subscribe()
 
         return () => {
-            console.log('🔴 Unsubscribing from all token prices...')
-            channel.unsubscribe()
+            logger.info('🔴 Unsubscribing from all token prices...')
+            void channel.unsubscribe()
         }
     }, [onUpdate, enabled])
 }

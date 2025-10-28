@@ -132,7 +132,7 @@ export class DepositService {
             .setAccountId(userAccountId)
             .execute(depositClient)
         const userUsdcBalanceTiny = userBalance.tokens?.get(usdcTokenId)
-            ? BigInt(userBalance.tokens?.get(usdcTokenId)!.toString())
+            ? BigInt(userBalance.tokens.get(usdcTokenId)?.toString() ?? '0')
             : BigInt(0)
 
         if (userUsdcBalanceTiny < requiredUsdcTiny) {
@@ -152,7 +152,7 @@ export class DepositService {
         const emissionsHusdBalanceTiny = emissionsBalance.tokens?.get(
             husdTokenId
         )
-            ? BigInt(emissionsBalance.tokens?.get(husdTokenId)!.toString())
+            ? BigInt(emissionsBalance.tokens.get(husdTokenId)?.toString() ?? '0')
             : BigInt(0)
 
         if (emissionsHusdBalanceTiny < requiredHusdTiny) {

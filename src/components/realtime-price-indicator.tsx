@@ -27,14 +27,20 @@ export function RealtimePriceIndicator({
             const timer = setTimeout(() => setIsConnected(true), 1000)
             return () => clearTimeout(timer)
         } else {
-            setIsConnected(false)
+            // Use timeout to avoid synchronous setState
+            setTimeout(() => {
+                setIsConnected(false)
+            }, 0)
         }
     }, [enabled])
 
     useEffect(() => {
         if (lastUpdate) {
             // Mostrar animación de pulso cuando hay actualización
-            setShowPulse(true)
+            // Use timeout to avoid synchronous setState
+            setTimeout(() => {
+                setShowPulse(true)
+            }, 0)
             const timer = setTimeout(() => setShowPulse(false), 2000)
             return () => clearTimeout(timer)
         }

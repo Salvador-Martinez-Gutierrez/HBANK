@@ -1,4 +1,8 @@
 import { supabase } from '@/lib/supabase'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:portfolioPriceService')
+
 
 /**
  * Token price mapping for Hedera tokens
@@ -24,7 +28,7 @@ export async function fetchTokenPrices(
             .join(',')
 
         if (!coingeckoIds) {
-            console.log('No CoinGecko IDs found for tokens')
+            logger.info('No CoinGecko IDs found for tokens')
             return {}
         }
 
@@ -53,7 +57,7 @@ export async function fetchTokenPrices(
 
         return prices
     } catch (error) {
-        console.error('Error fetching token prices:', error)
+        logger.error('Error fetching token prices:', error)
         return {}
     }
 }
@@ -70,7 +74,7 @@ export async function updateAllTokenPrices() {
             .order('token_address') as { data: Array<{ token_address: string | null }> | null, error: unknown }
 
         if (error) {
-            console.error('Error fetching tokens:', error)
+            logger.error('Error fetching tokens:', error)
             return { success: false, error: 'Failed to fetch tokens' }
         }
 
@@ -99,20 +103,20 @@ export async function updateAllTokenPrices() {
             if (!updateError) {
                 updatedCount++
             } else {
-                console.error(
+                logger.error(
                     `Error updating price for ${tokenAddress}:`,
                     updateError
                 )
             }
         }
 
-        console.log(`✅ Updated prices for ${updatedCount} tokens`)
+        logger.info(`✅ Updated prices for ${updatedCount} tokens`)
         return {
             success: true,
             message: `Updated ${updatedCount} token prices`,
         }
     } catch (error) {
-        console.error('Error updating token prices:', error)
+        logger.error('Error updating token prices:', error)
         return { success: false, error: 'Failed to update prices' }
     }
 }
@@ -139,13 +143,13 @@ export async function updateTokenPrice(tokenAddress: string) {
             .eq('token_address', tokenAddress)
 
         if (error) {
-            console.error('Error updating token price:', error)
+            logger.error('Error updating token price:', error)
             return { success: false, error: 'Failed to update price' }
         }
 
         return { success: true, price }
     } catch (error) {
-        console.error('Error in updateTokenPrice:', error)
+        logger.error('Error in updateTokenPrice:', error)
         return { success: false, error: 'Update failed' }
     }
 }
@@ -159,12 +163,12 @@ export async function fetchHederaTokenPrice(
     try {
         // This is a placeholder - you'll need to implement actual price fetching
         // from DEX pools or other sources on Hedera
-        console.log(`Fetching Hedera price for ${tokenId}`)
+        logger.info(`Fetching Hedera price for ${tokenId}`)
 
         // For now, return null
         return null
     } catch (error) {
-        console.error('Error fetching Hedera token price:', error)
+        logger.error('Error fetching Hedera token price:', error)
         return null
     }
 }

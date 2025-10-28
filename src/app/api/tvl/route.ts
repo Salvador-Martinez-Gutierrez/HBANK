@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { HederaService } from '@/services/hederaService'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:tvl')
 
 interface TVLResponse {
     tvl: number
@@ -13,10 +16,10 @@ interface TVLResponse {
 
 export async function GET(_req: NextRequest): Promise<NextResponse> {
     try {
-        console.log('📊 Calculating TVL from wallet balances...')
+        logger.info('Calculating TVL from wallet balances')
 
         const hederaService = new HederaService()
-        const usdcTokenId = process.env.USDC_TOKEN_ID!
+        const usdcTokenId = process.env.USDC_TOKEN_ID ?? ''
 
         // Get USDC balances from the 3 wallets that hold USDC
         const [
@@ -26,17 +29,17 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
         ] = await Promise.all([
             // Instant withdraw wallet
             hederaService.checkBalance(
-                process.env.INSTANT_WITHDRAW_WALLET_ID!,
+                process.env.INSTANT_WITHDRAW_WALLET_ID ?? '',
                 usdcTokenId
             ),
             // Standard withdraw wallet
             hederaService.checkBalance(
-                process.env.STANDARD_WITHDRAW_WALLET_ID!,
+                process.env.STANDARD_WITHDRAW_WALLET_ID ?? '',
                 usdcTokenId
             ),
             // Deposits wallet
             hederaService.checkBalance(
-                process.env.DEPOSIT_WALLET_ID!,
+                process.env.DEPOSIT_WALLET_ID ?? '',
                 usdcTokenId
             ),
         ])
@@ -51,11 +54,11 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
         const tvl =
             instantWithdrawBalance + standardWithdrawBalance + depositsBalance
 
-        console.log('💰 TVL Calculation:', {
-            'Instant Withdraw USDC': instantWithdrawBalance,
-            'Standard Withdraw USDC': standardWithdrawBalance,
-            'Deposits USDC': depositsBalance,
-            'Total TVL': tvl,
+        logger.info('TVL calculation complete', {
+            instantWithdrawUSDC: instantWithdrawBalance,
+            standardWithdrawUSDC: standardWithdrawBalance,
+            depositsUSDC: depositsBalance,
+            totalTVL: tvl,
         })
 
         return NextResponse.json({
@@ -64,7 +67,9 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
             lastUpdated: new Date().toISOString(),
         } as TVLResponse)
     } catch (error) {
-        console.error('❌ Error calculating TVL:', error)
+        logger.error('Error calculating TVL', {
+            error: error instanceof Error ? error.message : String(error),
+        })
         return NextResponse.json(
             {
                 error: 'Failed to calculate TVL',

@@ -1,4 +1,6 @@
 import { useCallback } from 'react'
+import { logger } from '@/lib/logger'
+
 
 interface UseWithdrawSubmitProps {
     userAccountId?: string
@@ -56,16 +58,16 @@ export function useWithdrawSubmit({
                     return {
                         success: true,
                         requestId: data.requestId,
-                        scheduleId: data.transferTxId || data.scheduleId,
+                        scheduleId: data.transferTxId ?? data.scheduleId,
                     }
                 } else {
                     return {
                         success: false,
-                        error: data.error || 'Failed to submit withdrawal',
+                        error: data.error ?? 'Failed to submit withdrawal',
                     }
                 }
             } catch (err) {
-                console.error('Error submitting withdrawal:', err)
+                logger.error('Error submitting withdrawal:', err)
                 return {
                     success: false,
                     error: err instanceof Error ? err.message : 'Unknown error',

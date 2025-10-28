@@ -25,7 +25,7 @@ export const GET = withRouteHandler(
         // Verify JWT
         const payload = await verifyJWT(token)
 
-        if (!payload || !payload.sub) {
+        if (!payload?.sub) {
             return NextResponse.json(
                 { error: 'Unauthorized: Invalid token' },
                 { status: 401 }

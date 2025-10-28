@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { WithdrawService } from '@/services/withdrawService'
 import { TOKENS, ACCOUNTS } from '@/app/backend-constants'
 
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:history')
 interface HistoryTransaction {
     timestamp: string
     type: 'deposit' | 'withdraw' | 'instant_withdraw'
@@ -26,7 +29,7 @@ interface HistoryResponse {
 export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
         const user = req.nextUrl.searchParams.get('user')
-        const limitParam = req.nextUrl.searchParams.get('limit') || '20'
+        const limitParam = req.nextUrl.searchParams.get('limit') ?? '20'
         const cursor = req.nextUrl.searchParams.get('cursor')
 
         if (!user) {
@@ -50,7 +53,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             )
         }
 
-        console.log(`📚 Fetching history for user: ${user}, limit: ${limitNum}`)
+        logger.info(`📚 Fetching history for user: ${user}, limit: ${limitNum}`)
 
         const withdrawService = new WithdrawService()
         const historyItems: HistoryTransaction[] = []
@@ -58,13 +61,13 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         // 1. Get withdrawals from the service
         try {
             const withdrawals = await withdrawService.getUserWithdrawals(user)
-            console.log(
+            logger.info(
                 `📊 Found ${withdrawals.length} withdrawals from WithdrawService`
             )
 
             // Convert withdrawals to history items
             for (const withdrawal of withdrawals) {
-                console.log(
+                logger.info(
                     `🔄 Processing withdrawal: ${withdrawal.requestId}, status: ${withdrawal.status}, txId: ${withdrawal.txId}`
                 )
 
@@ -79,7 +82,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                     amountHUSD: withdrawal.amountHUSD,
                     rate: withdrawal.rate,
                     status: withdrawal.status,
-                    txId: withdrawal.txId || withdrawal.requestId,
+                    txId: withdrawal.txId ?? withdrawal.requestId,
                     failureReason: withdrawal.failureReason,
                 }
 
@@ -106,17 +109,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 historyItems.push(historyItem)
             }
         } catch (withdrawError) {
-            console.warn('Failed to fetch withdrawals:', withdrawError)
+            logger.warn('Failed to fetch withdrawals:', withdrawError)
             // Continue without withdrawals rather than failing entirely
         }
 
         // 2. Get user deposits from Mirror Node
         try {
             const deposits = await fetchUserDeposits(user, limitNum * 2) // Get more to account for filtering
-            console.log(`📊 Adding ${deposits.length} deposits to history`)
+            logger.info(`📊 Adding ${deposits.length} deposits to history`)
             historyItems.push(...deposits)
         } catch (depositError) {
-            console.warn(
+            logger.warn(
                 'Failed to fetch deposits from Mirror Node:',
                 depositError
             )
@@ -131,9 +134,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         )
 
         // Log first few items to debug sorting
-        console.log(`🕐 First 5 items after sorting:`)
+        logger.info(`🕐 First 5 items after sorting:`)
         historyItems.slice(0, 5).forEach((item, i) => {
-            console.log(`   ${i + 1}. ${item.type} - ${item.timestamp}`)
+            logger.info(`   ${i + 1}. ${item.type} - ${item.timestamp}`)
         })
 
         // 4. Apply pagination
@@ -144,14 +147,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
         // Log transaction types for debugging
         const typeCount = paginatedHistory.reduce((acc, item) => {
-            acc[item.type] = (acc[item.type] || 0) + 1
+            acc[item.type] = (acc[item.type] ?? 0) + 1
             return acc
         }, {} as Record<string, number>)
 
-        console.log(
+        logger.info(
             `✅ Found ${historyItems.length} total history items, returning ${paginatedHistory.length}`
         )
-        console.log(`📈 Transaction types: ${JSON.stringify(typeCount)}`)
+        logger.info(`📈 Transaction types: ${JSON.stringify(typeCount)}`)
 
         return NextResponse.json({
             success: true,
@@ -160,7 +163,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             nextCursor: hasMore ? endIndex.toString() : undefined,
         } as HistoryResponse)
     } catch (error) {
-        console.error('❌ Error fetching user history:', error)
+        logger.error('❌ Error fetching user history:', error)
         return NextResponse.json(
             {
                 success: false,
@@ -188,10 +191,10 @@ async function fetchUserDeposits(
         limit * 2
     }` // Get more to filter
 
-    console.log(`🔍 Fetching deposits from Mirror Node: ${queryUrl}`)
-    console.log(`🔍 Using HUSD_TOKEN_ID: ${HUSD_TOKEN_ID}`)
-    console.log(`🔍 Using USDC_TOKEN_ID: ${USDC_TOKEN_ID}`)
-    console.log(`🔍 Using DEPOSIT_WALLET_ID: ${DEPOSIT_WALLET_ID}`)
+    logger.info(`🔍 Fetching deposits from Mirror Node: ${queryUrl}`)
+    logger.info(`🔍 Using HUSD_TOKEN_ID: ${HUSD_TOKEN_ID}`)
+    logger.info(`🔍 Using USDC_TOKEN_ID: ${USDC_TOKEN_ID}`)
+    logger.info(`🔍 Using DEPOSIT_WALLET_ID: ${DEPOSIT_WALLET_ID}`)
 
     const response = await fetch(queryUrl)
     if (!response.ok) {
@@ -199,17 +202,17 @@ async function fetchUserDeposits(
     }
 
     const data = await response.json()
-    const transactions = data.transactions || []
+    const transactions = data.transactions ?? []
 
     const deposits: HistoryTransaction[] = []
 
-    console.log(
+    logger.info(
         `🔍 Processing ${transactions.length} transactions from Mirror Node`
     )
 
     for (const tx of transactions) {
         if (!tx.token_transfers || !Array.isArray(tx.token_transfers)) {
-            console.log(
+            logger.info(
                 `⚠️ Skipping tx ${tx.transaction_id} - no token transfers`
             )
             continue
@@ -223,16 +226,16 @@ async function fetchUserDeposits(
         // Get decimals multipliers
         const HUSD_MULTIPLIER = Math.pow(
             10,
-            parseInt(process.env.HUSD_DECIMALS || '3')
+            parseInt(process.env.HUSD_DECIMALS ?? '3')
         )
         const USDC_MULTIPLIER = 1_000_000 // USDC has 6 decimals
 
-        console.log(
+        logger.info(
             `🔍 Processing tx ${tx.transaction_id} with ${tx.token_transfers.length} token transfers`
         )
 
         for (const transfer of tx.token_transfers) {
-            console.log(
+            logger.info(
                 `  Token: ${transfer.token_id}, Account: ${transfer.account}, Amount: ${transfer.amount}`
             )
 
@@ -240,14 +243,14 @@ async function fetchUserDeposits(
             if (transfer.token_id === USDC_TOKEN_ID) {
                 if (transfer.account === userAccountId && transfer.amount < 0) {
                     userSentUSDC = Math.abs(transfer.amount) / USDC_MULTIPLIER
-                    console.log(`    💵 User sent ${userSentUSDC} USDC`)
+                    logger.info(`    💵 User sent ${userSentUSDC} USDC`)
                 } else if (
                     transfer.account === DEPOSIT_WALLET_ID &&
                     transfer.amount > 0
                 ) {
                     depositWalletReceivedUSDC =
                         transfer.amount / USDC_MULTIPLIER
-                    console.log(
+                    logger.info(
                         `    ✅ Deposit wallet received ${depositWalletReceivedUSDC} USDC`
                     )
                 }
@@ -257,7 +260,7 @@ async function fetchUserDeposits(
             if (transfer.token_id === HUSD_TOKEN_ID) {
                 if (transfer.account === userAccountId && transfer.amount > 0) {
                     userReceivedHUSD = transfer.amount / HUSD_MULTIPLIER
-                    console.log(`    ✅ User received ${userReceivedHUSD} hUSD`)
+                    logger.info(`    ✅ User received ${userReceivedHUSD} hUSD`)
                 }
             }
         }
@@ -269,7 +272,7 @@ async function fetchUserDeposits(
             userReceivedHUSD > 0 &&
             Math.abs(userSentUSDC - depositWalletReceivedUSDC) < 0.001 // USDC amounts should match
         ) {
-            console.log(
+            logger.info(
                 `💰 Found deposit: user sent ${userSentUSDC} USDC, deposit wallet received ${depositWalletReceivedUSDC} USDC, user received ${userReceivedHUSD} hUSD`
             )
 
@@ -283,7 +286,7 @@ async function fetchUserDeposits(
                 timestamp = new Date(parseFloat(timestamp) * 1000).toISOString()
             }
 
-            console.log(
+            logger.info(
                 `📅 Deposit timestamp: ${timestamp} (original: ${tx.consensus_timestamp})`
             )
 
@@ -300,19 +303,19 @@ async function fetchUserDeposits(
             }
 
             deposits.push(deposit)
-            console.log(
+            logger.info(
                 `✅ Added deposit to history: ${JSON.stringify(deposit)}`
             )
         } else {
             if (userSentUSDC > 0 || userReceivedHUSD > 0) {
-                console.log(
+                logger.info(
                     `❌ Not a valid deposit: userSentUSDC=${userSentUSDC}, depositWalletReceived=${depositWalletReceivedUSDC}, userReceivedHUSD=${userReceivedHUSD}`
                 )
             }
         }
     }
 
-    console.log(
+    logger.info(
         `✅ Found ${deposits.length} deposits for user ${userAccountId}`
     )
     return deposits
@@ -330,7 +333,7 @@ async function getInstantWithdrawals(userAccountId: string): Promise<HistoryTran
         // Get messages from the last 30 days
         const url = `${TESTNET_MIRROR_NODE_ENDPOINT}/api/v1/topics/${WITHDRAW_TOPIC_ID}/messages?order=desc&limit=100`
 
-        console.log(`⚡ Fetching instant withdrawals from topic: ${url}`)
+        logger.info(`⚡ Fetching instant withdrawals from topic: ${url}`)
 
         const response = await fetch(url)
         if (!response.ok) {
@@ -367,16 +370,16 @@ async function getInstantWithdrawals(userAccountId: string): Promise<HistoryTran
                     instantWithdrawals.push(historyItem)
                 }
             } catch (parseError) {
-                console.warn('Failed to parse instant withdrawal message:', parseError)
+                logger.warn('Failed to parse instant withdrawal message:', parseError)
                 continue
             }
         }
 
-        console.log(`⚡ Found ${instantWithdrawals.length} instant withdrawals for user ${userAccountId}`)
+        logger.info(`⚡ Found ${instantWithdrawals.length} instant withdrawals for user ${userAccountId}`)
         return instantWithdrawals
 
     } catch (error) {
-        console.error('Error fetching instant withdrawals:', error)
+        logger.error('Error fetching instant withdrawals:', error)
         return []
     }
 }

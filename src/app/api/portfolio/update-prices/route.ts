@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateAllTokenPrices } from '@/services/portfolioPriceService'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:portfolio:update-prices')
+
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
     try {
@@ -21,7 +25,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
         return NextResponse.json(result)
     } catch (error) {
-        console.error('Error updating prices:', error)
+        logger.error('Error updating prices:', error)
         return NextResponse.json(
             {
                 success: false,
@@ -52,7 +56,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
         return NextResponse.json(result)
     } catch (error) {
-        console.error('Error updating prices:', error)
+        logger.error('Error updating prices:', error)
         return NextResponse.json(
             {
                 success: false,

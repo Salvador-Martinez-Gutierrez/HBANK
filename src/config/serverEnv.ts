@@ -1,4 +1,8 @@
 import { z } from 'zod'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('config:serverEnv')
+
 
 const accountIdRegex = /^\d+\.\d+\.\d+$/
 const tokenIdRegex = /^\d+\.\d+\.\d+$/
@@ -55,7 +59,7 @@ const parseInteger = (value: string | undefined, fallback: number): number => {
 const envResult = envSchema.safeParse(process.env)
 
 if (!envResult.success) {
-    console.error(
+    logger.error(
         '❌ Invalid server environment configuration',
         envResult.error.flatten()
     )

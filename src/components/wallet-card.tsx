@@ -61,28 +61,28 @@ export function WalletCard({
         let total = 0
 
         // Add HBAR value
-        const hbarBalance = parseFloat(String(wallet.hbar_balance || '0'))
+        const hbarBalance = parseFloat(String(wallet.hbar_balance ?? '0'))
         const priceUsd = wallet.hbar_price_usd
-        const hbarPrice = parseFloat(typeof priceUsd === 'number' ? priceUsd.toString() : String(priceUsd || '0'))
+        const hbarPrice = parseFloat(typeof priceUsd === 'number' ? priceUsd.toString() : String(priceUsd ?? '0'))
         total += hbarBalance * hbarPrice
 
         // Add fungible tokens value
-        for (const walletToken of wallet.wallet_tokens || []) {
-            const balance = parseFloat(walletToken.balance || '0')
+        for (const walletToken of wallet.wallet_tokens ?? []) {
+            const balance = parseFloat(walletToken.balance ?? '0')
             const priceUsd = walletToken.tokens_registry?.price_usd
             const price = parseFloat(
                 typeof priceUsd === 'number'
                     ? priceUsd.toString()
-                    : priceUsd || '0'
+                    : priceUsd ?? '0'
             )
-            const decimals = walletToken.tokens_registry?.decimals || 0
+            const decimals = walletToken.tokens_registry?.decimals ?? 0
             const normalizedBalance = balance / Math.pow(10, decimals)
             total += normalizedBalance * price
         }
 
         // Add DeFi positions value
-        for (const defiPosition of wallet.wallet_defi || []) {
-            const valueUsd = parseFloat(defiPosition.value_usd || '0')
+        for (const defiPosition of wallet.wallet_defi ?? []) {
+            const valueUsd = parseFloat(defiPosition.value_usd ?? '0')
             total += valueUsd
         }
 
@@ -90,9 +90,9 @@ export function WalletCard({
     }
 
     const totalValue = calculateTotalValue()
-    const hbarBalance = parseFloat(String(wallet.hbar_balance || '0'))
+    const hbarBalance = parseFloat(String(wallet.hbar_balance ?? '0'))
     const hbarPriceValue = wallet.hbar_price_usd
-    const hbarPriceUsd = parseFloat(typeof hbarPriceValue === 'number' ? hbarPriceValue.toString() : String(hbarPriceValue || '0'))
+    const hbarPriceUsd = parseFloat(typeof hbarPriceValue === 'number' ? hbarPriceValue.toString() : String(hbarPriceValue ?? '0'))
     const fungibleCount = wallet.wallet_tokens?.length || 0
     const defiCount = wallet.wallet_defi?.length || 0
     const nftCount = wallet.wallet_nfts?.length || 0
@@ -103,11 +103,10 @@ export function WalletCard({
 
     // Prepare data for AssetSections component
     const fungibleTokens = useMemo(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tokens = (wallet.wallet_tokens || []).map((wt: any) => {
+        const tokens = (wallet.wallet_tokens ?? []).map((wt) => {
             const balance = wt.balance
-            const decimals = wt.tokens_registry?.decimals || 0
-            const price_usd = wt.tokens_registry?.price_usd || '0'
+            const decimals = wt.tokens_registry?.decimals ?? 0
+            const price_usd = wt.tokens_registry?.price_usd ?? '0'
 
             // Calculate value in USD for sorting
             const normalizedBalance =
@@ -128,17 +127,15 @@ export function WalletCard({
         })
 
         // Sort by USD value (descending)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return tokens.sort((a: any, b: any) => b.valueUsd - a.valueUsd)
+        return tokens.sort((a, b) => b.valueUsd - a.valueUsd)
     }, [wallet.wallet_tokens])
 
     const defiPositions = useMemo(() => {
-        return wallet.wallet_defi || []
+        return wallet.wallet_defi ?? []
     }, [wallet.wallet_defi])
 
     const nfts = useMemo(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (wallet.wallet_nfts || []).map((nft: any) => ({
+        return (wallet.wallet_nfts ?? []).map((nft) => ({
             id: nft.id,
             token_id: nft.token_id,
             serial_number: nft.serial_number,
@@ -174,7 +171,7 @@ export function WalletCard({
                         <WalletIcon className='w-5 h-5' />
                         <div className='min-w-0'>
                             <CardTitle className='text-lg'>
-                                {wallet.label || 'Unnamed Wallet'}
+                                {wallet.label ?? 'Unnamed Wallet'}
                             </CardTitle>
                             <p className='text-sm text-muted-foreground font-mono truncate'>
                                 {wallet.wallet_address}

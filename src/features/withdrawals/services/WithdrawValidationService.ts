@@ -370,7 +370,7 @@ export class WithdrawValidationService {
      * })
      *
      * if (!result.isValid) {
-     *   console.log(result.error)
+     *   logger.info(result.error)
      * }
      * ```
      */

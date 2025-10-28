@@ -34,7 +34,10 @@ export function ThemeProvider({
     // Initialize theme from localStorage on client side
     const storedTheme = localStorage.getItem(storageKey) as Theme
     if (storedTheme) {
-      setTheme(storedTheme)
+      // Use timeout to avoid synchronous setState
+      setTimeout(() => {
+        setTheme(storedTheme)
+      }, 0)
     }
   }, [storageKey])
 

@@ -56,7 +56,7 @@ export enum DepositStatus {
  *
  * // Calculate HUSD amount
  * const husd = deposit.calculateHusdAmount()
- * console.log(`Will receive: ${husd.toDisplayString()}`)
+ * logger.info(`Will receive: ${husd.toDisplayString()}`)
  * ```
  */
 export class Deposit {
@@ -213,7 +213,7 @@ export class Deposit {
      * ```typescript
      * const deposit = Deposit.create('0.0.12345', 100, rate)
      * const husd = deposit.calculateHusdAmount()
-     * console.log(husd.toDisplayString()) // "99.502 HUSD"
+     * logger.info(husd.toDisplayString()) // "99.502 HUSD"
      * ```
      */
     calculateHusdAmount(): Money {
@@ -300,7 +300,7 @@ export class Deposit {
      * ```
      */
     fail(reason?: string): Deposit {
-        const failMemo = reason ? `${this.memo || ''} [Failed: ${reason}]` : this.memo
+        const failMemo = reason ? `${this.memo ?? ''} [Failed: ${reason}]` : this.memo
 
         return new Deposit(
             this.id,

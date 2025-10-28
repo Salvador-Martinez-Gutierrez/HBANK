@@ -4,6 +4,10 @@ import {
     WithdrawResult,
     WithdrawStatus,
 } from '@/types/withdrawal'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:withdrawService')
+
 import {
     WITHDRAW_TOPIC_ID,
     TESTNET_MIRROR_NODE_ENDPOINT,
@@ -45,7 +49,7 @@ export class WithdrawService {
 
             return true
         } catch (error) {
-            console.error('Error validating rate:', error)
+            logger.error('Error validating rate:', error)
             return false
         }
     }
@@ -72,12 +76,12 @@ export class WithdrawService {
                 url += `?${params.toString()}`
             }
 
-            console.log('Fetching withdrawal messages from:', url)
+            logger.info('Fetching withdrawal messages from:', url)
 
             const response = await fetch(url)
             if (!response.ok) {
                 if (response.status === 404) {
-                    console.log(
+                    logger.info(
                         'Withdrawal topic not found or has no messages yet. This is normal for new setups.'
                     )
                     return []
@@ -86,19 +90,19 @@ export class WithdrawService {
             }
 
             const data = await response.json()
-            console.log(
+            logger.info(
                 `📋 Fetched ${
-                    data.messages?.length || 0
+                    data.messages?.length ?? 0
                 } raw messages from withdrawal topic`
             )
 
             const messages: (WithdrawRequest | WithdrawResult)[] = []
 
-            for (const msg of data.messages || []) {
+            for (const msg of data.messages ?? []) {
                 try {
                     // Check if message exists and is not empty
                     if (!msg.message) {
-                        console.log(
+                        logger.info(
                             '⚠️ Skipping message without message content'
                         )
                         continue
@@ -110,7 +114,7 @@ export class WithdrawService {
                     ).toString('utf8')
                     const parsedMessage = JSON.parse(decodedMessage)
 
-                    console.log('📝 Parsed message:', {
+                    logger.info('📝 Parsed message:', {
                         type: parsedMessage.type,
                         requestId: parsedMessage.requestId,
                         user: parsedMessage.user,
@@ -130,7 +134,7 @@ export class WithdrawService {
                             processedMessage = {
                                 type: 'withdraw_result',
                                 requestId:
-                                    parsedMessage.payload.requestId ||
+                                    parsedMessage.payload.requestId ??
                                     parsedMessage.requestId,
                                 status: parsedMessage.payload.success
                                     ? 'completed'
@@ -151,15 +155,15 @@ export class WithdrawService {
                         messages.push(processedMessage)
                     }
                 } catch (parseError) {
-                    console.warn('Failed to parse message:', parseError)
+                    logger.warn('Failed to parse message:', parseError)
                     continue
                 }
             }
 
-            console.log(`✅ Found ${messages.length} valid withdrawal messages`)
+            logger.info(`✅ Found ${messages.length} valid withdrawal messages`)
             return messages
         } catch (error) {
-            console.error('Error fetching withdrawal messages:', error)
+            logger.error('Error fetching withdrawal messages:', error)
             return []
         }
     }
@@ -183,13 +187,13 @@ export class WithdrawService {
 
             for (const message of messages) {
                 if (message.type === 'withdraw_request') {
-                    const existing = requestMap.get(message.requestId) || {}
+                    const existing = requestMap.get(message.requestId) ?? {}
                     requestMap.set(message.requestId, {
                         ...existing,
                         request: message,
                     })
                 } else if (message.type === 'withdraw_result') {
-                    const existing = requestMap.get(message.requestId) || {}
+                    const existing = requestMap.get(message.requestId) ?? {}
                     requestMap.set(message.requestId, {
                         ...existing,
                         result: message,
@@ -204,7 +208,7 @@ export class WithdrawService {
                 process.env.SKIP_WITHDRAW_LOCK_PERIOD === 'true'
 
             if (skipLockPeriod) {
-                console.log(
+                logger.info(
                     '⚠️ TESTING MODE: Skipping 48h lock period for withdrawals'
                 )
             }
@@ -219,11 +223,11 @@ export class WithdrawService {
                         pendingRequests.push(request)
 
                         if (skipLockPeriod) {
-                            console.log(
+                            logger.info(
                                 `📋 Processing withdrawal ${request.requestId} (lock period skipped for testing)`
                             )
                         } else {
-                            console.log(
+                            logger.info(
                                 `📋 Processing withdrawal ${request.requestId} (48h period completed)`
                             )
                         }
@@ -233,7 +237,7 @@ export class WithdrawService {
                         const hoursRemaining = Math.ceil(
                             timeRemaining / (1000 * 60 * 60)
                         )
-                        console.log(
+                        logger.info(
                             `⏳ Withdrawal ${request.requestId} still locked for ${hoursRemaining} hours`
                         )
                     }
@@ -242,7 +246,7 @@ export class WithdrawService {
 
             return pendingRequests
         } catch (error) {
-            console.error('Error getting pending withdrawals:', error)
+            logger.error('Error getting pending withdrawals:', error)
             return []
         }
     }
@@ -284,7 +288,7 @@ export class WithdrawService {
                     message.type === 'withdraw_result' &&
                     userRequestIds.has(message.requestId)
                 ) {
-                    const existing = userRequestMap.get(message.requestId) || {}
+                    const existing = userRequestMap.get(message.requestId) ?? {}
                     userRequestMap.set(message.requestId, {
                         ...existing,
                         result: message,
@@ -302,7 +306,7 @@ export class WithdrawService {
                         user: request.user,
                         amountHUSD: request.amountHUSD,
                         rate: request.rate,
-                        status: result?.status || 'pending',
+                        status: result?.status ?? 'pending',
                         requestedAt: request.requestedAt,
                         unlockAt: request.unlockAt,
                         ...(result?.txId && { txId: result.txId }),
@@ -326,7 +330,7 @@ export class WithdrawService {
 
             return withdrawals
         } catch (error) {
-            console.error('Error getting user withdrawals:', error)
+            logger.error('Error getting user withdrawals:', error)
             return []
         }
     }

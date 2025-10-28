@@ -6,6 +6,10 @@
 
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:portfolioAuthService')
+
 import type { AuthPayload, AuthResponse } from '@/types/portfolio'
 
 
@@ -30,7 +34,7 @@ export async function verifyAndAuthenticate(
 
         return { success: true }
     } catch (error) {
-        console.error('Authentication error:', error)
+        logger.error('Authentication error:', error)
         return { success: false, error: 'Authentication failed' }
     }
 }
@@ -54,7 +58,7 @@ export async function registerOrGetUser(walletAddress: string) {
         )
 
         if (existingAuthUser) {
-            console.log('Auth user already exists:', existingAuthUser.id)
+            logger.info('Auth user already exists:', existingAuthUser.id)
 
             // Check if user exists in our database table (use maybeSingle to handle duplicates)
             const { data: existingDbUser } = await supabaseAdmin
@@ -64,14 +68,14 @@ export async function registerOrGetUser(walletAddress: string) {
                 .maybeSingle()
 
             if (existingDbUser) {
-                console.log(
+                logger.info(
                     'User found in database:',
                     (existingDbUser as { id: string }).id
                 )
                 return { success: true, user: existingDbUser }
             } else {
                 // Auth user exists but not in our database, create record using upsert
-                console.log(
+                logger.info(
                     'Auth user exists, creating database record:',
                     existingAuthUser.id
                 )
@@ -91,7 +95,7 @@ export async function registerOrGetUser(walletAddress: string) {
                     .maybeSingle()
 
                 if (insertError) {
-                    console.error(
+                    logger.error(
                         'Error creating database record:',
                         insertError
                     )
@@ -109,7 +113,7 @@ export async function registerOrGetUser(walletAddress: string) {
 
                 return {
                     success: true,
-                    user: newDbUser || {
+                    user: newDbUser ?? {
                         id: existingAuthUser.id,
                         wallet_address: walletAddress,
                         created_at: new Date().toISOString(),
@@ -120,7 +124,7 @@ export async function registerOrGetUser(walletAddress: string) {
         }
 
         // User doesn't exist in auth, create new user using ADMIN client (auto-confirms email)
-        console.log('Creating new auth user:', email)
+        logger.info('Creating new auth user:', email)
         const { data: signUpData, error: signUpError } =
             await supabaseAdmin.auth.admin.createUser({
                 email,
@@ -132,12 +136,12 @@ export async function registerOrGetUser(walletAddress: string) {
             })
 
         if (signUpError) {
-            console.error('Error during user creation:', signUpError)
+            logger.error('Error during user creation:', signUpError)
             return { success: false, error: 'Failed to register user' }
         }
 
         const userId = signUpData.user.id
-        console.log(
+        logger.info(
             'Auth user created successfully with auto-confirmed email:',
             userId
         )
@@ -159,7 +163,7 @@ export async function registerOrGetUser(walletAddress: string) {
             .maybeSingle()
 
         if (insertError) {
-            console.error(
+            logger.error(
                 'Error inserting new user into database:',
                 insertError
             )
@@ -177,7 +181,7 @@ export async function registerOrGetUser(walletAddress: string) {
 
         return {
             success: true,
-            user: newUser || {
+            user: newUser ?? {
                 id: userId,
                 wallet_address: walletAddress,
                 created_at: new Date().toISOString(),
@@ -185,7 +189,7 @@ export async function registerOrGetUser(walletAddress: string) {
             },
         }
     } catch (error) {
-        console.error('Error in registerOrGetUser:', error)
+        logger.error('Error in registerOrGetUser:', error)
         return { success: false, error: 'Database error' }
     }
 }
@@ -212,7 +216,7 @@ export async function getSessionCredentials(
             },
         }
     } catch (error) {
-        console.error('Error generating session credentials:', error)
+        logger.error('Error generating session credentials:', error)
         return { success: false, error: 'Failed to generate credentials' }
     }
 }
@@ -224,12 +228,12 @@ export async function signOut() {
     try {
         const { error } = await supabase.auth.signOut()
         if (error) {
-            console.error('Error signing out:', error)
+            logger.error('Error signing out:', error)
             return { success: false, error: 'Failed to sign out' }
         }
         return { success: true }
     } catch (error) {
-        console.error('Error in signOut:', error)
+        logger.error('Error in signOut:', error)
         return { success: false, error: 'Sign out error' }
     }
 }
@@ -259,17 +263,17 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
             }
 
             const serverClient = createServerClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+                process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
+                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
                 {
                     cookies: {
                         getAll() {
                             // Parse cookies from request
-                            const cookieString = req.headers?.cookie || ''
-                            console.log('🍪 Raw cookie string:', cookieString)
+                            const cookieString = req.headers?.cookie ?? ''
+                            logger.info('🍪 Raw cookie string:', cookieString)
 
                             if (!cookieString) {
-                                console.log('⚠️ No cookies found in request')
+                                logger.info('⚠️ No cookies found in request')
                                 return []
                             }
 
@@ -284,7 +288,7 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
                                         c.name && c.value
                                 )
 
-                            console.log(
+                            logger.info(
                                 '🍪 Parsed cookies:',
                                 cookies.map(
                                     (c: { name: string; value: string }) =>
@@ -315,12 +319,12 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
         }
 
         if (!authUser) {
-            console.log('No auth user found')
+            logger.info('No auth user found')
             return { success: false, user: null }
         }
 
         const typedAuthUser = authUser as { id: string; email?: string }
-        console.log('Auth user found:', typedAuthUser.email)
+        logger.info('Auth user found:', typedAuthUser.email)
 
         // Extract wallet address from email
         const walletAddress = typedAuthUser.email
@@ -329,11 +333,11 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
             .replace(/-/g, '.')
 
         if (!walletAddress) {
-            console.log('Could not extract wallet address from email')
+            logger.info('Could not extract wallet address from email')
             return { success: false, user: null }
         }
 
-        console.log(
+        logger.info(
             'Looking up user in database:',
             walletAddress,
             'ID:',
@@ -349,13 +353,13 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
             .maybeSingle()
 
         if (dbError) {
-            console.error('Error fetching user from database:', dbError)
+            logger.error('Error fetching user from database:', dbError)
             return { success: false, user: null }
         }
 
         // If user doesn't exist in database, create it
         if (!dbUser) {
-            console.log(
+            logger.info(
                 'User not found in database, creating record for:',
                 authUser.id
             )
@@ -374,7 +378,7 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
                 .maybeSingle()
 
             if (insertError) {
-                console.error('Error creating user record:', insertError)
+                logger.error('Error creating user record:', insertError)
                 // Return minimal user info even if upsert fails
                 return {
                     success: true,
@@ -387,11 +391,11 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
                 }
             }
 
-            console.log('User record created successfully:', newUser)
+            logger.info('User record created successfully:', newUser)
 
             return {
                 success: true,
-                user: newUser || {
+                user: newUser ?? {
                     id: authUser.id,
                     wallet_address: walletAddress,
                     created_at: new Date().toISOString(),
@@ -400,10 +404,10 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
             }
         }
 
-        console.log('Database user found:', (dbUser as { id: string }).id)
+        logger.info('Database user found:', (dbUser as { id: string }).id)
         return { success: true, user: dbUser }
     } catch (error) {
-        console.error('Error getting current user:', error)
+        logger.error('Error getting current user:', error)
         return { success: false, user: null }
     }
 }

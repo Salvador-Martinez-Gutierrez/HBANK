@@ -12,33 +12,33 @@
 export const HEDERA_CONFIG = {
     network: 'testnet',
     mirrorNode:
-        process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+        process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
         'https://testnet.mirrornode.hedera.com',
 }
 
 // Environment endpoints
 export const TESTNET_MIRROR_NODE_ENDPOINT =
-    process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+    process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
     'https://testnet.mirrornode.hedera.com'
 
 // ===================================
 // TOPIC IDS
 // ===================================
 
-export const WITHDRAW_TOPIC_ID = process.env.WITHDRAW_TOPIC_ID || '0.0.6908400'
-export const RATES_TOPIC_ID = process.env.RATES_TOPIC_ID || '0.0.6908395'
+export const WITHDRAW_TOPIC_ID = process.env.WITHDRAW_TOPIC_ID ?? '0.0.6908400'
+export const RATES_TOPIC_ID = process.env.RATES_TOPIC_ID ?? '0.0.6908395'
 
 // ===================================
 // ACCOUNT IDS
 // ===================================
 
 export const ACCOUNTS = {
-    treasury: process.env.TREASURY_WALLET_ID || '0.0.6887438',
-    emissions: process.env.EMISSIONS_WALLET_ID || '0.0.6887460',
-    instantWithdraw: process.env.INSTANT_WITHDRAW_WALLET_ID || '0.0.6887450',
-    standardWithdraw: process.env.STANDARD_WITHDRAW_WALLET_ID || '0.0.6887453',
-    operator: process.env.HEDERA_OPERATOR_ID || '0.0.6887438',
-    deposit: process.env.DEPOSIT_WALLET_ID || '0.0.6887448', // Wallet de depósitos
+    treasury: process.env.TREASURY_WALLET_ID ?? '0.0.6887438',
+    emissions: process.env.EMISSIONS_WALLET_ID ?? '0.0.6887460',
+    instantWithdraw: process.env.INSTANT_WITHDRAW_WALLET_ID ?? '0.0.6887450',
+    standardWithdraw: process.env.STANDARD_WITHDRAW_WALLET_ID ?? '0.0.6887453',
+    operator: process.env.HEDERA_OPERATOR_ID ?? '0.0.6887438',
+    deposit: process.env.DEPOSIT_WALLET_ID ?? '0.0.6887448', // Wallet de depósitos
 }
 
 // ===================================
@@ -47,8 +47,8 @@ export const ACCOUNTS = {
 
 export const TOKENS = {
     hbar: '0.0.0', // Native HBAR
-    usdc: process.env.USDC_TOKEN_ID || '0.0.429274',
-    husd: process.env.HUSD_TOKEN_ID || '0.0.6889338',
+    usdc: process.env.USDC_TOKEN_ID ?? '0.0.429274',
+    husd: process.env.HUSD_TOKEN_ID ?? '0.0.6889338',
 }
 
 // ===================================

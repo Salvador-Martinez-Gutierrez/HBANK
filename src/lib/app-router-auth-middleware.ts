@@ -71,7 +71,7 @@ export const withAuthRoute = <TPayload>(
             // Verify JWT
             const payload = await verifyJWT(token)
 
-            if (!payload || !payload.sub) {
+            if (!payload?.sub) {
                 logger.warn('Invalid JWT token')
                 return NextResponse.json(
                     { error: 'Unauthorized: Invalid token' },

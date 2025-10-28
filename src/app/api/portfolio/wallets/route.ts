@@ -39,7 +39,9 @@ export const GET = withAuthRoute(
                 wallets,
             })
         } catch (error) {
-            console.error('Error in wallets API:', error)
+            _logger.error('Error in wallets API GET', {
+                error: error instanceof Error ? error.message : String(error),
+            })
             return NextResponse.json(
                 {
                     success: false,
@@ -104,7 +106,9 @@ export const POST = withAuthRoute(
                 wallet: result.wallet,
             })
         } catch (error) {
-            console.error('Error in wallets API:', error)
+            _logger.error('Error in wallets API POST', {
+                error: error instanceof Error ? error.message : String(error),
+            })
             return NextResponse.json(
                 {
                     success: false,
@@ -151,7 +155,9 @@ export const PATCH = withAuthRoute(
                 success: true,
             })
         } catch (error) {
-            console.error('Error in wallets API:', error)
+            _logger.error('Error in wallets API PATCH', {
+                error: error instanceof Error ? error.message : String(error),
+            })
             return NextResponse.json(
                 {
                     success: false,
@@ -195,7 +201,9 @@ export const DELETE = withAuthRoute(
                 success: true,
             })
         } catch (error) {
-            console.error('Error in wallets API:', error)
+            _logger.error('Error in wallets API DELETE', {
+                error: error instanceof Error ? error.message : String(error),
+            })
             return NextResponse.json(
                 {
                     success: false,

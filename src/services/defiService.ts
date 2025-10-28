@@ -1,11 +1,16 @@
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:defiService')
+
 /**
  * DeFi Service
  * Integrates with SaucerSwap and Bonzo Finance APIs to fetch DeFi positions
  */
 
-const SAUCERSWAP_API = process.env.SAUCERSWAP_API_URL!
-const SAUCERSWAP_API_KEY = process.env.SAUCERSWAP_API_KEY!
-const BONZO_API = process.env.BONZO_API_URL!
+// Environment variables - will fail at runtime if not set
+const SAUCERSWAP_API = process.env.SAUCERSWAP_API_URL ?? ''
+const SAUCERSWAP_API_KEY = process.env.SAUCERSWAP_API_KEY ?? ''
+const BONZO_API = process.env.BONZO_API_URL ?? ''
 
 // ========================================
 // TYPES
@@ -138,13 +143,13 @@ export async function getLpTokenData(
         const matchingPool = pools.find((pool) => pool.lpToken.id === tokenId)
 
         if (matchingPool) {
-            console.log(`✅ Found LP pool for token ${tokenId}`)
+            logger.info(`✅ Found LP pool for token ${tokenId}`)
             return matchingPool
         }
 
         return undefined
     } catch (error) {
-        console.error('Error fetching LP token data:', error)
+        logger.error('Error fetching LP token data:', error)
         return undefined
     }
 }
@@ -175,10 +180,10 @@ export async function getLpTokenDataByPoolId(
         }
 
         const data: LpTokenData = await response.json()
-        console.log(`✅ Fetched LP data for pool ${poolId}`)
+        logger.info(`✅ Fetched LP data for pool ${poolId}`)
         return data
     } catch (error) {
-        console.error('Error in getLpTokenDataByPoolId:', error)
+        logger.error('Error in getLpTokenDataByPoolId:', error)
         return null
     }
 }
@@ -212,12 +217,12 @@ export async function fetchFarmTotals(accountId: string): Promise<FarmTotal[]> {
         const data: FarmTotal[] = await response.json()
         // Filter to include only farms with total > 0
         const activeFarms = data.filter((farm) => parseFloat(farm.total) > 0)
-        console.log(
+        logger.info(
             `✅ Found ${activeFarms.length} active farms for account ${accountId}`
         )
         return activeFarms
     } catch (error) {
-        console.error('Error in fetchFarmTotals:', error)
+        logger.error('Error in fetchFarmTotals:', error)
         return []
     }
 }
@@ -245,14 +250,14 @@ export async function fetchPoolId(id: number): Promise<number | null> {
         const farm = farms.find((f) => f.id === id)
 
         if (farm) {
-            console.log(`✅ Found pool ID ${farm.poolId} for farm ${id}`)
+            logger.info(`✅ Found pool ID ${farm.poolId} for farm ${id}`)
             return farm.poolId
         }
 
-        console.log(`⚠️ No farm found with id: ${id}`)
+        logger.info(`⚠️ No farm found with id: ${id}`)
         return null
     } catch (error) {
-        console.error('Error in fetchPoolId:', error)
+        logger.error('Error in fetchPoolId:', error)
         return null
     }
 }
@@ -311,7 +316,7 @@ export async function getBonzoLendingData(
                 tokenId: reserve.hts_address,
             }))
 
-        console.log(
+        logger.info(
             `✅ Found ${positions.length} Bonzo lending positions for account ${accountId}`
         )
 
@@ -321,7 +326,7 @@ export async function getBonzoLendingData(
             positions,
         }
     } catch (error) {
-        console.error('Error fetching Bonzo lending data:', error)
+        logger.error('Error fetching Bonzo lending data:', error)
         return undefined
     }
 }

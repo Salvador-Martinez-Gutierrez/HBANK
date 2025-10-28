@@ -19,7 +19,7 @@ declare global {
 
 // In-memory storage of nonces
 // Key: nonce, Value: StoredNonce
-const nonceStore = global.__nonceStore || new Map<string, StoredNonce>()
+const nonceStore = global.__nonceStore ?? new Map<string, StoredNonce>()
 
 // Persist in global for development
 if (process.env.NODE_ENV === 'development') {

@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { logger } from '@/lib/logger'
+
 
 interface AddWalletDialogProps {
     onAddWallet: (
@@ -76,13 +78,13 @@ export function AddWalletDialog({
 
                 // Sync the newly added wallet
                 if (onSyncWallet && result.wallet) {
-                    onSyncWallet(result.wallet.id, result.wallet.wallet_address)
+                    void onSyncWallet(result.wallet.id, result.wallet.wallet_address)
                 }
             } else {
-                toast.error(result.error || 'Failed to add wallet')
+                toast.error(result.error ?? 'Failed to add wallet')
             }
         } catch (error) {
-            console.error('Error adding wallet:', error)
+            logger.error('Error adding wallet:', error)
             toast.error('Failed to add wallet')
         } finally {
             setLoading(false)
@@ -108,7 +110,7 @@ export function AddWalletDialog({
                             : 'You have reached the maximum of 5 wallets per account.'}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={(e) => void handleSubmit(e)}>
                     <div className='grid gap-4 py-4 mb-4'>
                         <div className='grid gap-2'>
                             <Label htmlFor='wallet-address'>Account ID *</Label>

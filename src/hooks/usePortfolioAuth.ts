@@ -10,6 +10,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { logger } from '@/lib/logger'
+
 import type { User } from '@/types/portfolio'
 
 export function usePortfolioAuth(currentWalletId?: string | null) {
@@ -26,7 +28,7 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
 
         // If wallet was disconnected (currentWalletId is now null/undefined)
         if (previousWalletId && !currentWalletId) {
-            console.log('🚪 Wallet disconnected, clearing session...')
+            logger.info('🚪 Wallet disconnected, clearing session...')
 
             // Clear the session immediately
             setUser(null)
@@ -35,10 +37,10 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             // Sign out via API
             fetch('/api/auth/logout', { method: 'POST' })
                 .then(() => {
-                    console.log('✅ Session cleared after wallet disconnect')
+                    logger.info('✅ Session cleared after wallet disconnect')
                 })
                 .catch((error: Error) => {
-                    console.error('❌ Error signing out:', error)
+                    logger.error('❌ Error signing out:', error)
                 })
         }
         // If wallet changed (and we had a previous wallet), sign out
@@ -47,13 +49,13 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             currentWalletId &&
             previousWalletId !== currentWalletId
         ) {
-            console.log(
+            logger.info(
                 '🔄 Wallet changed from',
                 previousWalletId,
                 'to',
                 currentWalletId
             )
-            console.log('🚪 Signing out previous wallet session...')
+            logger.info('🚪 Signing out previous wallet session...')
 
             // Clear the session immediately
             setUser(null)
@@ -62,10 +64,10 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             // Sign out via API
             fetch('/api/auth/logout', { method: 'POST' })
                 .then(() => {
-                    console.log('✅ Previous session cleared')
+                    logger.info('✅ Previous session cleared')
                 })
                 .catch((error: Error) => {
-                    console.error('❌ Error signing out:', error)
+                    logger.error('❌ Error signing out:', error)
                 })
         }
 
@@ -75,14 +77,14 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
 
     const loadUser = useCallback(
         async (accountId: string) => {
-            console.log('🔍 loadUser: Starting for accountId:', accountId)
+            logger.info('🔍 loadUser: Starting for accountId:', accountId)
 
             // SECURITY CHECK: Verify that the session wallet matches the currently connected wallet
             if (currentWalletId && currentWalletId !== accountId) {
-                console.warn('⚠️ MISMATCH: Session wallet !== Connected wallet')
-                console.warn('Session wallet:', accountId)
-                console.warn('Connected wallet:', currentWalletId)
-                console.warn('🚪 Signing out stale session...')
+                logger.warn('⚠️ MISMATCH: Session wallet !== Connected wallet')
+                logger.warn('Session wallet:', accountId)
+                logger.warn('Connected wallet:', currentWalletId)
+                logger.warn('🚪 Signing out stale session...')
 
                 // Clear stale session
                 setUser(null)
@@ -102,7 +104,7 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
                 const result = await response.json()
 
                 if (!response.ok) {
-                    console.error('❌ loadUser: Server error:', {
+                    logger.error('❌ loadUser: Server error:', {
                         status: response.status,
                         error: result.error,
                     })
@@ -116,12 +118,12 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
                 }
 
                 if (result.success && result.user) {
-                    console.log('✅ loadUser: Success, data:', result.user)
+                    logger.info('✅ loadUser: Success, data:', result.user)
                     setUser(result.user)
                     setIsAuthenticated(true)
                 }
             } catch (error) {
-                console.error('❌ loadUser: Fetch error:', error)
+                logger.error('❌ loadUser: Fetch error:', error)
             } finally {
                 setLoading(false)
             }
@@ -136,7 +138,7 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
 
             if (response.ok) {
                 const data = await response.json()
-                console.log('✅ Valid session found for:', data.accountId)
+                logger.info('✅ Valid session found for:', data.accountId)
                 await loadUser(data.accountId)
             } else {
                 setUser(null)
@@ -144,7 +146,7 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
                 setLoading(false)
             }
         } catch (error) {
-            console.error('Error checking user:', error)
+            logger.error('Error checking user:', error)
             setUser(null)
             setIsAuthenticated(false)
             setLoading(false)
@@ -153,7 +155,7 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
 
     useEffect(() => {
         // Check current session on mount
-        checkUser()
+        void checkUser()
     }, [checkUser])
 
     /**
@@ -167,7 +169,7 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
         try {
             setLoading(true)
 
-            console.log('🔑 Verifying signature with backend...')
+            logger.info('🔑 Verifying signature with backend...')
 
             // Verify signature and get JWT
             const response = await fetch('/api/auth/verify', {
@@ -185,7 +187,7 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             const result = await response.json()
 
             if (result.success) {
-                console.log('✅ Authentication successful')
+                logger.info('✅ Authentication successful')
 
                 // JWT is now in HttpOnly cookie
                 // Load user data
@@ -193,11 +195,11 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
 
                 return { success: true }
             } else {
-                console.error('❌ Auth failed:', result.error)
+                logger.error('❌ Auth failed:', result.error)
                 return { success: false, error: result.error }
             }
         } catch (error) {
-            console.error('Sign in error:', error)
+            logger.error('Sign in error:', error)
             return { success: false, error: 'Failed to sign in' }
         } finally {
             setLoading(false)
@@ -215,13 +217,13 @@ export function usePortfolioAuth(currentWalletId?: string | null) {
             if (response.ok) {
                 setUser(null)
                 setIsAuthenticated(false)
-                console.log('✅ Signed out successfully')
+                logger.info('✅ Signed out successfully')
                 return { success: true }
             }
 
             return { success: false, error: 'Failed to sign out' }
         } catch (error) {
-            console.error('Sign out error:', error)
+            logger.error('Sign out error:', error)
             return { success: false, error: 'Failed to sign out' }
         } finally {
             setLoading(false)

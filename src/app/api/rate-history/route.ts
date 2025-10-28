@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { HederaRateService } from '@/services/hederaRateService'
 
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:rate-history')
 export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
         const hederaService = new HederaRateService()
@@ -40,7 +43,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             count: sortedHistory.length,
         })
     } catch (error) {
-        console.error('Error fetching rate history:', error)
+        logger.error('Error fetching rate history:', error)
         return NextResponse.json(
             {
                 error: 'Failed to fetch rate history',

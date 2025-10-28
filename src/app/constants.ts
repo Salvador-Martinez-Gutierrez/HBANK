@@ -17,7 +17,7 @@ import {
 export const HEDERA_CONFIG = {
     network: 'testnet',
     mirrorNode:
-        process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+        process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
         'https://testnet.mirrornode.hedera.com',
     validationCloudEndpoint: 'https://testnet.hedera.validationcloud.io/v1',
 } as const
@@ -43,14 +43,14 @@ export const WITHDRAW_TOPIC_ID = TOPICS.WITHDRAW
 
 // Account IDs
 export const ACCOUNTS = {
-    treasury: process.env.TREASURY_ID || '0.0.6887438',
-    emissions: process.env.EMISSIONS_ID || '0.0.6887460',
-    depositWallet: process.env.DEPOSIT_WALLET_ID || '0.0.6887448',
+    treasury: process.env.TREASURY_ID ?? '0.0.6887438',
+    emissions: process.env.EMISSIONS_ID ?? '0.0.6887460',
+    depositWallet: process.env.DEPOSIT_WALLET_ID ?? '0.0.6887448',
     instantWithdrawWallet:
-        process.env.INSTANT_WITHDRAW_WALLET_ID || '0.0.6887450',
+        process.env.INSTANT_WITHDRAW_WALLET_ID ?? '0.0.6887450',
     standardWithdrawWallet:
-        process.env.STANDARD_WITHDRAW_WALLET_ID || '0.0.6887453',
-    ratePublisher: process.env.RATE_PUBLISHER_ID || '0.0.6887432',
+        process.env.STANDARD_WITHDRAW_WALLET_ID ?? '0.0.6887453',
+    ratePublisher: process.env.RATE_PUBLISHER_ID ?? '0.0.6887432',
 } as const
 
 // ===================================
@@ -65,7 +65,7 @@ export const DECIMALS = {
 
 // Fees
 export const FEES = {
-    instantWithdraw: parseFloat(process.env.INSTANT_WITHDRAW_FEE || '0.005'), // 0.5%
+    instantWithdraw: parseFloat(process.env.INSTANT_WITHDRAW_FEE ?? '0.005'), // 0.5%
 } as const
 
 // Legacy export
@@ -88,7 +88,7 @@ export const WALLETCONNECT_PROJECT_ID =
 
 // App URL for metadata
 export const APP_URL =
-    process.env.NEXT_PUBLIC_APP_URL || 'https://localhost:3000'
+    process.env.NEXT_PUBLIC_APP_URL ?? 'https://localhost:3000'
 
 // ===================================
 // WALLET CONFIGURATION

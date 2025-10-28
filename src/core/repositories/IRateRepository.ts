@@ -9,6 +9,7 @@
 
 import { Rate } from '@/domain/value-objects/Rate'
 
+
 /**
  * Rate history query options
  */
@@ -54,8 +55,8 @@ export interface IRateRepository {
      * @example
      * ```typescript
      * const rate = await repository.getLatest()
-     * console.log(`Current rate: ${rate.value}`)
-     * console.log(`Valid until: ${rate.validUntil}`)
+     * logger.info(`Current rate: ${rate.value}`)
+     * logger.info(`Valid until: ${rate.validUntil}`)
      * ```
      */
     getLatest(): Promise<Rate>
@@ -91,7 +92,7 @@ export interface IRateRepository {
      * })
      *
      * for (const rate of history) {
-     *   console.log(`${rate.timestamp}: ${rate.value}`)
+     *   logger.info(`${rate.timestamp}: ${rate.value}`)
      * }
      * ```
      */
@@ -107,7 +108,7 @@ export interface IRateRepository {
      * ```typescript
      * const newRate = Rate.create(1.005, 'pending')
      * const published = await repository.publish(newRate)
-     * console.log(`Rate published with sequence: ${published.sequenceNumber}`)
+     * logger.info(`Rate published with sequence: ${published.sequenceNumber}`)
      * ```
      */
     publish(rate: Rate): Promise<Rate>
@@ -141,9 +142,9 @@ export interface IRateRepository {
      *   new Date('2025-10-01'),
      *   new Date('2025-10-31')
      * )
-     * console.log(`Average rate: ${stats.average}`)
-     * console.log(`Min rate: ${stats.min}`)
-     * console.log(`Max rate: ${stats.max}`)
+     * logger.info(`Average rate: ${stats.average}`)
+     * logger.info(`Min rate: ${stats.min}`)
+     * logger.info(`Max rate: ${stats.max}`)
      * ```
      */
     getStatistics(

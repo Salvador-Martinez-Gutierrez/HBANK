@@ -19,6 +19,8 @@ import { useTokenBalances } from '../hooks/useTokenBalances'
 import { RateData } from '@/hooks/useRealTimeRate'
 import { ProcessModal } from '@/components/process-modal'
 import { useProcessModal, MINT_STEPS } from '@/hooks/useProcessModal'
+import { logger } from '@/lib/logger'
+
 
 interface MintActionButtonProps {
     fromAmount: string
@@ -76,10 +78,10 @@ export function MintActionButton({
         setIsCheckingAssociation(true)
         try {
             const hasAssociation = await checkTokenAssociation(accountId)
-            console.log('hasAssociation', hasAssociation)
+            logger.info('hasAssociation', hasAssociation)
             setHasTokenAssociation(hasAssociation)
         } catch (error) {
-            console.error('Failed to check token association:', error)
+            logger.error('Failed to check token association:', error)
             setHasTokenAssociation(false)
         } finally {
             setIsCheckingAssociation(false)
@@ -89,7 +91,7 @@ export function MintActionButton({
     // Check token association when wallet connects
     useEffect(() => {
         if (isConnected && accountId && hasTokenAssociation === null) {
-            checkAssociation()
+            void checkAssociation()
         } else if (!isConnected) {
             // Reset state when wallet disconnects
             setHasTokenAssociation(null)
@@ -99,7 +101,7 @@ export function MintActionButton({
     const handleAssociateToken = async () => {
         setIsProcessing(true)
         try {
-            console.log(
+            logger.info(
                 '🔗 Starting token association for hUSD:',
                 TOKEN_IDS.HUSD
             )
@@ -122,14 +124,14 @@ export function MintActionButton({
                 ? transactionResult[0]
                 : transactionResult
 
-            console.log('📤 Token association transaction sent:', transactionId)
-            console.log('⏳ Watching transaction receipt...')
+            logger.info('📤 Token association transaction sent:', transactionId)
+            logger.info('⏳ Watching transaction receipt...')
 
             // Watch the transaction receipt for completion
             await watch(transactionId, {
                 onSuccess: (transaction) => {
-                    console.log('✅ Token association successful:', transaction)
-                    console.log('🔄 Updating association state to true')
+                    logger.info('✅ Token association successful:', transaction)
+                    logger.info('🔄 Updating association state to true')
 
                     toast.dismiss('associate-token')
                     toast.success('✅ hUSD token successfully associated!', {
@@ -143,8 +145,8 @@ export function MintActionButton({
                     return transaction
                 },
                 onError: (transaction, error) => {
-                    console.error('❌ Token association failed:', error)
-                    console.log('📊 Transaction details:', transaction)
+                    logger.error('❌ Token association failed:', error)
+                    logger.info('📊 Transaction details:', transaction)
 
                     toast.dismiss('associate-token')
                     toast.error(
@@ -161,7 +163,7 @@ export function MintActionButton({
                 },
             })
         } catch (error) {
-            console.error('❌ Token association failed:', error)
+            logger.error('❌ Token association failed:', error)
             toast.dismiss('associate-token')
             toast.error('❌ Token association failed. Please try again.', {
                 duration: 4000,
@@ -171,7 +173,7 @@ export function MintActionButton({
     }
 
     const handleMint = async () => {
-        console.log('🚀 handleMint called with:', {
+        logger.info('🚀 handleMint called with:', {
             fromAmount,
             toAmount,
             rateData,
@@ -202,7 +204,7 @@ export function MintActionButton({
             return
         }
 
-        console.log('✅ All validations passed, starting process modal...')
+        logger.info('✅ All validations passed, starting process modal...')
 
         // START THE PROCESS MODAL
         processModal.startProcess('mint', MINT_STEPS, {
@@ -211,7 +213,7 @@ export function MintActionButton({
             toToken: 'hUSD',
         })
 
-        console.log('📱 ProcessModal state after start:', {
+        logger.info('📱 ProcessModal state after start:', {
             isOpen: processModal.isOpen,
             processType: processModal.processType,
             currentStep: processModal.currentStep,
@@ -219,8 +221,8 @@ export function MintActionButton({
 
         setIsProcessing(true)
         try {
-            console.log('Starting atomic mint for:', amountNum, 'USDC')
-            console.log('Using rate data:', rateData)
+            logger.info('Starting atomic mint for:', amountNum, 'USDC')
+            logger.info('Using rate data:', rateData)
 
             // Step 1: Initialize atomic deposit (already active from startProcess)
             const initResponse = await fetch('/api/deposit/init', {
@@ -235,15 +237,15 @@ export function MintActionButton({
                 }),
             })
 
-            console.log('Init response status:', initResponse.status)
+            logger.info('Init response status:', initResponse.status)
 
             if (!initResponse.ok) {
                 const errorData = await initResponse.json()
-                console.error('Init error:', errorData)
+                logger.error('Init error:', errorData)
 
                 // Handle rate conflict specifically
                 if (initResponse.status === 409 && errorData.currentRate) {
-                    console.log('Rate conflict detected, showing modal')
+                    logger.info('Rate conflict detected, showing modal')
                     processModal.closeModal()
                     setRateConflictData({
                         currentRate: errorData.currentRate,
@@ -256,20 +258,20 @@ export function MintActionButton({
                 }
 
                 throw new Error(
-                    errorData.message ||
-                        errorData.error ||
+                    errorData.message ??
+                        errorData.error ??
                         'Error initializing atomic mint'
                 )
             }
 
             const initResult = await initResponse.json()
-            console.log('Init success:', initResult)
+            logger.info('Init success:', initResult)
 
             const { scheduleId, amountHUSDC } = initResult
 
             // Step 2: User signs the schedule
             processModal.nextStep()
-            console.log('Requesting schedule signature for:', scheduleId)
+            logger.info('Requesting schedule signature for:', scheduleId)
 
             // Create ScheduleSignTransaction for user to sign
             const scheduleSignTx = new ScheduleSignTransaction()
@@ -287,28 +289,28 @@ export function MintActionButton({
 
             try {
                 // User signs the schedule
-                console.log('Requesting user signature...')
+                logger.info('Requesting user signature...')
                 // @ts-expect-error - Hedera SDK signer type inference issue
                 signedScheduleTx = await frozenScheduleTx.signWithSigner(signer)
-                console.log('✅ User signature completed successfully')
+                logger.info('✅ User signature completed successfully')
 
                 // Execute the user's signature
-                console.log('Executing signed transaction...')
+                logger.info('Executing signed transaction...')
                 // @ts-expect-error - Hedera SDK signer type inference issue
                 userSignResponse = await signedScheduleTx.executeWithSigner(signer)
-                console.log(
+                logger.info(
                     'User signature executed:',
                     userSignResponse.transactionId?.toString()
                 )
             } catch (signingError: unknown) {
-                console.error('Signing error:', signingError)
+                logger.error('Signing error:', signingError)
 
                 // Check for user rejection with multiple approaches
                 let errorMessage = ''
                 let errorType = ''
 
                 if (signingError instanceof Error) {
-                    errorMessage = signingError.message || ''
+                    errorMessage = signingError.message ?? ''
                     errorType = signingError.name || ''
                 } else if (typeof signingError === 'string') {
                     errorMessage = signingError
@@ -328,7 +330,7 @@ export function MintActionButton({
 
                 const fullErrorText =
                     `${errorType} ${errorMessage}`.toLowerCase()
-                console.log('Full error text for analysis:', fullErrorText)
+                logger.info('Full error text for analysis:', fullErrorText)
 
                 // Enhanced detection for user rejection
                 if (
@@ -370,7 +372,7 @@ export function MintActionButton({
             // Get receipt to confirm user signature
             // @ts-expect-error - Hedera SDK signer type inference issue
             const userSignReceipt = await userSignResponse.getReceiptWithSigner(signer)
-            console.log(
+            logger.info(
                 'User signature receipt:',
                 userSignReceipt.status.toString()
             )
@@ -383,7 +385,7 @@ export function MintActionButton({
 
             // Step 3: Complete atomic transaction
             processModal.nextStep()
-            console.log('Notifying backend of user signature...')
+            logger.info('Notifying backend of user signature...')
 
             const completeResponse = await fetch('/api/deposit/user-signed', {
                 method: 'POST',
@@ -394,20 +396,20 @@ export function MintActionButton({
                 }),
             })
 
-            console.log('Complete response status:', completeResponse.status)
+            logger.info('Complete response status:', completeResponse.status)
 
             if (!completeResponse.ok) {
                 const errorData = await completeResponse.json()
-                console.error('Complete error:', errorData)
+                logger.error('Complete error:', errorData)
                 throw new Error(
-                    errorData.message ||
-                        errorData.error ||
+                    errorData.message ??
+                        errorData.error ??
                         'Error completing atomic mint'
                 )
             }
 
             const completeResult = await completeResponse.json()
-            console.log('Complete success:', completeResult)
+            logger.info('Complete success:', completeResult)
 
             // Step 4: Finalize
             processModal.nextStep()
@@ -415,7 +417,7 @@ export function MintActionButton({
             // Complete the process - the onComplete callback will handle cleanup
             processModal.completeProcess()
         } catch (error: unknown) {
-            console.error('❌ Atomic mint failed:', error)
+            logger.error('❌ Atomic mint failed:', error)
 
             let errorMessage = 'Unknown error occurred'
 
@@ -464,7 +466,7 @@ export function MintActionButton({
         setShowRateConflict(false)
         setRateConflictData(null)
         // Retry mint operation with new rate from hook
-        handleMint()
+        void handleMint()
     }
 
     const handleCancelRateConflict = () => {
@@ -495,7 +497,7 @@ export function MintActionButton({
         return (
             <Button
                 className='w-full h-14 bg-blue-500 hover:bg-blue-600 text-white'
-                onClick={handleAssociateToken}
+                onClick={() => void handleAssociateToken()}
                 disabled={isProcessing}
             >
                 <span className='flex items-center gap-x-2 px-4'>
@@ -522,7 +524,7 @@ export function MintActionButton({
         <>
             <Button
                 className='w-full h-14 bg-blue-500 hover:bg-blue-600 text-white disabled:bg-gray-400'
-                onClick={handleMint}
+                onClick={() => void handleMint()}
                 disabled={isDisabled}
             >
                 <span className='flex items-center gap-x-2 px-4'>

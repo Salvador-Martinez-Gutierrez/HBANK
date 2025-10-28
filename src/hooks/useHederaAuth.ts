@@ -6,6 +6,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { logger } from '@/lib/logger'
+
 import type { AuthResponse } from '@/types/auth'
 
 interface UseHederaAuthOptions {
@@ -37,7 +39,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
             setIsAuthenticated(false)
             onAuthChange?.(null)
         } catch (error) {
-            console.error('Sign out error:', error)
+            logger.error('Sign out error:', error)
         }
     }, [onAuthChange])
 
@@ -66,7 +68,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
                 onAuthChange?.(null)
             }
         } catch (error) {
-            console.error('Error checking auth status:', error)
+            logger.error('Error checking auth status:', error)
             setAccountId(null)
             setIsAuthenticated(false)
             onAuthChange?.(null)
@@ -80,13 +82,13 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
         const previousWalletId = previousWalletIdRef.current
 
         if (previousWalletId && !currentWalletId) {
-            handleLogout()
+            void handleLogout()
         } else if (
             previousWalletId &&
             currentWalletId &&
             previousWalletId !== currentWalletId
         ) {
-            handleLogout()
+            void handleLogout()
         }
 
         previousWalletIdRef.current = currentWalletId
@@ -94,7 +96,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
 
     // Check authentication status ONLY on mount (not on every render)
     useEffect(() => {
-        checkAuthStatus()
+        void checkAuthStatus()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -124,7 +126,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
                     const error = await nonceResponse.json()
                     return {
                         success: false,
-                        error: error.error || 'Failed to get nonce',
+                        error: error.error ?? 'Failed to get nonce',
                     }
                 }
 
@@ -139,7 +141,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
                     signature = signResult.signature
                     publicKey = signResult.publicKey
                 } catch (signError) {
-                    console.error(
+                    logger.error(
                         'User rejected signature or error:',
                         signError
                     )
@@ -168,7 +170,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
                 if (!verifyResponse.ok || !verifyResult.success) {
                     return {
                         success: false,
-                        error: verifyResult.error || 'Verification failed',
+                        error: verifyResult.error ?? 'Verification failed',
                     }
                 }
 
@@ -179,7 +181,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
 
                 return { success: true }
             } catch (error) {
-                console.error('Sign in error:', error)
+                logger.error('Sign in error:', error)
                 return {
                     success: false,
                     error:
@@ -218,7 +220,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
 
             return { success: true }
         } catch (error) {
-            console.error('Sign out error:', error)
+            logger.error('Sign out error:', error)
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error',
@@ -271,7 +273,7 @@ export async function signMessageWithHashPack(
             publicKey: result.publicKey,
         }
     } catch (error) {
-        console.error('Error signing with HashPack:', error)
+        logger.error('Error signing with HashPack:', error)
         throw error
     }
 }
@@ -297,7 +299,7 @@ export async function signMessageWithBlade(
             publicKey: result.publicKey,
         }
     } catch (error) {
-        console.error('Error signing with Blade:', error)
+        logger.error('Error signing with Blade:', error)
         throw error
     }
 }

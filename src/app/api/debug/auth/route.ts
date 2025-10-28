@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createScopedLogger } from '@/lib/logger'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const logger = createScopedLogger('api:debug:auth')
+
+// Environment variables - will fail at runtime if not set
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
     try {
@@ -49,7 +53,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             session: session.user?.id,
         })
     } catch (error: unknown) {
-        console.error('Debug auth error:', error)
+        logger.error('Debug auth error', {
+            error: error instanceof Error ? error.message : String(error),
+        })
         const errorMessage =
             error instanceof Error ? error.message : 'Unknown error'
         return NextResponse.json({ error: errorMessage }, { status: 500 })

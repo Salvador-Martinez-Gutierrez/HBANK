@@ -164,7 +164,7 @@ export function AssetSections({
                                 token.balance,
                                 token.decimals
                             )
-                            const priceUsd = parseFloat(token.price_usd || '0')
+                            const priceUsd = parseFloat(token.price_usd ?? '0')
                             const valueUsd = parseFloat(balance) * priceUsd
 
                             return (
@@ -177,7 +177,7 @@ export function AssetSections({
                                             <img
                                                 src={token.token_icon}
                                                 alt={
-                                                    token.token_symbol ||
+                                                    token.token_symbol ??
                                                     'Token'
                                                 }
                                                 className='w-8 h-8 rounded-full'
@@ -188,18 +188,18 @@ export function AssetSections({
                                             />
                                         ) : (
                                             <div className='w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold'>
-                                                {token.token_symbol?.[0] || '?'}
+                                                {token.token_symbol?.[0] ?? '?'}
                                             </div>
                                         )}
                                         <div>
                                             <div className='font-medium'>
-                                                {token.token_name ||
-                                                    token.token_symbol ||
+                                                {token.token_name ??
+                                                    token.token_symbol ??
                                                     token.token_address}
                                             </div>
                                             <div className='text-sm text-muted-foreground'>
                                                 {balance}{' '}
-                                                {token.token_symbol || 'tokens'}
+                                                {token.token_symbol ?? 'tokens'}
                                             </div>
                                         </div>
                                     </div>
@@ -273,7 +273,7 @@ export function AssetSections({
                                             <TableBody>
                                                 {pools.map((position) => {
                                                     const valueUsd = parseFloat(
-                                                        position.value_usd ||
+                                                        position.value_usd ??
                                                             '0'
                                                     )
                                                     const metadata =
@@ -310,8 +310,8 @@ export function AssetSections({
                                                             className='hover:bg-blue-500/5'
                                                         >
                                                             <TableCell className='font-medium'>
-                                                                {poolName ||
-                                                                    `${token0Symbol}/${token1Symbol}` ||
+                                                                {poolName ??
+                                                                    `${token0Symbol}/${token1Symbol}` ??
                                                                     'Unknown Pool'}
                                                             </TableCell>
                                                             <TableCell>
@@ -411,7 +411,7 @@ export function AssetSections({
                                             <TableBody>
                                                 {farms.map((position) => {
                                                     const valueUsd = parseFloat(
-                                                        position.value_usd ||
+                                                        position.value_usd ??
                                                             '0'
                                                     )
                                                     const metadata =
@@ -448,8 +448,8 @@ export function AssetSections({
                                                             className='hover:bg-green-500/5'
                                                         >
                                                             <TableCell className='font-medium'>
-                                                                {farmName ||
-                                                                    `${token0Symbol}/${token1Symbol}` ||
+                                                                {farmName ??
+                                                                    `${token0Symbol}/${token1Symbol}` ??
                                                                     'Unknown Farm'}
                                                             </TableCell>
                                                             <TableCell>
@@ -552,7 +552,7 @@ export function AssetSections({
                                             <TableBody>
                                                 {lending.map((position) => {
                                                     const valueUsd = parseFloat(
-                                                        position.value_usd ||
+                                                        position.value_usd ??
                                                             '0'
                                                     )
                                                     const metadata =
@@ -577,16 +577,16 @@ export function AssetSections({
                                                             className='hover:bg-purple-500/5'
                                                         >
                                                             <TableCell className='font-medium'>
-                                                                {asset ||
+                                                                {asset ??
                                                                     position
                                                                         .tokens_registry
-                                                                        ?.token_symbol ||
+                                                                        ?.token_symbol ??
                                                                     'Unknown Asset'}
                                                             </TableCell>
                                                             <TableCell>
                                                                 <span className='text-sm'>
                                                                     {parseFloat(
-                                                                        position.balance ||
+                                                                        position.balance ??
                                                                             '0'
                                                                     ).toFixed(
                                                                         4
@@ -638,11 +638,11 @@ export function AssetSections({
                     <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
                         {nfts.map((nft) => {
                             // Get image from metadata or token_icon
-                            const nftMeta = (nft.metadata || {}) as Record<string, unknown>
-                            const nftImage = nft.token_icon || (nftMeta.image ? String(nftMeta.image) : null) || null
+                            const nftMeta = (nft.metadata ?? {}) as Record<string, unknown>
+                            const nftImage = nft.token_icon ?? (nftMeta.image ? String(nftMeta.image) : null) ?? null
                             const nftName =
-                                nft.token_name ||
-                                (nftMeta.name ? String(nftMeta.name) : null) ||
+                                nft.token_name ??
+                                (nftMeta.name ? String(nftMeta.name) : null) ??
                                 `NFT #${nft.serial_number}`
 
                             return (

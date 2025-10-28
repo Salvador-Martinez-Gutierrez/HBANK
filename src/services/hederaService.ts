@@ -1,3 +1,7 @@
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:hederaService')
+
 import {
     Client,
     TopicMessageSubmitTransaction,
@@ -21,15 +25,15 @@ export class HederaService {
     // Decimal constants from environment
     private readonly HBAR_MULTIPLIER = Math.pow(
         10,
-        parseInt(process.env.HBAR_DECIMALS || '8')
+        parseInt(process.env.HBAR_DECIMALS ?? '8')
     )
     private readonly USDC_MULTIPLIER = Math.pow(
         10,
-        parseInt(process.env.USDC_DECIMALS || '6')
+        parseInt(process.env.USDC_DECIMALS ?? '6')
     )
     private readonly HUSD_MULTIPLIER = Math.pow(
         10,
-        parseInt(process.env.HUSD_DECIMALS || '3')
+        parseInt(process.env.HUSD_DECIMALS ?? '3')
     )
 
     constructor() {
@@ -37,7 +41,7 @@ export class HederaService {
         const useRealTestnet = process.env.USE_REAL_TESTNET === 'true'
 
         if (!useRealTestnet) {
-            console.log(
+            logger.info(
                 '⚠️ Running in mock mode. Set USE_REAL_TESTNET=true for real transactions'
             )
         }
@@ -66,9 +70,9 @@ export class HederaService {
         this.client.setDefaultMaxTransactionFee(new Hbar(10))
         this.client.setDefaultMaxQueryPayment(new Hbar(5))
 
-        console.log('✅ Hedera client initialized for testnet')
-        console.log(`   Operator: ${this.operatorId.toString()}`)
-        console.log(`   Topic: ${this.topicId.toString()}`)
+        logger.info('✅ Hedera client initialized for testnet')
+        logger.info(`   Operator: ${this.operatorId.toString()}`)
+        logger.info(`   Topic: ${this.topicId.toString()}`)
     }
 
     /**
@@ -100,33 +104,33 @@ export class HederaService {
         switch (walletType) {
             case 'deposit':
                 return {
-                    id: process.env.DEPOSIT_WALLET_ID!,
-                    key: process.env.DEPOSIT_WALLET_KEY!,
+                    id: process.env.DEPOSIT_WALLET_ID ?? '',
+                    key: process.env.DEPOSIT_WALLET_KEY ?? '',
                 }
             case 'instant-withdraw':
                 return {
-                    id: process.env.INSTANT_WITHDRAW_WALLET_ID!,
-                    key: process.env.INSTANT_WITHDRAW_WALLET_KEY!,
+                    id: process.env.INSTANT_WITHDRAW_WALLET_ID ?? '',
+                    key: process.env.INSTANT_WITHDRAW_WALLET_KEY ?? '',
                 }
             case 'standard-withdraw':
                 return {
-                    id: process.env.STANDARD_WITHDRAW_WALLET_ID!,
-                    key: process.env.STANDARD_WITHDRAW_WALLET_KEY!,
+                    id: process.env.STANDARD_WITHDRAW_WALLET_ID ?? '',
+                    key: process.env.STANDARD_WITHDRAW_WALLET_KEY ?? '',
                 }
             case 'treasury':
                 return {
-                    id: process.env.TREASURY_ID!,
-                    key: process.env.TREASURY_KEY!,
+                    id: process.env.TREASURY_ID ?? '',
+                    key: process.env.TREASURY_KEY ?? '',
                 }
             case 'emissions':
                 return {
-                    id: process.env.EMISSIONS_ID!,
-                    key: process.env.EMISSIONS_KEY!,
+                    id: process.env.EMISSIONS_ID ?? '',
+                    key: process.env.EMISSIONS_KEY ?? '',
                 }
             case 'rate-publisher':
                 return {
-                    id: process.env.RATE_PUBLISHER_ID!,
-                    key: process.env.RATE_PUBLISHER_KEY!,
+                    id: process.env.RATE_PUBLISHER_ID ?? '',
+                    key: process.env.RATE_PUBLISHER_KEY ?? '',
                 }
             default:
                 throw new Error(`Unknown wallet type: ${walletType}`)
@@ -165,7 +169,7 @@ export class HederaService {
                 operator: this.operatorId.toString(),
             })
 
-            console.log('📝 Publishing rate to HCS:', {
+            logger.info('📝 Publishing rate to HCS:', {
                 topicId: this.topicId.toString(),
                 rate,
                 totalUsd,
@@ -184,11 +188,11 @@ export class HederaService {
             // Get the receipt to confirm it was processed
             const receipt = await submitResponse.getReceipt(this.client)
 
-            console.log('✅ Rate published successfully')
-            console.log(
+            logger.info('✅ Rate published successfully')
+            logger.info(
                 `   Transaction ID: ${submitResponse.transactionId.toString()}`
             )
-            console.log(
+            logger.info(
                 `   Topic Sequence Number: ${receipt.topicSequenceNumber?.toString()}`
             )
 
@@ -201,7 +205,7 @@ export class HederaService {
                 timestamp: new Date().toISOString(),
             }
         } catch (error) {
-            console.error('❌ Error publishing rate to HCS:', error)
+            logger.error('❌ Error publishing rate to HCS:', error)
             throw error
         }
     }
@@ -238,7 +242,7 @@ export class HederaService {
             // Convert to number using USDC decimals from environment
             return Number(tokenBalance.toString()) / this.USDC_MULTIPLIER
         } catch (error) {
-            console.error('Error checking balance:', error)
+            logger.error('Error checking balance:', error)
             // If there's an error, assume no balance
             return 0
         }
@@ -262,7 +266,7 @@ export class HederaService {
             const currentRate = await this.getCurrentRate()
             const husdAmount = amountUsdc / currentRate
 
-            console.log('📋 Creating scheduled deposit transaction:', {
+            logger.info('📋 Creating scheduled deposit transaction:', {
                 user: userId,
                 usdcAmount: amountUsdc,
                 husdAmount: husdAmount.toFixed(2),
@@ -312,21 +316,21 @@ export class HederaService {
             )
             const scheduleId = scheduleReceipt.scheduleId
 
-            console.log('✅ Scheduled transaction created')
-            console.log(`   Schedule ID: ${scheduleId?.toString()}`)
-            console.log(
+            logger.info('✅ Scheduled transaction created')
+            logger.info(`   Schedule ID: ${scheduleId?.toString()}`)
+            logger.info(
                 `   Transaction ID: ${scheduleResponse.transactionId.toString()}`
             )
 
             return {
                 status: 'success',
-                scheduleId: scheduleId?.toString() || 'unknown',
+                scheduleId: scheduleId?.toString() ?? 'unknown',
                 husdAmount: Number(husdAmount.toFixed(2)),
                 transactionId: scheduleResponse.transactionId.toString(),
                 timestamp: new Date().toISOString(),
             }
         } catch (error) {
-            console.error('❌ Error creating scheduled deposit:', error)
+            logger.error('❌ Error creating scheduled deposit:', error)
             throw error
         }
     }
@@ -346,7 +350,7 @@ export class HederaService {
             throw new Error('Missing required token ID')
         }
 
-        console.log('📋 Creating scheduled HUSD transfer:', {
+        logger.info('📋 Creating scheduled HUSD transfer:', {
             user,
             treasury: treasuryWallet.id,
             amount: amountHUSD,
@@ -388,16 +392,16 @@ export class HederaService {
                 throw new Error('Failed to create scheduled transaction')
             }
 
-            console.log('✅ Scheduled transaction created successfully')
-            console.log(`   Schedule ID: ${scheduleId.toString()}`)
-            console.log(`   Memo: ${uniqueMemo}`)
-            console.log(
+            logger.info('✅ Scheduled transaction created successfully')
+            logger.info(`   Schedule ID: ${scheduleId.toString()}`)
+            logger.info(`   Memo: ${uniqueMemo}`)
+            logger.info(
                 `   User must sign this schedule to execute the transfer`
             )
 
             return scheduleId.toString()
         } catch (error) {
-            console.error('❌ Error creating scheduled HUSD transfer:', error)
+            logger.error('❌ Error creating scheduled HUSD transfer:', error)
             throw error
         }
     }
@@ -437,7 +441,7 @@ export class HederaService {
                 )
             }
 
-            console.log('💰 Transferring USDC to user:', {
+            logger.info('💰 Transferring USDC to user:', {
                 user,
                 standardWithdrawWallet: standardWithdrawWallet.id,
                 amount: amountUSDC,
@@ -475,14 +479,14 @@ export class HederaService {
                 )
             }
 
-            console.log('✅ USDC transferred to user successfully')
-            console.log(
+            logger.info('✅ USDC transferred to user successfully')
+            logger.info(
                 `   Transaction ID: ${transferResponse.transactionId.toString()}`
             )
 
             return transferResponse.transactionId.toString()
         } catch (error) {
-            console.error('❌ Error transferring USDC to user:', error)
+            logger.error('❌ Error transferring USDC to user:', error)
             throw error
         }
     }
@@ -533,14 +537,14 @@ export class HederaService {
                 )
             }
 
-            console.log('✅ Withdrawal request published to HCS')
-            console.log(`   Request ID: ${requestId}`)
-            console.log(`   Topic: ${withdrawTopicId}`)
-            console.log(`   Message: ${JSON.stringify(message, null, 2)}`)
+            logger.info('✅ Withdrawal request published to HCS')
+            logger.info(`   Request ID: ${requestId}`)
+            logger.info(`   Topic: ${withdrawTopicId}`)
+            logger.info(`   Message: ${JSON.stringify(message, null, 2)}`)
 
             return response.transactionId.toString()
         } catch (error) {
-            console.error('❌ Error publishing withdrawal request:', error)
+            logger.error('❌ Error publishing withdrawal request:', error)
             throw error
         }
     }
@@ -583,13 +587,13 @@ export class HederaService {
                 )
             }
 
-            console.log('✅ Withdrawal result published successfully')
-            console.log(`   Request ID: ${requestId}`)
-            console.log(`   Status: ${status}`)
+            logger.info('✅ Withdrawal result published successfully')
+            logger.info(`   Request ID: ${requestId}`)
+            logger.info(`   Status: ${status}`)
 
             return response.transactionId.toString()
         } catch (error) {
-            console.error('❌ Error publishing withdrawal result:', error)
+            logger.error('❌ Error publishing withdrawal result:', error)
             throw error
         }
     }
@@ -614,7 +618,7 @@ export class HederaService {
                 throw new Error(`Invalid user parameter: ${user}`)
             }
 
-            console.log('🔄 Rolling back HUSD to user:', {
+            logger.info('🔄 Rolling back HUSD to user:', {
                 user,
                 treasury: treasuryWallet.id,
                 amount: amountHUSD,
@@ -648,14 +652,14 @@ export class HederaService {
                 )
             }
 
-            console.log('✅ HUSD rollback completed successfully')
-            console.log(
+            logger.info('✅ HUSD rollback completed successfully')
+            logger.info(
                 `   Transaction ID: ${transferResponse.transactionId.toString()}`
             )
 
             return transferResponse.transactionId.toString()
         } catch (error) {
-            console.error('❌ Error rolling back HUSD to user:', error)
+            logger.error('❌ Error rolling back HUSD to user:', error)
             throw error
         }
     }
@@ -667,18 +671,18 @@ export class HederaService {
         scheduleId: string
     ): Promise<boolean> {
         try {
-            console.log(`🔍 Verifying Schedule Transaction: ${scheduleId}`)
+            logger.info(`🔍 Verifying Schedule Transaction: ${scheduleId}`)
 
             // Query the Mirror Node for the schedule information
             const mirrorNodeUrl =
-                process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+                process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
                 'https://testnet.mirrornode.hedera.com'
             const response = await fetch(
                 `${mirrorNodeUrl}/api/v1/schedules/${scheduleId}`
             )
 
             if (!response.ok) {
-                console.log(
+                logger.info(
                     `❌ Schedule ${scheduleId} not found in Mirror Node`
                 )
                 return false
@@ -689,7 +693,7 @@ export class HederaService {
             // Check if the schedule has been executed
             const isExecuted = scheduleData.executed_timestamp !== null
 
-            console.log(`📋 Schedule ${scheduleId} status:`, {
+            logger.info(`📋 Schedule ${scheduleId} status:`, {
                 executed: isExecuted,
                 executed_timestamp: scheduleData.executed_timestamp,
                 deleted: scheduleData.deleted,
@@ -697,7 +701,7 @@ export class HederaService {
 
             return isExecuted
         } catch (error) {
-            console.error(
+            logger.error(
                 `❌ Error verifying Schedule Transaction ${scheduleId}:`,
                 error
             )
@@ -717,24 +721,24 @@ export class HederaService {
         since: string
     ): Promise<boolean> {
         try {
-            console.log(
+            logger.info(
                 `🔍 Verifying HUSD transfer from ${userAccountId} to ${treasuryId}`
             )
-            console.log(`   Expected amount: ${expectedAmount} HUSD`)
-            console.log(`   Since: ${since}`)
+            logger.info(`   Expected amount: ${expectedAmount} HUSD`)
+            logger.info(`   Since: ${since}`)
 
             const husdTokenId = process.env.HUSD_TOKEN_ID
             if (!husdTokenId) {
                 throw new Error('Missing HUSD_TOKEN_ID')
             }
 
-            console.log(`   HUSD Token ID: ${husdTokenId}`)
+            logger.info(`   HUSD Token ID: ${husdTokenId}`)
 
             // Add some buffer time to the 'since' parameter to account for clock differences
             const sinceWithBuffer = new Date(
                 new Date(since).getTime() - 60000
             ).toISOString() // 1 minute buffer
-            console.log(`   Since with buffer: ${sinceWithBuffer}`)
+            logger.info(`   Since with buffer: ${sinceWithBuffer}`)
 
             // Retry logic: try multiple times with increasing delays
             // This accounts for Mirror Node synchronization delays
@@ -744,7 +748,7 @@ export class HederaService {
             ] // Added more delays
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                console.log(`🔄 Verification attempt ${attempt}/${maxRetries}`)
+                logger.info(`🔄 Verification attempt ${attempt}/${maxRetries}`)
 
                 const verified = await this.performHUSDTransferCheck(
                     userAccountId,
@@ -756,7 +760,7 @@ export class HederaService {
                 )
 
                 if (verified) {
-                    console.log(
+                    logger.info(
                         `✅ HUSD transfer verified on attempt ${attempt}`
                     )
                     return true
@@ -765,28 +769,28 @@ export class HederaService {
                 // If not the last attempt, wait before retrying
                 if (attempt < maxRetries) {
                     const delay = retryDelays[attempt - 1]
-                    console.log(
+                    logger.info(
                         `⏳ Waiting ${delay}ms before retry (Mirror Node may need time to sync)...`
                     )
                     await new Promise((resolve) => setTimeout(resolve, delay))
                 }
             }
 
-            console.log(
+            logger.info(
                 `❌ HUSD transfer verification failed after ${maxRetries} attempts`
             )
-            console.log(
+            logger.info(
                 `📋 Expected ${expectedAmount} HUSD from ${userAccountId} to ${treasuryId}`
             )
-            console.log(
+            logger.info(
                 `⚠️ This might indicate a Mirror Node delay or the transaction was not executed properly`
             )
-            console.log(
+            logger.info(
                 `💡 Check the Hedera Explorer for recent transactions involving account ${userAccountId}`
             )
             return false
         } catch (error) {
-            console.error(`❌ Error verifying HUSD transfer:`, error)
+            logger.error(`❌ Error verifying HUSD transfer:`, error)
             return false
         }
     }
@@ -805,49 +809,49 @@ export class HederaService {
     ): Promise<boolean> {
         // Query Mirror Node for token transfers
         const mirrorNodeUrl =
-            process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+            process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
             'https://testnet.mirrornode.hedera.com'
         const sinceTimestamp = new Date(since).getTime() / 1000 // Convert to seconds
 
         const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=100` // Increased limit to 100
-        console.log(`🔍 Attempt ${attempt} - Querying Mirror Node:`, queryUrl)
+        logger.info(`🔍 Attempt ${attempt} - Querying Mirror Node:`, queryUrl)
 
         // Get transfers involving the user account since the withdrawal request
         const response = await fetch(queryUrl)
 
         if (!response.ok) {
-            console.log(
+            logger.info(
                 `❌ Attempt ${attempt} - Failed to fetch transactions for ${userAccountId}: ${response.status} ${response.statusText}`
             )
             return false
         }
 
         const data = await response.json()
-        const transactions = data.transactions || []
+        const transactions = data.transactions ?? []
 
-        console.log(
+        logger.info(
             `📋 Attempt ${attempt} - Found ${transactions.length} transactions since ${since}`
         )
 
         // Look for a transaction where user sent HUSD to treasury
         for (const tx of transactions) {
-            console.log(
+            logger.info(
                 `🔍 Checking transaction ${tx.transaction_id} (${tx.consensus_timestamp})`
             )
 
             if (tx.token_transfers) {
-                console.log(
+                logger.info(
                     `   Token transfers found: ${tx.token_transfers.length}`
                 )
 
                 for (const tokenTransfer of tx.token_transfers) {
-                    console.log(
+                    logger.info(
                         `   Token ID: ${tokenTransfer.token_id} (looking for ${husdTokenId})`
                     )
 
                     if (tokenTransfer.token_id === husdTokenId) {
-                        console.log(`   ✅ Found HUSD token transfer!`)
-                        console.log(
+                        logger.info(`   ✅ Found HUSD token transfer!`)
+                        logger.info(
                             `   Transfer details:`,
                             JSON.stringify(tokenTransfer, null, 2)
                         )
@@ -866,14 +870,14 @@ export class HederaService {
                             tokenTransfer.account === treasuryId &&
                             tokenTransfer.amount > 0
 
-                        console.log(
+                        logger.info(
                             `   Transfer from account: ${tokenTransfer.account}`
                         )
-                        console.log(
+                        logger.info(
                             `   Transfer amount: ${tokenTransfer.amount} (${transferredAmount} HUSD)`
                         )
-                        console.log(`   Is user sending: ${isUserSending}`)
-                        console.log(
+                        logger.info(`   Is user sending: ${isUserSending}`)
+                        logger.info(
                             `   Is treasury receiving: ${isTreasuryReceiving}`
                         )
 
@@ -898,7 +902,7 @@ export class HederaService {
                                 const treasuryAmount =
                                     treasuryTransfer.amount /
                                     this.HUSD_MULTIPLIER // Use consistent multiplier
-                                console.log(
+                                logger.info(
                                     `📋 Attempt ${attempt} - Found complete HUSD transfer:`,
                                     {
                                         from: userAccountId,
@@ -915,17 +919,17 @@ export class HederaService {
                                     Math.abs(treasuryAmount - expectedAmount) <
                                     0.001
                                 ) {
-                                    console.log(
+                                    logger.info(
                                         `✅ Attempt ${attempt} - HUSD transfer verified: ${expectedAmount} HUSD`
                                     )
                                     return true
                                 } else {
-                                    console.log(
+                                    logger.info(
                                         `❌ Attempt ${attempt} - Amount mismatch: treasury received ${treasuryAmount} vs expected ${expectedAmount}`
                                     )
                                 }
                             } else {
-                                console.log(
+                                logger.info(
                                     `❌ Attempt ${attempt} - No corresponding treasury transfer found`
                                 )
                             }
@@ -933,11 +937,11 @@ export class HederaService {
                     }
                 }
             } else {
-                console.log(`   No token_transfers in this transaction`)
+                logger.info(`   No token_transfers in this transaction`)
             }
         }
 
-        console.log(`❌ Attempt ${attempt} - No matching HUSD transfer found`)
+        logger.info(`❌ Attempt ${attempt} - No matching HUSD transfer found`)
         return false
     }
 
@@ -947,7 +951,7 @@ export class HederaService {
     async checkTransactionInMirrorNode(txId: string): Promise<boolean> {
         try {
             const mirrorNodeUrl =
-                process.env.TESTNET_MIRROR_NODE_ENDPOINT ||
+                process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
                 'https://testnet.mirrornode.hedera.com'
             const response = await fetch(
                 `${mirrorNodeUrl}/api/v1/transactions/${txId}`
@@ -955,20 +959,20 @@ export class HederaService {
 
             if (response.ok) {
                 const txData = await response.json()
-                console.log(`🔍 Transaction ${txId} found in Mirror Node:`, {
+                logger.info(`🔍 Transaction ${txId} found in Mirror Node:`, {
                     status: txData.result,
                     timestamp: txData.consensus_timestamp,
-                    transfers: txData.token_transfers?.length || 0,
+                    transfers: txData.token_transfers?.length ?? 0,
                 })
                 return true
             } else {
-                console.log(
+                logger.info(
                     `❌ Transaction ${txId} not found in Mirror Node: ${response.status}`
                 )
                 return false
             }
         } catch (error) {
-            console.error(`❌ Error checking transaction ${txId}:`, error)
+            logger.error(`❌ Error checking transaction ${txId}:`, error)
             return false
         }
     }

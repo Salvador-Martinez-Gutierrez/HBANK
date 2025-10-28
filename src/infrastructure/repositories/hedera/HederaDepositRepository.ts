@@ -215,7 +215,7 @@ export class HederaDepositRepository implements IDepositRepository {
      *
      * @private
      */
-    // private mapHederaToDeposit(scheduleInfo: any): Deposit {
+    // private mapHederaToDeposit(scheduleInfo: unknown): Deposit {
     //     // TODO: Implement mapping logic
     //     throw new Error('Not implemented')
     // }

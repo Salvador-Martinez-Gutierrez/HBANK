@@ -17,6 +17,8 @@ import {
     ArrowRightLeft,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
+
 
 export type ProcessType = 'mint' | 'redeem-instant' | 'redeem-standard'
 
@@ -50,7 +52,7 @@ export function ProcessModal({
     toToken,
     error,
 }: ProcessModalProps) {
-    console.log('🔄 ProcessModal render:', {
+    logger.info('🔄 ProcessModal render:', {
         isOpen,
         processType,
         currentStep,

@@ -6,9 +6,8 @@
 
 import { NextResponse } from 'next/server'
 import { withAuthRoute } from '@/lib/app-router-auth-middleware'
-import { syncWalletTokens } from '@/services/portfolioWalletService'
+import { syncWalletTokens, getUserWallets } from '@/services/portfolioWalletService'
 import { getAllSaucerSwapTokens } from '@/services/saucerSwapService'
-import { getUserWallets } from '@/services/portfolioWalletService'
 
 export const POST = withAuthRoute(
     async ({ req: _req, user, logger: _logger }): Promise<NextResponse> => {
@@ -33,24 +32,18 @@ export const POST = withAuthRoute(
 
             const userId = userResult.userId
 
-            console.log(
-                `🔄 Starting batch sync for user ${userId} (${accountId})`
-            )
+            _logger.info('Starting batch sync for user', { userId, accountId })
 
             // 1. Pre-fetch tokens from SaucerSwap ONCE (will be cached for all wallets)
-            console.log('📡 Pre-loading SaucerSwap token data...')
+            _logger.info('Pre-loading SaucerSwap token data')
             const saucerSwapResult = await getAllSaucerSwapTokens()
 
             if (!saucerSwapResult.success) {
-                console.warn(
-                    '⚠️ Failed to pre-load SaucerSwap data, continuing anyway...'
-                )
+                _logger.warn('Failed to pre-load SaucerSwap data, continuing anyway')
             } else {
-                console.log(
-                    `✅ SaucerSwap data loaded (${
-                        saucerSwapResult.tokens?.length || 0
-                    } tokens)`
-                )
+                _logger.info('SaucerSwap data loaded', {
+                    tokenCount: saucerSwapResult.tokens?.length ?? 0,
+                })
             }
 
             // 2. Get all user wallets
@@ -64,7 +57,7 @@ export const POST = withAuthRoute(
                 })
             }
 
-            console.log(`📊 Syncing ${wallets.length} wallets...`)
+            _logger.info('Syncing wallets', { walletCount: wallets.length })
 
             // 3. Sync all wallets (they will all use the cached SaucerSwap data)
             const results = []
@@ -72,7 +65,7 @@ export const POST = withAuthRoute(
                 const walletId = wallet.id as string
                 const walletAddress = wallet.wallet_address as string
 
-                console.log(`🔄 Syncing wallet ${walletAddress}...`)
+                _logger.info('Syncing wallet', { walletAddress })
 
                 const syncResult = await syncWalletTokens(
                     walletId,
@@ -95,9 +88,10 @@ export const POST = withAuthRoute(
             const allSuccess = results.every((r) => r.success)
             const successCount = results.filter((r) => r.success).length
 
-            console.log(
-                `✅ Batch sync completed: ${successCount}/${results.length} successful`
-            )
+            _logger.info('Batch sync completed', {
+                successful: successCount,
+                total: results.length,
+            })
 
             return NextResponse.json({
                 success: allSuccess,
@@ -105,7 +99,9 @@ export const POST = withAuthRoute(
                 results,
             })
         } catch (error) {
-            console.error('Error in batch sync:', error)
+            _logger.error('Error in batch sync', {
+                error: error instanceof Error ? error.message : String(error),
+            })
             return NextResponse.json(
                 {
                     success: false,

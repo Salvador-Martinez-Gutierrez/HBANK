@@ -9,6 +9,8 @@ import {
 } from '@buidlerlabs/hashgraph-react-wallets/connectors'
 import Image, { StaticImageData } from 'next/image'
 import { useState } from 'react'
+import { logger } from '@/lib/logger'
+
 
 export interface WalletConfig {
     id: string
@@ -55,7 +57,7 @@ const BaseWalletButton = ({
             await connect()
             onWalletConnected?.()
         } catch (error: unknown) {
-            console.error(`Failed to connect with ${config.name}:`, error)
+            logger.error(`Failed to connect with ${config.name}:`, error)
             const errorMessage =
                 error instanceof Error ? error.message : 'Connection failed'
             setError(errorMessage)
@@ -77,7 +79,7 @@ const BaseWalletButton = ({
     return (
         <div className='flex flex-col items-center gap-2'>
             <Button
-                onClick={handleConnect}
+                onClick={() => void handleConnect()}
                 disabled={isConnecting}
                 className='bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 w-24 h-24 flex flex-col items-center justify-center gap-2 rounded-xl transition-all duration-200'
             >

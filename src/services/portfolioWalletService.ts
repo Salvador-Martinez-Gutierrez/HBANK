@@ -9,6 +9,10 @@ import {
     isLpToken,
 } from './defiService'
 import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('service:portfolioWalletService')
+
 
 /**
  * Supabase operation types
@@ -89,7 +93,7 @@ interface NftMetadata {
     [key: string]: unknown
 }
 
-interface WalletNftRow {
+interface _WalletNftRow {
     wallet_id: string
     token_id: string
     token_registry_id: string
@@ -98,7 +102,7 @@ interface WalletNftRow {
     last_synced_at: string
 }
 
-interface LpTokenRow {
+interface _LpTokenRow {
     wallet_id: string
     token_id: string
     balance: string
@@ -106,7 +110,7 @@ interface LpTokenRow {
     last_synced_at: string
 }
 
-interface WalletTokenRow {
+interface _WalletTokenRow {
     wallet_id: string
     token_id: string
     balance: string
@@ -117,7 +121,7 @@ interface DefiMetadata {
     [key: string]: unknown
 }
 
-interface WalletDefiRow {
+interface _WalletDefiRow {
     wallet_id: string
     token_id: string
     position_type: string
@@ -134,7 +138,7 @@ interface WalletDefiRow {
 function getValidationCloudUrl(): string {
     const apiKey = process.env.VALIDATION_CLOUD_API_KEY
     const baseUrl =
-        process.env.VALIDATION_CLOUD_BASE_URL ||
+        process.env.VALIDATION_CLOUD_BASE_URL ??
         'https://mainnet.hedera.validationcloud.io/v1'
 
     if (!apiKey) {
@@ -182,13 +186,13 @@ export async function getUserWallets(
             .order('created_at', { ascending: true })
 
         if (error) {
-            console.error('Error fetching wallets:', error)
+            logger.error('Error fetching wallets:', error)
             return []
         }
 
         return wallets || []
     } catch (error) {
-        console.error('Error in getUserWallets:', error)
+        logger.error('Error in getUserWallets:', error)
         return []
     }
 }
@@ -211,7 +215,7 @@ export async function addWallet(
             .eq('user_id', userId)
 
         if (countError) {
-            console.error('Error counting wallets:', countError)
+            logger.error('Error counting wallets:', countError)
             return { success: false, error: 'Failed to verify wallet limit' }
         }
 
@@ -244,19 +248,19 @@ export async function addWallet(
         )({
             user_id: userId,
             wallet_address: walletAddress,
-            label: label || 'Sub Wallet',
+            label: label ?? 'Sub Wallet',
         })
             .select()
             .single()
 
         if (error) {
-            console.error('Error adding wallet:', error)
+            logger.error('Error adding wallet:', error)
             return { success: false, error: 'Failed to add wallet' }
         }
 
         return { success: true, wallet: data }
     } catch (error) {
-        console.error('Error in addWallet:', error)
+        logger.error('Error in addWallet:', error)
         return { success: false, error: 'Database error' }
     }
 }
@@ -272,13 +276,13 @@ export async function updateWalletLabel(walletId: string, label: string) {
         }).eq('id', walletId)
 
         if (error) {
-            console.error('Error updating wallet:', error)
+            logger.error('Error updating wallet:', error)
             return { success: false, error: 'Failed to update wallet' }
         }
 
         return { success: true }
     } catch (error) {
-        console.error('Error in updateWalletLabel:', error)
+        logger.error('Error in updateWalletLabel:', error)
         return { success: false, error: 'Database error' }
     }
 }
@@ -295,13 +299,13 @@ export async function deleteWallet(walletId: string) {
             .eq('id', walletId)
 
         if (error) {
-            console.error('Error deleting wallet:', error)
+            logger.error('Error deleting wallet:', error)
             return { success: false, error: 'Failed to delete wallet' }
         }
 
         return { success: true }
     } catch (error) {
-        console.error('Error in deleteWallet:', error)
+        logger.error('Error in deleteWallet:', error)
         return { success: false, error: 'Database error' }
     }
 }
@@ -336,20 +340,20 @@ async function fetchTokenMetadata(tokenId: string, baseUrl: string) {
         const response = await fetch(url)
 
         if (!response.ok) {
-            console.warn(`⚠️ Failed to fetch metadata for token ${tokenId}`)
+            logger.warn(`⚠️ Failed to fetch metadata for token ${tokenId}`)
             return null
         }
 
         const data = await response.json()
         return {
-            name: data.name || tokenId,
-            symbol: data.symbol || tokenId,
-            decimals: parseInt(data.decimals || '0'),
-            type: data.type || 'FUNGIBLE_COMMON', // FUNGIBLE_COMMON or NON_FUNGIBLE_UNIQUE
+            name: data.name ?? tokenId,
+            symbol: data.symbol ?? tokenId,
+            decimals: parseInt(data.decimals ?? '0'),
+            type: data.type ?? 'FUNGIBLE_COMMON', // FUNGIBLE_COMMON or NON_FUNGIBLE_UNIQUE
             metadata: data.metadata, // Base64 encoded metadata (for NFTs)
         }
     } catch (error) {
-        console.error(`Error fetching metadata for token ${tokenId}:`, error)
+        logger.error(`Error fetching metadata for token ${tokenId}:`, error)
         return null
     }
 }
@@ -367,17 +371,17 @@ async function fetchNFTsMetadata(
 
     try {
         const url = `${baseUrl}/accounts/${walletAddress}/nfts`
-        console.log(`📡 Fetching NFT metadata: ${url}`)
+        logger.info(`📡 Fetching NFT metadata: ${url}`)
 
         const response = await fetch(url)
         if (!response.ok) {
-            console.error(`❌ Failed to fetch NFTs: ${response.status}`)
+            logger.error(`❌ Failed to fetch NFTs: ${response.status}`)
             return nftMap
         }
 
         const data = await response.json()
-        const nfts = data.nfts || []
-        console.log(`📦 Found ${nfts.length} NFTs in response`)
+        const nfts = data.nfts ?? []
+        logger.info(`📦 Found ${nfts.length} NFTs in response`)
 
         for (const nft of nfts) {
             const tokenId = nft.token_id
@@ -392,11 +396,11 @@ async function fetchNFTsMetadata(
                     decodedMetadata,
                 })
 
-                console.log(`✅ NFT ${tokenId} metadata processed`)
+                logger.info(`✅ NFT ${tokenId} metadata processed`)
             }
         }
     } catch (error) {
-        console.error('Error fetching NFTs metadata:', error)
+        logger.error('Error fetching NFTs metadata:', error)
     }
 
     return nftMap
@@ -419,12 +423,12 @@ export async function syncWalletTokens(
         // 1. FETCH ACCOUNT DATA (HBAR + ALL TOKENS)
         // ========================================
         const accountUrl = `${validationCloudBaseUrl}/accounts/${walletAddress}?transactions=false`
-        console.log(`📡 Fetching account data: ${accountUrl}`)
+        logger.info(`📡 Fetching account data: ${accountUrl}`)
 
         const accountResponse = await fetch(accountUrl)
         if (!accountResponse.ok) {
             const errorText = await accountResponse.text()
-            console.error(
+            logger.error(
                 `❌ Hedera API Error (${accountResponse.status}):`,
                 errorText
             )
@@ -436,13 +440,13 @@ export async function syncWalletTokens(
         const accountData = await accountResponse.json()
 
         // Extract HBAR balance (divide by 10^8 to get actual value)
-        const hbarBalance = accountData.balance?.balance || 0
+        const hbarBalance = accountData.balance?.balance ?? 0
         const hbarBalanceActual = hbarBalance / Math.pow(10, 8)
-        console.log(`💰 HBAR Balance: ${hbarBalanceActual} HBAR`)
+        logger.info(`💰 HBAR Balance: ${hbarBalanceActual} HBAR`)
 
         // Extract all tokens
-        const allTokens = accountData.balance?.tokens || []
-        console.log(
+        const allTokens = accountData.balance?.tokens ?? []
+        logger.info(
             `� Found ${allTokens.length} total token balances for wallet ${walletAddress}`
         )
 
@@ -453,7 +457,7 @@ export async function syncWalletTokens(
                 return balance > 0
             }
         )
-        console.log(
+        logger.info(
             `📊 ${activeTokens.length} tokens with balance > 0 after filtering`
         )
 
@@ -461,7 +465,7 @@ export async function syncWalletTokens(
         // 2. GET TOKEN METADATA FROM SAUCERSWAP (for prices)
         // ========================================
         const tokenLookupMap = await createTokenLookupMap()
-        console.log(
+        logger.info(
             `🔍 Loaded ${tokenLookupMap.size} tokens from SaucerSwap (cached)`
         )
 
@@ -491,7 +495,7 @@ export async function syncWalletTokens(
             )
 
             if (!metadata) {
-                console.warn(
+                logger.warn(
                     `⚠️ Skipping token ${tokenAddress} - could not fetch metadata`
                 )
                 continue
@@ -508,14 +512,14 @@ export async function syncWalletTokens(
         // If there are NFTs, fetch proper metadata from /nfts endpoint
         let nftMetadataMap = new Map<string, Record<string, unknown>>()
         if (nftTokenIds.length > 0) {
-            console.log(
+            logger.info(
                 `🎨 Found ${nftTokenIds.length} NFTs, fetching proper metadata...`
             )
             nftMetadataMap = await fetchNFTsMetadata(
                 walletAddress,
                 validationCloudBaseUrl
             )
-            console.log(`✅ Fetched metadata for ${nftMetadataMap.size} NFTs`)
+            logger.info(`✅ Fetched metadata for ${nftMetadataMap.size} NFTs`)
         }
 
         // ========================================
@@ -538,14 +542,14 @@ export async function syncWalletTokens(
             const tokenSymbol = metadata.symbol
             const decimals = metadata.decimals
 
-            console.log(
+            logger.info(
                 `📋 Token ${tokenAddress}: type="${tokenType}", name="${tokenName}", symbol="${tokenSymbol}"`
             )
 
             // Get price from SaucerSwap
             const saucerToken = tokenLookupMap.get(tokenAddress)
-            const tokenIcon = saucerToken?.icon || null
-            const priceUsd = saucerToken?.priceUsd?.toString() || '0'
+            const tokenIcon = saucerToken?.icon ?? null
+            const priceUsd = saucerToken?.priceUsd?.toString() ?? '0'
 
             // ========================================
             // CATEGORIZE TOKEN TYPE
@@ -553,7 +557,7 @@ export async function syncWalletTokens(
 
             if (tokenType === 'NON_FUNGIBLE_UNIQUE') {
                 // This is an NFT - use proper metadata from /nfts endpoint
-                console.log(`🎨 NFT detected: ${tokenName} (${tokenAddress})`)
+                logger.info(`🎨 NFT detected: ${tokenName} (${tokenAddress})`)
 
                 // Get the proper NFT metadata from the /nfts endpoint
                 const nftData = nftMetadataMap.get(tokenAddress)
@@ -561,8 +565,8 @@ export async function syncWalletTokens(
                 let nftImageUrl = tokenIcon // Default to SaucerSwap icon if available
                 let serialNumber = 1 // Default serial number
 
-                if (nftData && nftData.decodedMetadata) {
-                    console.log(
+                if (nftData?.decodedMetadata) {
+                    logger.info(
                         `✅ Using proper NFT metadata from /nfts endpoint`
                     )
                     const decodedMeta = nftData.decodedMetadata
@@ -578,9 +582,9 @@ export async function syncWalletTokens(
                     // Use the actual NFT image if available
                     if (decodedMeta.image) {
                         nftImageUrl = decodedMeta.image
-                        console.log(`🖼️ NFT Image found: ${decodedMeta.image}`)
+                        logger.info(`🖼️ NFT Image found: ${decodedMeta.image}`)
                     } else {
-                        console.warn(`⚠️ No image found in NFT metadata`)
+                        logger.warn(`⚠️ No image found in NFT metadata`)
                     }
 
                     // Get serial number if available
@@ -588,7 +592,7 @@ export async function syncWalletTokens(
                         serialNumber = nftData.serial_number
                     }
                 } else {
-                    console.warn(
+                    logger.warn(
                         `⚠️ No metadata found in /nfts endpoint for ${tokenAddress}`
                     )
                 }
@@ -615,7 +619,7 @@ export async function syncWalletTokens(
                     .single()
 
                 if (registryError) {
-                    console.error(
+                    logger.error(
                         'Error upserting NFT registry:',
                         tokenAddress,
                         registryError
@@ -625,28 +629,28 @@ export async function syncWalletTokens(
 
                 // Insert into wallet_nfts table
                 // Using the serial number from the /nfts endpoint
-                const { error: nftError } = await (
-                    supabaseAdmin.from('wallet_nfts').upsert as UpsertFunction<WalletNftRow>
-                )(
-                    {
-                        wallet_id: walletId,
-                        token_id: tokenAddress,
-                        token_registry_id: registryToken.id,
-                        serial_number: serialNumber, // Actual serial number from API
-                        metadata: nftMetadata,
-                        last_synced_at: new Date().toISOString(),
-                    },
-                    {
-                        onConflict: 'wallet_id,token_id,serial_number',
-                        ignoreDuplicates: false, // Always update existing records with latest metadata
-                    }
-                )
+                const { error: nftError } = await supabaseAdmin
+                    .from('wallet_nfts')
+                    .upsert(
+                        {
+                            wallet_id: walletId,
+                            token_id: tokenAddress,
+                            token_registry_id: registryToken.id,
+                            serial_number: serialNumber, // Actual serial number from API
+                            metadata: nftMetadata,
+                            last_synced_at: new Date().toISOString(),
+                        },
+                        {
+                            onConflict: 'wallet_id,token_id,serial_number',
+                            ignoreDuplicates: false, // Always update existing records with latest metadata
+                        }
+                    )
 
                 if (nftError) {
-                    console.error('Error syncing NFT:', tokenAddress, nftError)
+                    logger.error('Error syncing NFT:', tokenAddress, nftError)
                 } else {
                     nftCount++
-                    console.log(`✅ Synced NFT: ${tokenName}`)
+                    logger.info(`✅ Synced NFT: ${tokenName}`)
                 }
             } else if (tokenType === 'FUNGIBLE_COMMON') {
                 // This is a fungible token - check if it's an LP token
@@ -657,7 +661,7 @@ export async function syncWalletTokens(
                 )
                 const finalTokenType = isLP ? 'LP_TOKEN' : 'FUNGIBLE'
 
-                console.log(
+                logger.info(
                     `💰 ${finalTokenType}: ${tokenSymbol} - ${tokenName} (${tokenAddress})`
                 )
 
@@ -684,7 +688,7 @@ export async function syncWalletTokens(
                     .single()
 
                 if (registryError) {
-                    console.error(
+                    logger.error(
                         'Error upserting token registry:',
                         tokenAddress,
                         registryError
@@ -695,65 +699,64 @@ export async function syncWalletTokens(
                 // Insert into appropriate table
                 if (isLP) {
                     // Insert into liquidity_pool_tokens
-                    const { error: lpTokenError } = await (
-                        supabaseAdmin.from('liquidity_pool_tokens')
-                            .upsert as UpsertFunction<LpTokenRow>
-                    )(
-                        {
-                            wallet_id: walletId,
-                            token_id: registryToken.id as string,
-                            balance: token.balance.toString(),
-                            pool_metadata: {
-                                tokenAddress,
-                                decimals,
+                    const { error: lpTokenError } = await supabaseAdmin
+                        .from('liquidity_pool_tokens')
+                        .upsert(
+                            {
+                                wallet_id: walletId,
+                                token_id: registryToken.id as string,
+                                balance: token.balance.toString(),
+                                pool_metadata: {
+                                    tokenAddress,
+                                    decimals,
+                                },
+                                last_synced_at: new Date().toISOString(),
                             },
-                            last_synced_at: new Date().toISOString(),
-                        },
-                        {
-                            onConflict: 'wallet_id,token_id',
-                        }
-                    )
+                            {
+                                onConflict: 'wallet_id,token_id',
+                            }
+                        )
 
                     if (lpTokenError) {
-                        console.error(
+                        logger.error(
                             'Error syncing LP token:',
                             tokenAddress,
                             lpTokenError
                         )
                     } else {
                         lpCount++
-                        console.log(`✅ Synced LP token: ${tokenSymbol}`)
+                        logger.info(`✅ Synced LP token: ${tokenSymbol}`)
                     }
                 } else {
                     // Insert into wallet_tokens
-                    const { error: walletTokenError } = await (
-                        supabaseAdmin.from('wallet_tokens').upsert as UpsertFunction<WalletTokenRow>
-                    )(
-                        {
-                            wallet_id: walletId,
-                            token_id: registryToken.id as string,
-                            balance: token.balance.toString(),
-                            last_synced_at: new Date().toISOString(),
-                        },
-                        {
-                            onConflict: 'wallet_id,token_id',
-                        }
-                    )
+                    const { error: walletTokenError } = await supabaseAdmin
+                        .from('wallet_tokens')
+                        .upsert(
+                            {
+                                wallet_id: walletId,
+                                token_id: registryToken.id as string,
+                                balance: token.balance.toString(),
+                                last_synced_at: new Date().toISOString(),
+                            },
+                            {
+                                onConflict: 'wallet_id,token_id',
+                            }
+                        )
 
                     if (walletTokenError) {
-                        console.error(
+                        logger.error(
                             'Error syncing fungible token:',
                             tokenAddress,
                             walletTokenError
                         )
                     } else {
                         fungibleCount++
-                        console.log(`✅ Synced fungible token: ${tokenSymbol}`)
+                        logger.info(`✅ Synced fungible token: ${tokenSymbol}`)
                     }
                 }
             } else {
                 // Unknown token type
-                console.warn(
+                logger.warn(
                     `⚠️ Unknown token type "${tokenType}" for ${tokenAddress}. Skipping.`
                 )
             }
@@ -762,11 +765,11 @@ export async function syncWalletTokens(
         // ========================================
         // 5. SYNC DEFI POSITIONS
         // ========================================
-        console.log(`\n💰 Starting DeFi positions sync...`)
+        logger.info(`\n💰 Starting DeFi positions sync...`)
         let defiCount = 0
 
         // 5a. SaucerSwap V1 Pools (from LP tokens already processed)
-        console.log(`\n🔵 Syncing SaucerSwap V1 Pools...`)
+        logger.info(`\n🔵 Syncing SaucerSwap V1 Pools...`)
         const lpTokens = activeTokens.filter((token: Record<string, unknown>) => {
             const metadata = tokenMetadataMap.get(token.token_id as string)
             return metadata && isLpToken(metadata.name)
@@ -812,7 +815,7 @@ export async function syncWalletTokens(
                             .single()
 
                     if (registryError) {
-                        console.error(
+                        logger.error(
                             `Error creating registry for LP token ${tokenAddress}:`,
                             registryError
                         )
@@ -839,53 +842,53 @@ export async function syncWalletTokens(
                         userTokenBAmount / Math.pow(10, tokenBDecimals)
 
                     // Save DeFi position
-                    const { error: defiError } = await (
-                        supabaseAdmin.from('wallet_defi').upsert as UpsertFunction<WalletDefiRow>
-                    )(
-                        {
-                            wallet_id: walletId,
-                            token_id: registryToken.id as string,
-                            position_type: 'SAUCERSWAP_V1_POOL',
-                            balance: balance.toString(),
-                            value_usd: poolValue.toString(),
-                            defi_metadata: {
-                                poolId: lpData.id,
-                                poolName: `${lpData.tokenA.symbol}/${lpData.tokenB.symbol}`,
-                                lpTokenAddress: tokenAddress,
-                                token0Symbol: lpData.tokenA.symbol,
-                                token1Symbol: lpData.tokenB.symbol,
-                                token0Amount: userTokenADisplay.toString(),
-                                token1Amount: userTokenBDisplay.toString(),
-                                tokenA: {
-                                    id: lpData.tokenA.id,
-                                    symbol: lpData.tokenA.symbol,
-                                    priceUsd: lpData.tokenA.priceUsd,
-                                    decimals: tokenADecimals,
-                                    userAmount: userTokenADisplay.toString(),
+                    const { error: defiError } = await supabaseAdmin
+                        .from('wallet_defi')
+                        .upsert(
+                            {
+                                wallet_id: walletId,
+                                token_id: registryToken.id as string,
+                                position_type: 'SAUCERSWAP_V1_POOL',
+                                balance: balance.toString(),
+                                value_usd: poolValue.toString(),
+                                defi_metadata: {
+                                    poolId: lpData.id,
+                                    poolName: `${lpData.tokenA.symbol}/${lpData.tokenB.symbol}`,
+                                    lpTokenAddress: tokenAddress,
+                                    token0Symbol: lpData.tokenA.symbol,
+                                    token1Symbol: lpData.tokenB.symbol,
+                                    token0Amount: userTokenADisplay.toString(),
+                                    token1Amount: userTokenBDisplay.toString(),
+                                    tokenA: {
+                                        id: lpData.tokenA.id,
+                                        symbol: lpData.tokenA.symbol,
+                                        priceUsd: lpData.tokenA.priceUsd,
+                                        decimals: tokenADecimals,
+                                        userAmount: userTokenADisplay.toString(),
+                                    },
+                                    tokenB: {
+                                        id: lpData.tokenB.id,
+                                        symbol: lpData.tokenB.symbol,
+                                        priceUsd: lpData.tokenB.priceUsd,
+                                        decimals: tokenBDecimals,
+                                        userAmount: userTokenBDisplay.toString(),
+                                    },
                                 },
-                                tokenB: {
-                                    id: lpData.tokenB.id,
-                                    symbol: lpData.tokenB.symbol,
-                                    priceUsd: lpData.tokenB.priceUsd,
-                                    decimals: tokenBDecimals,
-                                    userAmount: userTokenBDisplay.toString(),
-                                },
+                                last_synced_at: new Date().toISOString(),
                             },
-                            last_synced_at: new Date().toISOString(),
-                        },
-                        {
-                            onConflict: 'wallet_id,position_type,token_id',
-                        }
-                    )
+                            {
+                                onConflict: 'wallet_id,position_type,token_id',
+                            }
+                        )
 
                     if (defiError) {
-                        console.error(
+                        logger.error(
                             `Error syncing LP pool ${tokenAddress}:`,
                             defiError
                         )
                     } else {
                         defiCount++
-                        console.log(
+                        logger.info(
                             `✅ Synced SaucerSwap V1 Pool: ${
                                 lpData.lpToken.symbol
                             } ($${poolValue.toFixed(2)})`
@@ -893,7 +896,7 @@ export async function syncWalletTokens(
                     }
                 }
             } catch (error) {
-                console.error(
+                logger.error(
                     `Error processing LP token ${tokenAddress}:`,
                     error
                 )
@@ -901,7 +904,7 @@ export async function syncWalletTokens(
         }
 
         // 5b. SaucerSwap V1 Farms
-        console.log(`\n🌾 Syncing SaucerSwap V1 Farms...`)
+        logger.info(`\n🌾 Syncing SaucerSwap V1 Farms...`)
         try {
             const farms = await fetchFarmTotals(walletAddress)
 
@@ -941,7 +944,7 @@ export async function syncWalletTokens(
                             .single()
 
                     if (registryError) {
-                        console.error(
+                        logger.error(
                             `Error creating registry for farm LP token:`,
                             registryError
                         )
@@ -968,70 +971,70 @@ export async function syncWalletTokens(
                         userTokenBAmount / Math.pow(10, tokenBDecimals)
 
                     // Save farm position
-                    const { error: farmError } = await (
-                        supabaseAdmin.from('wallet_defi').upsert as UpsertFunction<WalletDefiRow>
-                    )(
-                        {
-                            wallet_id: walletId,
-                            token_id: registryToken.id as string,
-                            position_type: 'SAUCERSWAP_V1_FARM',
-                            balance: farm.total,
-                            value_usd: farmValue.toString(),
-                            defi_metadata: {
-                                farmId: farm.id,
-                                farmName: `${lpData.tokenA.symbol}/${lpData.tokenB.symbol}`,
-                                poolId: poolId,
-                                lpTokenAddress: lpData.lpToken.id,
-                                stakedAmount: farm.total,
-                                token0Symbol: lpData.tokenA.symbol,
-                                token1Symbol: lpData.tokenB.symbol,
-                                token0Amount: userTokenADisplay.toString(),
-                                token1Amount: userTokenBDisplay.toString(),
-                                tokenA: {
-                                    id: lpData.tokenA.id,
-                                    symbol: lpData.tokenA.symbol,
-                                    priceUsd: lpData.tokenA.priceUsd,
-                                    decimals: tokenADecimals,
-                                    userAmount: userTokenADisplay.toString(),
+                    const { error: farmError } = await supabaseAdmin
+                        .from('wallet_defi')
+                        .upsert(
+                            {
+                                wallet_id: walletId,
+                                token_id: registryToken.id as string,
+                                position_type: 'SAUCERSWAP_V1_FARM',
+                                balance: farm.total,
+                                value_usd: farmValue.toString(),
+                                defi_metadata: {
+                                    farmId: farm.id,
+                                    farmName: `${lpData.tokenA.symbol}/${lpData.tokenB.symbol}`,
+                                    poolId: poolId,
+                                    lpTokenAddress: lpData.lpToken.id,
+                                    stakedAmount: farm.total,
+                                    token0Symbol: lpData.tokenA.symbol,
+                                    token1Symbol: lpData.tokenB.symbol,
+                                    token0Amount: userTokenADisplay.toString(),
+                                    token1Amount: userTokenBDisplay.toString(),
+                                    tokenA: {
+                                        id: lpData.tokenA.id,
+                                        symbol: lpData.tokenA.symbol,
+                                        priceUsd: lpData.tokenA.priceUsd,
+                                        decimals: tokenADecimals,
+                                        userAmount: userTokenADisplay.toString(),
+                                    },
+                                    tokenB: {
+                                        id: lpData.tokenB.id,
+                                        symbol: lpData.tokenB.symbol,
+                                        priceUsd: lpData.tokenB.priceUsd,
+                                        decimals: tokenBDecimals,
+                                        userAmount: userTokenBDisplay.toString(),
+                                    },
                                 },
-                                tokenB: {
-                                    id: lpData.tokenB.id,
-                                    symbol: lpData.tokenB.symbol,
-                                    priceUsd: lpData.tokenB.priceUsd,
-                                    decimals: tokenBDecimals,
-                                    userAmount: userTokenBDisplay.toString(),
-                                },
+                                last_synced_at: new Date().toISOString(),
                             },
-                            last_synced_at: new Date().toISOString(),
-                        },
-                        {
-                            onConflict: 'wallet_id,position_type,token_id',
-                        }
-                    )
+                            {
+                                onConflict: 'wallet_id,position_type,token_id',
+                            }
+                        )
 
                     if (farmError) {
-                        console.error(
+                        logger.error(
                             `Error syncing farm ${farm.id}:`,
                             farmError
                         )
                     } else {
                         defiCount++
-                        console.log(
+                        logger.info(
                             `✅ Synced SaucerSwap V1 Farm: ${
                                 lpData.lpToken.symbol
                             } ($${farmValue.toFixed(2)})`
                         )
                     }
                 } catch (error) {
-                    console.error(`Error processing farm ${farm.id}:`, error)
+                    logger.error(`Error processing farm ${farm.id}:`, error)
                 }
             }
         } catch (error) {
-            console.error('Error fetching farms:', error)
+            logger.error('Error fetching farms:', error)
         }
 
         // 5c. Bonzo Finance Lending
-        console.log(`\n🏦 Syncing Bonzo Finance Lending...`)
+        logger.info(`\n🏦 Syncing Bonzo Finance Lending...`)
         try {
             const bonzoData = await getBonzoLendingData(walletAddress)
 
@@ -1061,7 +1064,7 @@ export async function syncWalletTokens(
                                 .single()
 
                         if (registryError) {
-                            console.error(
+                            logger.error(
                                 `Error creating registry for Bonzo token:`,
                                 registryError
                             )
@@ -1069,45 +1072,45 @@ export async function syncWalletTokens(
                         }
 
                         // Save lending position
-                        const { error: bonzoError } = await (
-                            supabaseAdmin.from('wallet_defi').upsert as UpsertFunction<WalletDefiRow>
-                        )(
-                            {
-                                wallet_id: walletId,
-                                token_id: registryToken.id as string,
-                                position_type: 'BONZO_LENDING',
-                                balance: position.tokenAmount,
-                                value_usd: position.valueUsd
-                                    .replace('$', '')
-                                    .replace(',', ''),
-                                defi_metadata: {
-                                    asset: position.asset,
-                                    apy: position.apy,
-                                    tokenId: position.tokenId,
-                                    tokenAmount: position.tokenAmount,
+                        const { error: bonzoError } = await supabaseAdmin
+                            .from('wallet_defi')
+                            .upsert(
+                                {
+                                    wallet_id: walletId,
+                                    token_id: registryToken.id as string,
+                                    position_type: 'BONZO_LENDING',
+                                    balance: position.tokenAmount,
+                                    value_usd: position.valueUsd
+                                        .replace('$', '')
+                                        .replace(',', ''),
+                                    defi_metadata: {
+                                        asset: position.asset,
+                                        apy: position.apy,
+                                        tokenId: position.tokenId,
+                                        tokenAmount: position.tokenAmount,
+                                    },
+                                    last_synced_at: new Date().toISOString(),
                                 },
-                                last_synced_at: new Date().toISOString(),
-                            },
-                            {
-                                onConflict: 'wallet_id,position_type,token_id',
-                            }
-                        )
+                                {
+                                    onConflict: 'wallet_id,position_type,token_id',
+                                }
+                            )
 
                         if (bonzoError) {
-                            console.error(
+                            logger.error(
                                 `Error syncing Bonzo position ${position.asset}:`,
                                 bonzoError
                             )
                         } else {
                             defiCount++
-                            console.log(
+                            logger.info(
                                 `✅ Synced Bonzo Lending: ${
                                     position.asset
                                 } (${position.apy.toFixed(2)}% APY)`
                             )
                         }
                     } catch (error) {
-                        console.error(
+                        logger.error(
                             `Error processing Bonzo position ${position.asset}:`,
                             error
                         )
@@ -1115,20 +1118,20 @@ export async function syncWalletTokens(
                 }
             }
         } catch (error) {
-            console.error('Error fetching Bonzo data:', error)
+            logger.error('Error fetching Bonzo data:', error)
         }
 
-        console.log(`✅ DeFi sync completed: ${defiCount} positions synced\n`)
+        logger.info(`✅ DeFi sync completed: ${defiCount} positions synced\n`)
 
         // ========================================
         // 4. SAVE HBAR BALANCE TO WALLET
         // ========================================
-        console.log(`💎 Updating HBAR Balance: ${hbarBalanceActual}`)
+        logger.info(`💎 Updating HBAR Balance: ${hbarBalanceActual}`)
 
         // Get HBAR price from SaucerSwap
         const hbarPriceResult = await getHbarPrice()
-        const hbarPriceUsd = hbarPriceResult.priceUsd || 0
-        console.log(`💰 HBAR Price: $${hbarPriceUsd}`)
+        const hbarPriceUsd = hbarPriceResult.priceUsd ?? 0
+        logger.info(`💰 HBAR Price: $${hbarPriceUsd}`)
 
         const { error: hbarUpdateError } = await (
             supabaseAdmin.from('wallets').update as UpdateFunction<WalletRow>
@@ -1138,17 +1141,17 @@ export async function syncWalletTokens(
         }).eq('id', walletId)
 
         if (hbarUpdateError) {
-            console.error('Error updating HBAR balance:', hbarUpdateError)
+            logger.error('Error updating HBAR balance:', hbarUpdateError)
         } else {
             const hbarValueUsd = hbarBalanceActual * hbarPriceUsd
-            console.log(
+            logger.info(
                 `✅ HBAR balance saved: ${hbarBalanceActual} HBAR (~$${hbarValueUsd.toFixed(
                     2
                 )})`
             )
         }
 
-        console.log(`
+        logger.info(`
 ✅ Sync completed for wallet ${walletAddress}:
    💎 ${hbarBalanceActual} HBAR (~$${(hbarBalanceActual * hbarPriceUsd).toFixed(
             2
@@ -1171,7 +1174,7 @@ export async function syncWalletTokens(
             },
         }
     } catch (error) {
-        console.error('Error in syncWalletTokens:', error)
+        logger.error('Error in syncWalletTokens:', error)
         return { success: false, error: 'Sync failed' }
     }
 }
@@ -1192,7 +1195,7 @@ async function getNFTMetadata(metadataBase64: string): Promise<{
         const metadataUri = Buffer.from(metadataBase64, 'base64').toString(
             'utf-8'
         )
-        console.log(`📦 NFT Metadata URI: ${metadataUri}`)
+        logger.info(`📦 NFT Metadata URI: ${metadataUri}`)
 
         // Check if metadata is a direct IPFS image link
         // Some NFTs store the image directly in metadata, others store a JSON with metadata
@@ -1205,18 +1208,18 @@ async function getNFTMetadata(metadataBase64: string): Promise<{
         // Fetch the metadata
         const response = await fetch(metadataUrl)
         if (!response.ok) {
-            console.error(
+            logger.error(
                 `Failed to fetch NFT metadata from ${metadataUrl}: ${response.status}`
             )
             return {}
         }
 
         const contentType = response.headers.get('content-type')
-        console.log(`📄 Content-Type: ${contentType}`)
+        logger.info(`📄 Content-Type: ${contentType}`)
 
         // If it's an image, the metadata field points directly to the image
         if (contentType?.startsWith('image/')) {
-            console.log(`🖼️ Direct image link detected: ${metadataUrl}`)
+            logger.info(`🖼️ Direct image link detected: ${metadataUrl}`)
             return {
                 image: metadataUrl,
             }
@@ -1224,18 +1227,18 @@ async function getNFTMetadata(metadataBase64: string): Promise<{
 
         // Otherwise, it's a JSON with metadata
         const metadata = await response.json()
-        console.log(`✅ NFT Metadata JSON:`, JSON.stringify(metadata, null, 2))
+        logger.info(`✅ NFT Metadata JSON:`, JSON.stringify(metadata, null, 2))
 
         // Convert IPFS image URI to HTTP gateway URL if needed
         let imageUrl = metadata.image
-        if (imageUrl && imageUrl.startsWith('ipfs://')) {
+        if (imageUrl?.startsWith('ipfs://')) {
             const ipfsHash = imageUrl.replace('ipfs://', '')
             imageUrl = `https://ipfs.io/ipfs/${ipfsHash}`
-            console.log(`🖼️ Converted IPFS image to HTTP: ${imageUrl}`)
+            logger.info(`🖼️ Converted IPFS image to HTTP: ${imageUrl}`)
         }
 
         if (!imageUrl) {
-            console.warn(`⚠️ No 'image' field found in NFT metadata`)
+            logger.warn(`⚠️ No 'image' field found in NFT metadata`)
         }
 
         return {
@@ -1243,10 +1246,10 @@ async function getNFTMetadata(metadataBase64: string): Promise<{
             name: metadata.name,
             description: metadata.description,
             creator: metadata.creator,
-            properties: metadata.properties || metadata.attributes,
+            properties: metadata.properties ?? metadata.attributes,
         }
     } catch (error) {
-        console.error('Error fetching NFT metadata:', error)
+        logger.error('Error fetching NFT metadata:', error)
         return {}
     }
 }
@@ -1279,7 +1282,7 @@ export async function getTokenMetadata(tokenId: string) {
             },
         }
     } catch (error) {
-        console.error('Error fetching token metadata:', error)
+        logger.error('Error fetching token metadata:', error)
         return { success: false, error: 'Failed to fetch metadata' }
     }
 }
@@ -1314,13 +1317,13 @@ export async function updateTokenMetadata(
             .eq('token_address', tokenAddress)
 
         if (error) {
-            console.error('Error updating token metadata:', error)
+            logger.error('Error updating token metadata:', error)
             return { success: false, error: 'Failed to update metadata' }
         }
 
         return { success: true }
     } catch (error) {
-        console.error('Error in updateTokenMetadata:', error)
+        logger.error('Error in updateTokenMetadata:', error)
         return { success: false, error: 'Database error' }
     }
 }
@@ -1336,9 +1339,9 @@ export async function calculatePortfolioValue(userId: string): Promise<number> {
         for (const wallet of wallets) {
             const tokens = Array.isArray(wallet.tokens) ? wallet.tokens : []
             for (const token of tokens) {
-                const balance = parseFloat(token.balance || '0')
-                const price = parseFloat(token.price_usd || '0')
-                const decimals = token.decimals || 0
+                const balance = parseFloat(token.balance ?? '0')
+                const price = parseFloat(token.price_usd ?? '0')
+                const decimals = token.decimals ?? 0
                 const normalizedBalance = balance / Math.pow(10, decimals)
                 totalValue += normalizedBalance * price
             }
@@ -1346,7 +1349,7 @@ export async function calculatePortfolioValue(userId: string): Promise<number> {
 
         return totalValue
     } catch (error) {
-        console.error('Error calculating portfolio value:', error)
+        logger.error('Error calculating portfolio value:', error)
         return 0
     }
 }

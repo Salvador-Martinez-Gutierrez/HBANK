@@ -43,7 +43,12 @@ export const getHederaClient = (operator: Operator): Client => {
         clients.set(cacheKey, buildClient(operator, operatorConfig))
     }
 
-    return clients.get(cacheKey)!
+    // Safe to assert - we just set it above if it didn't exist
+    const client = clients.get(cacheKey)
+    if (!client) {
+        throw new Error(`Failed to get client for ${operator}`)
+    }
+    return client
 }
 
 export const resetHederaClients = () => {

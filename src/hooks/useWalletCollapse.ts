@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react'
+import { logger } from '@/lib/logger'
+
 
 const COLLAPSED_WALLETS_KEY = 'portfolio_collapsed_wallets'
 
@@ -12,7 +14,7 @@ export function useWalletCollapse() {
                 return new Set(parsed)
             }
         } catch (error) {
-            console.error(
+            logger.error(
                 'Error loading collapsed wallets from localStorage:',
                 error
             )
@@ -28,7 +30,7 @@ export function useWalletCollapse() {
                 JSON.stringify(Array.from(walletIds))
             )
         } catch (error) {
-            console.error(
+            logger.error(
                 'Error saving collapsed wallets to localStorage:',
                 error
             )

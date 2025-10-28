@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
+import { logger } from '@/lib/logger'
+
 
 // Types for wallet connectors and signers
 interface WalletSigner {
@@ -72,12 +74,12 @@ export function useAccountId() {
                     }
                 }
             } catch (error) {
-                console.error('Error fetching account ID:', error)
+                logger.error('Error fetching account ID:', error)
                 setAccountId('')
             }
         }
 
-        fetchAccountId()
+        void fetchAccountId()
     }, [isConnected, connector, signer])
 
     return accountId

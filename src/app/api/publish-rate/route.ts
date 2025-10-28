@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { HederaService } from '@/services/hederaService'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:publish-rate:route.ts')
+
 
 /**
  * POST /api/publish-rate
@@ -109,7 +113,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             transactionId: result.transactionId, // <- Verify this line is there
         })
     } catch (error) {
-        console.error('Publish rate endpoint error:', error)
+        logger.error('Publish rate endpoint error:', error)
 
         // Check if it's a validation error from the service
         if (error instanceof Error) {

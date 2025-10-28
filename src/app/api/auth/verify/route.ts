@@ -56,7 +56,7 @@ export const POST = withRouteHandler(
             return NextResponse.json(
                 {
                     success: false,
-                    error: nonceValidation.error || 'Invalid nonce',
+                    error: nonceValidation.error ?? 'Invalid nonce',
                 },
                 { status: 400 }
             )

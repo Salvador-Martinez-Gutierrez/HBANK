@@ -15,6 +15,7 @@ import { Signer, TransferTransaction, TokenId, AccountId } from '@hashgraph/sdk'
 import { useToast } from '@/hooks/useToast'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { ProcessModal } from '@/components/process-modal'
+import { logger } from '@/lib/logger'
 import {
     useProcessModal,
     REDEEM_INSTANT_STEPS,
@@ -72,7 +73,7 @@ export function RedeemActionButton({
         onComplete: async () => {
             if (onInputClear) onInputClear()
             await refreshBalances()
-            if (onBalanceRefresh) await onBalanceRefresh()
+            if (onBalanceRefresh) onBalanceRefresh()
             // Force refresh of instant withdraw max amount across all components
             refreshInstantWithdrawMax()
         },
@@ -86,17 +87,17 @@ export function RedeemActionButton({
             }
             await refreshBalances()
             if (onBalanceRefresh) {
-                await onBalanceRefresh()
+                onBalanceRefresh()
             }
         },
         onError: (error) => toastSuccess(`Standard redeem failed: ${error}`),
     })
 
     // Use rateData from props or realTimeRateData as fallback
-    const currentRateData = rateData || realTimeRateData
+    const currentRateData = rateData ?? realTimeRateData
 
     // Calculate instant withdrawal amounts if applicable
-    const amountValue = parseFloat(fromAmount || '0')
+    const amountValue = parseFloat(fromAmount ?? '0')
     const instantAmounts =
         currentRateData?.rate && amountValue > 0
             ? calculateInstantWithdrawAmounts(amountValue, currentRateData.rate)
@@ -193,7 +194,7 @@ export function RedeemActionButton({
         const emissionsId = '0.0.6887460' // Emissions Wallet ID (hardcoded for frontend)
 
         // DEBUG: Log the amount being processed
-        console.log('🔍 [FRONTEND] Creating HUSD transfer:', {
+        logger.info('🔍 [FRONTEND] Creating HUSD transfer:', {
             amount: amount,
             amountType: typeof amount,
             convertedUnits: Math.floor(amount * 1_000),
@@ -234,7 +235,7 @@ export function RedeemActionButton({
         )
 
         if (!result.success) {
-            throw new Error(result.error || 'Instant withdrawal failed')
+            throw new Error(result.error ?? 'Instant withdrawal failed')
         }
 
         // Step 3: Finalize
@@ -258,7 +259,7 @@ export function RedeemActionButton({
 
         try {
             // Step 1: Create withdrawal request (initialize) - already active from startProcess
-            console.log('🔄 [STANDARD WITHDRAW] Step 1: Initialize active')
+            logger.info('🔄 [STANDARD WITHDRAW] Step 1: Initialize active')
 
             if (!isValidSigner(signer)) {
                 throw new Error('Invalid signer: wallet not properly connected')
@@ -269,7 +270,7 @@ export function RedeemActionButton({
             const emissionsId = '0.0.6887460' // Emissions Wallet ID (hardcoded for frontend)
 
             // DEBUG: Log the amount being processed
-            console.log('🔍 [STANDARD WITHDRAW] Creating HUSD transfer:', {
+            logger.info('🔍 [STANDARD WITHDRAW] Creating HUSD transfer:', {
                 amount: amount,
                 amountType: typeof amount,
                 convertedUnits: Math.floor(amount * 1_000),
@@ -290,7 +291,7 @@ export function RedeemActionButton({
                 .setTransactionMemo(`Standard withdrawal: ${amount} hUSD`)
 
             // Step 2: User must sign the transfer (user-sign)
-            console.log('🔄 [STANDARD WITHDRAW] Moving to Step 2: User sign')
+            logger.info('🔄 [STANDARD WITHDRAW] Moving to Step 2: User sign')
             standardProcessModal.nextStep()
 
             // Execute transaction (this is the moment when the user signs)
@@ -303,25 +304,30 @@ export function RedeemActionButton({
                 throw new Error(`HUSD transfer failed: ${receipt.status}`)
             }
 
-            console.log('✅ [STANDARD WITHDRAW] HUSD transfer completed')
+            logger.info('✅ [STANDARD WITHDRAW] HUSD transfer completed')
 
             // Step 3: Register withdrawal request (finalize)
-            console.log('🔄 [STANDARD WITHDRAW] Moving to Step 3: Finalize')
+            logger.info('🔄 [STANDARD WITHDRAW] Moving to Step 3: Finalize')
             standardProcessModal.nextStep()
+
+            // Safe to use - currentRateData validated earlier in flow
+            if (!currentRateData) {
+                throw new Error('Rate data not available')
+            }
 
             const result = await submitWithdrawal(
                 amount,
-                currentRateData!.rate,
-                currentRateData!.sequenceNumber
+                currentRateData.rate,
+                currentRateData.sequenceNumber
             )
 
             if (!result.success) {
                 throw new Error(
-                    result.error || 'Failed to create withdrawal request'
+                    result.error ?? 'Failed to create withdrawal request'
                 )
             }
 
-            console.log('✅ [STANDARD WITHDRAW] Withdrawal request submitted')
+            logger.info('✅ [STANDARD WITHDRAW] Withdrawal request submitted')
 
             // Complete the process
             standardProcessModal.completeProcess()
@@ -330,7 +336,7 @@ export function RedeemActionButton({
                 error instanceof Error
                     ? error.message
                     : 'Unknown error occurred'
-            console.error('❌ [STANDARD WITHDRAW] Error:', errorMessage)
+            logger.error('❌ [STANDARD WITHDRAW] Error:', errorMessage)
             standardProcessModal.setStepError(
                 standardProcessModal.currentStep,
                 errorMessage
@@ -382,7 +388,7 @@ export function RedeemActionButton({
     //         // Complete the process - the onComplete callback will handle cleanup
     //         standardProcessModal.completeProcess()
     //     } catch (err) {
-    //         console.error('Error signing Schedule Transaction:', err)
+    //         logger.error('Error signing Schedule Transaction:', err)
     //         const errorMessage =
     //             err instanceof Error
     //                 ? err.message
@@ -395,7 +401,7 @@ export function RedeemActionButton({
     // }
 
     // Determine if we can submit
-    const inputAmount = parseFloat(fromAmount || '0')
+    const inputAmount = parseFloat(fromAmount ?? '0')
     const canSubmit = Boolean(
         isConnected &&
             accountId &&
@@ -487,7 +493,7 @@ export function RedeemActionButton({
             )}
 
             <Button
-                onClick={handleWithdraw}
+                onClick={() => void handleWithdraw()}
                 disabled={!canSubmitInstant}
                 className='w-full'
                 size='lg'

@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TOKENS, RATES_TOPIC_ID } from '@/app/backend-constants'
 
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:account-balances')
 // Function to get the latest rate from the topic
 async function getLatestRate(): Promise<number> {
     try {
-        const topicId = process.env.TOPIC_ID || RATES_TOPIC_ID
+        const topicId = process.env.TOPIC_ID ?? RATES_TOPIC_ID
         const mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
         const url = `${mirrorNodeUrl}/api/v1/topics/${topicId}/messages?limit=1&order=desc`
 
-        console.log(
+        logger.info(
             '📡 [account-balances] Fetching latest rate from topic:',
             url
         )
@@ -23,7 +26,7 @@ async function getLatestRate(): Promise<number> {
         const data = await response.json()
 
         if (!data.messages || data.messages.length === 0) {
-            console.warn(
+            logger.warn(
                 '⚠️ [account-balances] No messages found in topic, using default rate'
             )
             return 1.0 // Default rate if no messages
@@ -35,7 +38,7 @@ async function getLatestRate(): Promise<number> {
             'base64'
         ).toString('utf-8')
 
-        console.log(
+        logger.info(
             '📨 [account-balances] Latest topic message:',
             messageContent
         )
@@ -44,17 +47,17 @@ async function getLatestRate(): Promise<number> {
         const rateData = JSON.parse(messageContent)
         const rate = parseFloat(rateData.rate)
 
-        console.log('📊 [account-balances] Parsed rate:', rate)
+        logger.info('📊 [account-balances] Parsed rate:', rate)
 
-        return rate || 1.0
+        return rate ?? 1.0
     } catch (error) {
-        console.error('❌ [account-balances] Error fetching rate:', error)
+        logger.error('❌ [account-balances] Error fetching rate:', error)
         return 1.0 // Default rate on error
     }
 }
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-    const accountId = req.nextUrl.searchParams.get('accountId') || ''
+    const accountId = req.nextUrl.searchParams.get('accountId') ?? ''
     if (!accountId) {
         return NextResponse.json(
             { error: 'accountId is required' },
@@ -63,14 +66,14 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     try {
-        console.log(
+        logger.info(
             '📡 [account-balances] Fetching balances for account:',
             accountId
         )
 
         // Get the latest rate from the topic first
         const latestRate = await getLatestRate()
-        console.log('📊 [account-balances] Using rate:', latestRate)
+        logger.info('📊 [account-balances] Using rate:', latestRate)
 
         // Try Validation Cloud first, then fallback to standard mirror node
         let data
@@ -81,10 +84,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         if (apiKey) {
             try {
                 const baseUrl =
-                    process.env.VALIDATION_CLOUD_BASE_URL ||
+                    process.env.VALIDATION_CLOUD_BASE_URL ??
                     'https://testnet.hedera.validationcloud.io/v1'
                 const url = `${baseUrl}/${apiKey}/api/v1/accounts/${accountId}`
-                console.log(
+                logger.info(
                     '📡 [account-balances] Trying Validation Cloud:',
                     url
                 )
@@ -97,12 +100,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 }
 
                 data = await response.json()
-                console.log(
+                logger.info(
                     '✅ [account-balances] Validation Cloud response:',
                     data
                 )
             } catch (validationCloudError) {
-                console.warn(
+                logger.warn(
                     '⚠️ [account-balances] Validation Cloud failed:',
                     validationCloudError
                 )
@@ -114,7 +117,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         if (!data) {
             dataSource = 'standard-mirror'
             const url = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}`
-            console.log(
+            logger.info(
                 '📡 [account-balances] Trying standard mirror node:',
                 url
             )
@@ -127,18 +130,18 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             }
 
             data = await response.json()
-            console.log(
+            logger.info(
                 '✅ [account-balances] Standard mirror node response:',
                 data
             )
         }
 
-        console.log(`📊 [account-balances] Using data source: ${dataSource}`)
+        logger.info(`📊 [account-balances] Using data source: ${dataSource}`)
 
         const tinybar = data?.balance?.balance ?? 0
         const HBAR_MULTIPLIER = Math.pow(
             10,
-            parseInt(process.env.HBAR_DECIMALS || '8')
+            parseInt(process.env.HBAR_DECIMALS ?? '8')
         )
         // Use higher precision for HBAR as well for consistency
         const hbarBalance = tinybar / HBAR_MULTIPLIER
@@ -148,8 +151,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         let husd = '0.00'
 
         const TOKEN_IDS = {
-            USDC: process.env.USDC_TOKEN_ID || TOKENS.usdc,
-            hUSD: process.env.HUSD_TOKEN_ID || TOKENS.husd,
+            USDC: process.env.USDC_TOKEN_ID ?? TOKENS.usdc,
+            hUSD: process.env.HUSD_TOKEN_ID ?? TOKENS.husd,
         } as const
 
         const DECIMALS_BY_TOKEN_ID: Record<string, number> = {
@@ -157,7 +160,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             [TOKEN_IDS.hUSD]: 3, // Updated to 3 decimals
         }
 
-        console.log('🔍 [account-balances] Using token IDs:', TOKEN_IDS)
+        logger.info('🔍 [account-balances] Using token IDs:', TOKEN_IDS)
 
         let tokens = Array.isArray(data?.balance?.tokens)
             ? data.balance.tokens
@@ -165,7 +168,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             ? data.tokens
             : []
 
-        console.log(
+        logger.info(
             '🔍 [account-balances] Found tokens in account data:',
             tokens.length
         )
@@ -174,7 +177,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         if (tokens.length === 0 && dataSource === 'standard-mirror') {
             try {
                 const tokensUrl = `https://testnet.mirrornode.hedera.com/api/v1/accounts/${accountId}/tokens`
-                console.log(
+                logger.info(
                     '📡 [account-balances] Fetching tokens separately:',
                     tokensUrl
                 )
@@ -182,24 +185,24 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 const tokensResponse = await fetch(tokensUrl)
                 if (tokensResponse.ok) {
                     const tokensData = await tokensResponse.json()
-                    tokens = tokensData.tokens || []
-                    console.log(
+                    tokens = tokensData.tokens ?? []
+                    logger.info(
                         '🔍 [account-balances] Found tokens from tokens endpoint:',
                         tokens.length
                     )
                 }
             } catch (tokensError) {
-                console.warn(
+                logger.warn(
                     '⚠️ [account-balances] Failed to fetch tokens separately:',
                     tokensError
                 )
             }
         }
 
-        console.log('🔍 [account-balances] Processing', tokens.length, 'tokens')
+        logger.info('🔍 [account-balances] Processing', tokens.length, 'tokens')
 
         for (const t of tokens) {
-            console.log('🔍 [account-balances] Processing token:', {
+            logger.info('🔍 [account-balances] Processing token:', {
                 token_id: t.token_id,
                 balance: t.balance,
                 decimals: t.decimals,
@@ -213,7 +216,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 // Use higher precision to avoid rounding issues
                 const balance = t.balance / Math.pow(10, decimals)
                 usdc = balance.toFixed(6).replace(/\.?0+$/, '')
-                console.log('💰 [account-balances] USDC found:', usdc)
+                logger.info('💰 [account-balances] USDC found:', usdc)
             }
             if (t.token_id === TOKEN_IDS.hUSD) {
                 const decimals =
@@ -223,7 +226,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 // Use higher precision to avoid rounding issues
                 const balance = t.balance / Math.pow(10, decimals)
                 husd = balance.toFixed(6).replace(/\.?0+$/, '')
-                console.log('💰 [account-balances] hUSD found:', husd)
+                logger.info('💰 [account-balances] hUSD found:', husd)
             }
         }
 
@@ -236,11 +239,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
                 .replace(/\.?0+$/, ''),
             rate: latestRate.toString(),
         }
-        console.log('✅ [account-balances] Final result:', result)
+        logger.info('✅ [account-balances] Final result:', result)
 
         return NextResponse.json(result)
     } catch (err) {
-        console.error('❌ [account-balances] Error:', err)
+        logger.error('❌ [account-balances] Error:', err)
 
         // More specific error handling
         const errorMessage =
@@ -252,7 +255,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             timestamp: new Date().toISOString(),
         }
 
-        console.error('❌ [account-balances] Error details:', errorDetails)
+        logger.error('❌ [account-balances] Error details:', errorDetails)
         return NextResponse.json(errorDetails, { status: 500 })
     }
 }

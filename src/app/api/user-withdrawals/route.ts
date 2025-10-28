@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WithdrawService } from '@/services/withdrawService'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:user-withdrawals')
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
@@ -14,7 +17,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             )
         }
 
-        console.log('Fetching withdrawals for user:', user)
+        logger.info('Fetching withdrawals for user', { user })
 
         const withdrawService = new WithdrawService()
         const withdrawals = await withdrawService.getUserWithdrawals(user)
@@ -24,7 +27,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             withdrawals,
         })
     } catch (error) {
-        console.error('❌ Error fetching user withdrawals:', error)
+        logger.error('Error fetching user withdrawals', {
+            error: error instanceof Error ? error.message : String(error),
+        })
         return NextResponse.json(
             {
                 error: 'Internal server error',

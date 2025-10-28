@@ -39,11 +39,11 @@ export function useRateHistory(
 
                 if (!response.ok) {
                     throw new Error(
-                        result.error || 'Failed to fetch rate history'
+                        result.error ?? 'Failed to fetch rate history'
                     )
                 }
 
-                const formattedData = (result.data || []).map(
+                const formattedData = (result.data ?? []).map(
                     (point: Omit<RateHistoryPoint, 'time'>) => ({
                         ...point,
                         time: new Date(point.timestamp).getTime(),
@@ -68,11 +68,11 @@ export function useRateHistory(
 
     // Auto-refresh every 30 seconds
     useEffect(() => {
-        fetchRateHistory()
+        void fetchRateHistory()
 
         if (autoRefresh) {
             const interval = setInterval(() => {
-                fetchRateHistory(false) // Don't show loading on auto-refresh
+                void fetchRateHistory(false) // Don't show loading on auto-refresh
             }, 30000)
 
             return () => clearInterval(interval)
@@ -93,7 +93,7 @@ export function useRateHistory(
         data,
         loading,
         error,
-        refetch: () => fetchRateHistory(true),
+        refetch: () => void fetchRateHistory(true),
         lastUpdated,
         currentRate,
         priceChange,

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
+import { logger } from '@/lib/logger'
+
 
 interface InstantWithdrawData {
     maxInstantWithdrawable: number
@@ -43,7 +45,7 @@ const refreshCallbacks = new Set<() => void>()
 
 const triggerGlobalRefresh = () => {
     globalRefreshTimestamp = Date.now()
-    console.log(
+    logger.info(
         '🌐 [useInstantWithdraw] Triggering global refresh, notifying',
         refreshCallbacks.size,
         'instances'
@@ -72,13 +74,13 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
 
             if (!response.ok) {
                 throw new Error(
-                    data.error ||
+                    data.error ??
                         'Failed to fetch max instant withdrawable amount'
                 )
             }
 
             setMaxInstantWithdrawable(data.maxInstantWithdrawable)
-            console.log(
+            logger.info(
                 '🔄 [useInstantWithdraw] Max amount updated to:',
                 data.maxInstantWithdrawable
             )
@@ -86,7 +88,7 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
             const errorMessage =
                 err instanceof Error ? err.message : 'Unknown error'
             setError(errorMessage)
-            console.error('Error fetching max instant withdrawable:', err)
+            logger.error('Error fetching max instant withdrawable:', err)
         } finally {
             setIsLoading(false)
         }
@@ -117,7 +119,7 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
         rate: number,
         rateSequenceNumber: string
     ): Promise<InstantWithdrawResponse> => {
-        console.log('🚀 Making instant withdraw request:', {
+        logger.info('🚀 Making instant withdraw request:', {
             userAccountId,
             amountHUSD,
         })
@@ -140,14 +142,14 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
             const data: InstantWithdrawResponse = await response.json()
 
             if (!response.ok) {
-                console.error('❌ Instant withdraw failed:', data)
+                logger.error('❌ Instant withdraw failed:', data)
                 return {
                     success: false,
-                    error: data.error || 'Instant withdrawal failed',
+                    error: data.error ?? 'Instant withdrawal failed',
                 }
             }
 
-            console.log('✅ Instant withdraw successful!')
+            logger.info('✅ Instant withdraw successful!')
 
             // Refresh max amount after successful withdrawal and trigger global refresh
             await fetchMaxInstantWithdrawable()
@@ -155,7 +157,7 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
 
             return data
         } catch (err) {
-            console.error('❌ Instant withdraw exception:', err)
+            logger.error('❌ Instant withdraw exception:', err)
             const errorMessage =
                 err instanceof Error ? err.message : 'Unknown error'
             return {
@@ -180,16 +182,16 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
     // Refresh when global refresh is triggered
     useEffect(() => {
         if (lastRefresh < globalRefreshTimestamp) {
-            console.log(
+            logger.info(
                 '🔄 [useInstantWithdraw] Global refresh triggered, updating max amount...'
             )
-            fetchMaxInstantWithdrawable()
+            void fetchMaxInstantWithdrawable()
         }
     }, [lastRefresh, fetchMaxInstantWithdrawable])
 
     // Fetch max amount on mount
     useEffect(() => {
-        fetchMaxInstantWithdrawable()
+        void fetchMaxInstantWithdrawable()
     }, [fetchMaxInstantWithdrawable])
 
     return {

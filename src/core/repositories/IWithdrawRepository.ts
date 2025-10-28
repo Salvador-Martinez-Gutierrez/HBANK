@@ -9,6 +9,7 @@
 
 import { Withdrawal } from '@/domain/entities/Withdrawal'
 
+
 /**
  * Pagination options for querying withdrawals
  */
@@ -73,7 +74,7 @@ export interface IWithdrawRepository {
      * ```typescript
      * const withdrawal = await repository.findById('0.0.123456@1234567890.000000000')
      * if (withdrawal) {
-     *   console.log(`Withdrawal type: ${withdrawal.type}`)
+     *   logger.info(`Withdrawal type: ${withdrawal.type}`)
      * }
      * ```
      */
@@ -144,7 +145,7 @@ export interface IWithdrawRepository {
      * ```typescript
      * const withdrawal = Withdrawal.createInstant('0.0.12345', 50, rate, fee)
      * const saved = await repository.save(withdrawal)
-     * console.log(`Withdrawal saved with ID: ${saved.id}`)
+     * logger.info(`Withdrawal saved with ID: ${saved.id}`)
      * ```
      */
     save(withdrawal: Withdrawal): Promise<Withdrawal>
@@ -185,7 +186,7 @@ export interface IWithdrawRepository {
      * @example
      * ```typescript
      * const instantCount = await repository.count({ type: 'instant' })
-     * console.log(`Total instant withdrawals: ${instantCount}`)
+     * logger.info(`Total instant withdrawals: ${instantCount}`)
      * ```
      */
     count(filters?: WithdrawalFilterOptions): Promise<number>

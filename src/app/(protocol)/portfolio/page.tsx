@@ -42,6 +42,8 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { logger } from '@/lib/logger'
+
 
 export default function PortfolioPage() {
     const { isConnected } = useWallet()
@@ -64,7 +66,7 @@ export default function PortfolioPage() {
         addWallet,
         deleteWallet,
         lastPriceUpdate,
-    } = usePortfolioWallets(user?.id || null)
+    } = usePortfolioWallets(user?.id ?? null)
     const [syncing, setSyncing] = useState(false)
     const [syncingWallets, setSyncingWallets] = useState<Set<string>>(new Set())
     const [isAuthenticating, setIsAuthenticating] = useState(false)
@@ -82,7 +84,7 @@ export default function PortfolioPage() {
     const { isWalletCollapsed, toggleWalletCollapsed } = useWalletCollapse()
 
     // Wallet order state (localStorage, instant)
-    const { sortWallets, saveWalletOrder } = useWalletOrder(user?.id || null)
+    const { sortWallets, saveWalletOrder } = useWalletOrder(user?.id ?? null)
 
     // Sync cooldown state (localStorage, 1 hour cooldown)
     const {
@@ -126,7 +128,7 @@ export default function PortfolioPage() {
             return
         }
 
-        console.log('🚀 Starting authentication for:', accountId)
+        logger.info('🚀 Starting authentication for:', accountId)
         setIsAuthenticating(true)
 
         try {
@@ -144,7 +146,7 @@ export default function PortfolioPage() {
             }
 
             const { nonce, message } = await nonceResponse.json()
-            console.log('📝 Nonce received, message:', message)
+            logger.info('📝 Nonce received, message:', message)
 
             // Step 2: Request signature from wallet
             toast.loading('Please sign the message in your wallet...', {
@@ -152,7 +154,7 @@ export default function PortfolioPage() {
             })
 
             const { signature } = await signMessage(message)
-            console.log('✍️ Signature received')
+            logger.info('✍️ Signature received')
 
             // Step 3: Verify signature with backend and get JWT
             toast.loading('Verifying signature...', {
@@ -164,15 +166,15 @@ export default function PortfolioPage() {
             toast.dismiss('auth-flow')
 
             if (result.success) {
-                console.log('✅ Authentication successful!')
+                logger.info('✅ Authentication successful!')
                 toast.success('Portfolio authenticated successfully!')
             } else {
-                console.error('❌ Authentication failed:', result.error)
-                toast.error(result.error || 'Authentication failed')
+                logger.error('❌ Authentication failed:', result.error)
+                toast.error(result.error ?? 'Authentication failed')
             }
         } catch (error) {
             toast.dismiss('auth-flow')
-            console.error('💥 Authentication error:', error)
+            logger.error('💥 Authentication error:', error)
             const errorMessage =
                 error instanceof Error
                     ? error.message
@@ -208,10 +210,10 @@ export default function PortfolioPage() {
                 // Record sync time
                 recordWalletSync(walletId)
             } else {
-                toast.error(result.error || 'Failed to sync tokens')
+                toast.error(result.error ?? 'Failed to sync tokens')
             }
         } catch (error) {
-            console.error('Sync error:', error)
+            logger.error('Sync error:', error)
             toast.error('Failed to sync tokens')
         } finally {
             // Remove wallet from syncing set
@@ -239,21 +241,21 @@ export default function PortfolioPage() {
 
         try {
             // 🚀 Use optimized batch sync that makes only ONE SaucerSwap API call
-            console.log('🚀 Starting optimized batch sync for all wallets...')
+            logger.info('🚀 Starting optimized batch sync for all wallets...')
             const result = await syncAllWallets()
 
             if (result.success) {
                 toast.success(
-                    result.message || 'All wallets synced successfully'
+                    result.message ?? 'All wallets synced successfully'
                 )
                 // Record sync all time and set cooldown for all individual wallets
                 const walletIds = wallets.map((wallet) => wallet.id)
                 recordSyncAll(walletIds)
             } else {
-                toast.error(result.error || 'Failed to sync wallets')
+                toast.error(result.error ?? 'Failed to sync wallets')
             }
         } catch (error) {
-            console.error('Sync all error:', error)
+            logger.error('Sync all error:', error)
             toast.error('Failed to sync wallets')
         } finally {
             setSyncing(false)
@@ -268,7 +270,7 @@ export default function PortfolioPage() {
         // Open confirmation modal
         setWalletToDelete({
             id: walletId,
-            label: wallet.label || undefined,
+            label: wallet.label ?? undefined,
             address: wallet.wallet_address,
         })
     }
@@ -280,7 +282,7 @@ export default function PortfolioPage() {
         if (result.success) {
             toast.success('Wallet removed')
         } else {
-            toast.error(result.error || 'Failed to remove wallet')
+            toast.error(result.error ?? 'Failed to remove wallet')
         }
 
         setWalletToDelete(null)
@@ -360,7 +362,7 @@ export default function PortfolioPage() {
                         </p>
                     </div>
                     <Button
-                        onClick={handleAuthenticatePortfolio}
+                        onClick={() => void handleAuthenticatePortfolio()}
                         disabled={
                             authLoading || isAuthenticating || !isSignReady
                         }
@@ -417,7 +419,7 @@ export default function PortfolioPage() {
                     <Button
                         type='button'
                         variant='outline'
-                        onClick={handleSyncAllWallets}
+                        onClick={() => void handleSyncAllWallets()}
                         disabled={
                             syncing || walletsLoading || isSyncAllOnCooldown()
                         }
@@ -509,7 +511,7 @@ export default function PortfolioPage() {
                             type='button'
                             onClick={() => {
                                 if (wallets[0]) {
-                                    handleSyncWallet(
+                                    void handleSyncWallet(
                                         wallets[0].id,
                                         wallets[0].wallet_address
                                     )
@@ -548,8 +550,8 @@ export default function PortfolioPage() {
                                     cooldownRemainingTime={formatRemainingTime(
                                         getWalletRemainingTime(wallet.id)
                                     )}
-                                    onSync={handleSyncWallet}
-                                    onDelete={handleDeleteWallet}
+                                    onSync={(id, address) => void handleSyncWallet(id, address)}
+                                    onDelete={(id) => void handleDeleteWallet(id)}
                                     onToggleCollapse={() =>
                                         toggleWalletCollapsed(wallet.id)
                                     }
@@ -566,7 +568,7 @@ export default function PortfolioPage() {
             <DeleteWalletDialog
                 open={walletToDelete !== null}
                 onOpenChange={(open) => !open && setWalletToDelete(null)}
-                onConfirm={confirmDeleteWallet}
+                onConfirm={() => void confirmDeleteWallet()}
                 walletLabel={walletToDelete?.label}
                 walletAddress={walletToDelete?.address}
             />

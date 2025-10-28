@@ -66,16 +66,16 @@ export function useSignMessage() {
                     }
                 }
                 const walletType: string =
-                    walletAny.walletType?.toLowerCase() || ''
+                    walletAny.walletType?.toLowerCase() ?? ''
 
                 if (walletType.includes('hashpack')) {
                     // HashPack wallet
                     // HashPack uses hashconnect
                     const hashconnect =
-                        walletAny.connector?.hashconnect ||
+                        walletAny.connector?.hashconnect ??
                         walletAny.hashconnect
 
-                    if (!hashconnect || !hashconnect.signMessage) {
+                    if (!hashconnect?.signMessage) {
                         throw new Error(
                             'HashPack connector not available or does not support message signing'
                         )
@@ -86,8 +86,8 @@ export function useSignMessage() {
                         message
                     )
                     resultSignature =
-                        result.signatureMap?.sigPair?.[0]?.ed25519 ||
-                        result.signature ||
+                        result.signatureMap?.sigPair?.[0]?.ed25519 ??
+                        result.signature ??
                         ''
                     resultPublicKey = result.publicKey
                 } else if (walletType.includes('blade')) {
@@ -111,7 +111,7 @@ export function useSignMessage() {
                         message,
                         connectedAccountId
                     )
-                    resultSignature = result.signature || ''
+                    resultSignature = result.signature ?? ''
                     resultPublicKey = result.publicKey
                 } else {
                     // Generic wallet - try with the signer

@@ -23,7 +23,10 @@ export function ConnectWalletButton({
     // Close dialog when wallet connects
     useEffect(() => {
         if (isConnected && isDialogOpen) {
-            setIsDialogOpen(false)
+            // Use timeout to avoid synchronous setState
+            setTimeout(() => {
+                setIsDialogOpen(false)
+            }, 0)
         }
     }, [isConnected, isDialogOpen, isLoading])
 
@@ -36,7 +39,7 @@ export function ConnectWalletButton({
     const variantStyles = variant === 'full-width' ? 'w-full h-14' : ''
 
     const combinedClassName = `${baseStyles} ${variantStyles} ${
-        className || ''
+        className ?? ''
     }`.trim()
 
     return (

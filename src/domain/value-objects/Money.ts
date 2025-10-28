@@ -11,6 +11,7 @@
 import { InvalidValueError, CurrencyMismatchError } from '@/domain/errors/DomainError'
 import { Rate } from './Rate'
 
+
 /**
  * Supported currencies in HBANK Protocol
  */
@@ -46,7 +47,7 @@ const CURRENCY_MULTIPLIERS: Record<Currency, number> = {
  * const husd = usdc.convertTo('HUSD', rate)
  *
  * const total = usdc.add(Money.usdc(50))
- * console.log(total.toDisplayString()) // "$150.50 USDC"
+ * logger.info(total.toDisplayString()) // "$150.50 USDC"
  * ```
  */
 export class Money {
@@ -82,8 +83,8 @@ export class Money {
      * @example
      * ```typescript
      * const usdc = Money.usdc(100.50)
-     * console.log(usdc.amount) // 100.50
-     * console.log(usdc.currency) // 'USDC'
+     * logger.info(usdc.amount) // 100.50
+     * logger.info(usdc.currency) // 'USDC'
      * ```
      */
     static usdc(amount: number): Money {
@@ -163,7 +164,7 @@ export class Money {
      * @example
      * ```typescript
      * const zero = Money.zero('USDC')
-     * console.log(zero.isZero()) // true
+     * logger.info(zero.isZero()) // true
      * ```
      */
     static zero(currency: Currency): Money {
@@ -186,7 +187,7 @@ export class Money {
      * const usdc = Money.usdc(100)
      * const rate = Rate.create(1.005, '123')
      * const husd = usdc.convertTo('HUSD', rate)
-     * console.log(husd.amount) // ~99.5 HUSD
+     * logger.info(husd.amount) // ~99.5 HUSD
      * ```
      */
     convertTo(targetCurrency: Currency, rate: Rate): Money {
@@ -218,7 +219,7 @@ export class Money {
      * @example
      * ```typescript
      * const usdc = Money.usdc(100.5)
-     * console.log(usdc.toTinyUnits()) // 100500000
+     * logger.info(usdc.toTinyUnits()) // 100500000
      * ```
      */
     toTinyUnits(): number {
@@ -239,7 +240,7 @@ export class Money {
      * @example
      * ```typescript
      * const total = Money.usdc(100).add(Money.usdc(50))
-     * console.log(total.amount) // 150
+     * logger.info(total.amount) // 150
      * ```
      */
     add(other: Money): Money {
@@ -256,7 +257,7 @@ export class Money {
      * @example
      * ```typescript
      * const remaining = Money.usdc(100).subtract(Money.usdc(30))
-     * console.log(remaining.amount) // 70
+     * logger.info(remaining.amount) // 70
      * ```
      */
     subtract(other: Money): Money {
@@ -282,7 +283,7 @@ export class Money {
      * @example
      * ```typescript
      * const doubled = Money.usdc(100).multiply(2)
-     * console.log(doubled.amount) // 200
+     * logger.info(doubled.amount) // 200
      * ```
      */
     multiply(multiplier: number): Money {
@@ -301,7 +302,7 @@ export class Money {
      * @example
      * ```typescript
      * const half = Money.usdc(100).divide(2)
-     * console.log(half.amount) // 50
+     * logger.info(half.amount) // 50
      * ```
      */
     divide(divisor: number): Money {
@@ -377,7 +378,7 @@ export class Money {
      * @example
      * ```typescript
      * const usdc = Money.usdc(100.50)
-     * console.log(usdc.toDisplayString()) // "100.50 USDC"
+     * logger.info(usdc.toDisplayString()) // "100.50 USDC"
      * ```
      */
     toDisplayString(): string {

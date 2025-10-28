@@ -25,6 +25,8 @@ import {
 } from '@/hooks/useInstantWithdraw'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { formatCurrency } from '@/lib/formatters'
+import { logger } from '@/lib/logger'
+
 
 export function TradingInterface() {
     // State management
@@ -67,7 +69,7 @@ export function TradingInterface() {
 
     // Debug effect to track maxInstantWithdrawable changes
     useEffect(() => {
-        console.log(
+        logger.info(
             '🔍 [TradingInterface] maxInstantWithdrawable updated:',
             maxInstantWithdrawable
         )
@@ -241,9 +243,9 @@ export function TradingInterface() {
                 <RedeemActionButton
                     fromAmount={fromAmount}
                     hUSDBalance={parseFloat(balances.hUSD) || 0}
-                    onBalanceRefresh={enhancedRefreshBalances}
+                    onBalanceRefresh={() => void enhancedRefreshBalances()}
                     onInputClear={handleInputClear}
-                    rateData={rateData || undefined}
+                    rateData={rateData ?? undefined}
                     redeemType={redeemType}
                 />
             ) : (
@@ -252,7 +254,7 @@ export function TradingInterface() {
             )}
 
             {/* Transaction Details */}
-            <TransactionDetails exchangeRate={rateData?.rate || 1.0} />
+            <TransactionDetails exchangeRate={rateData?.rate ?? 1.0} />
         </div>
     )
 

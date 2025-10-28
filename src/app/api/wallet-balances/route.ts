@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { HederaService } from '@/services/hederaService'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:wallet-balances')
 
 interface WalletInfo {
     id: string
@@ -26,45 +29,45 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
         // Define all wallets from .env
         const wallets = [
             {
-                id: process.env.RATE_PUBLISHER_ID!,
+                id: process.env.RATE_PUBLISHER_ID ?? '',
                 name: 'Rate Publisher',
                 description: 'Publishes exchange rates to HCS',
                 envKey: 'RATE_PUBLISHER_ID',
             },
             {
-                id: process.env.TREASURY_ID!,
+                id: process.env.TREASURY_ID ?? '',
                 name: 'Treasury',
                 description: 'Holds hUSD tokens',
                 envKey: 'TREASURY_ID',
             },
             {
-                id: process.env.DEPOSIT_WALLET_ID!,
+                id: process.env.DEPOSIT_WALLET_ID ?? '',
                 name: 'Deposit Wallet',
                 description: 'Receives USDC deposits',
                 envKey: 'DEPOSIT_WALLET_ID',
             },
             {
-                id: process.env.INSTANT_WITHDRAW_WALLET_ID!,
+                id: process.env.INSTANT_WITHDRAW_WALLET_ID ?? '',
                 name: 'Instant Withdrawal',
                 description: 'Processes instant USDC withdrawals',
                 envKey: 'INSTANT_WITHDRAW_WALLET_ID',
             },
             {
-                id: process.env.STANDARD_WITHDRAW_WALLET_ID!,
+                id: process.env.STANDARD_WITHDRAW_WALLET_ID ?? '',
                 name: 'Standard Withdrawal',
                 description: 'Processes standard USDC withdrawals',
                 envKey: 'STANDARD_WITHDRAW_WALLET_ID',
             },
             {
-                id: process.env.EMISSIONS_ID!,
+                id: process.env.EMISSIONS_ID ?? '',
                 name: 'Emissions',
                 description: 'Mints hUSD tokens',
                 envKey: 'EMISSIONS_ID',
             },
         ]
 
-        const usdcTokenId = process.env.USDC_TOKEN_ID!
-        const husdTokenId = process.env.HUSD_TOKEN_ID!
+        const usdcTokenId = process.env.USDC_TOKEN_ID ?? ''
+        const husdTokenId = process.env.HUSD_TOKEN_ID ?? ''
 
         const walletBalances: WalletInfo[] = []
 
@@ -103,10 +106,11 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
                     health,
                 })
             } catch (error) {
-                console.error(
-                    `Error fetching balance for wallet ${wallet.name}:`,
-                    error
-                )
+                logger.error(`Error fetching balance for wallet ${wallet.name}`, {
+                    walletName: wallet.name,
+                    walletId: wallet.id,
+                    error: error instanceof Error ? error.message : String(error),
+                })
                 // Add wallet with zero balances if error occurs
                 walletBalances.push({
                     id: wallet.id,
@@ -128,7 +132,9 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
             lastUpdated: new Date().toISOString(),
         } as WalletBalancesResponse)
     } catch (error) {
-        console.error('Error fetching wallet balances:', error)
+        logger.error('Error fetching wallet balances', {
+            error: error instanceof Error ? error.message : String(error),
+        })
         return NextResponse.json(
             { error: 'Failed to fetch wallet balances' },
             { status: 500 }
@@ -151,11 +157,14 @@ async function getHbarBalance(accountId: string): Promise<number> {
         // Convert tinybars to HBAR using environment decimal setting
         const HBAR_MULTIPLIER = Math.pow(
             10,
-            parseInt(process.env.HBAR_DECIMALS || '8')
+            parseInt(process.env.HBAR_DECIMALS ?? '8')
         )
         return data.balance ? data.balance.balance / HBAR_MULTIPLIER : 0
     } catch (error) {
-        console.error('Error fetching HBAR balance:', error)
+        logger.error('Error fetching HBAR balance', {
+            accountId,
+            error: error instanceof Error ? error.message : String(error),
+        })
         return 0
     }
 }
@@ -185,14 +194,18 @@ async function getHusdBalance(
             )
             if (husdToken) {
                 // Use the actual decimals from the token info, fallback to 8 for hUSD
-                const decimals = husdToken.decimals || 3
+                const decimals = husdToken.decimals ?? 3
                 return husdToken.balance / Math.pow(10, decimals)
             }
         }
 
         return 0
     } catch (error) {
-        console.error('Error fetching hUSD balance:', error)
+        logger.error('Error fetching hUSD balance', {
+            accountId,
+            tokenId,
+            error: error instanceof Error ? error.message : String(error),
+        })
         return 0
     }
 }

@@ -14,6 +14,8 @@ import { Label } from '@/components/ui/label'
 import { useRealTimeRate } from '@/hooks/useRealTimeRate'
 import { useWithdrawals } from '@/hooks/useWithdrawals'
 import { Loader2, AlertTriangle, Clock } from 'lucide-react'
+import { logger } from '@/lib/logger'
+
 
 function isValidSigner(signer: unknown): signer is Signer {
     return (
@@ -91,15 +93,15 @@ export function WithdrawDialog({
             const result = await submitWithdrawal(amount, rate, sequenceNumber)
 
             if (!result.success) {
-                setError(result.error || 'Failed to create withdrawal request')
+                setError(result.error ?? 'Failed to create withdrawal request')
                 return
             }
 
-            console.log('Schedule Transaction created:', result)
-            setScheduleId(result.scheduleId || '')
+            logger.info('Schedule Transaction created:', result)
+            setScheduleId(result.scheduleId ?? '')
 
             // Step 2: User signs the Schedule Transaction
-            await handleScheduleSignature(result.scheduleId || '')
+            await handleScheduleSignature(result.scheduleId ?? '')
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error')
         } finally {
@@ -117,7 +119,7 @@ export function WithdrawDialog({
                 throw new Error('Invalid signer: wallet not properly connected')
             }
 
-            console.log(
+            logger.info(
                 'Requesting schedule signature for:',
                 scheduleTransactionId
             )
@@ -141,7 +143,7 @@ export function WithdrawDialog({
             const userSignResponse = await signedScheduleTx.executeWithSigner(
                 signer
             )
-            console.log(
+            logger.info(
                 'User signature executed:',
                 userSignResponse.transactionId?.toString()
             )
@@ -150,7 +152,7 @@ export function WithdrawDialog({
             const userSignReceipt = await userSignResponse.getReceiptWithSigner(
                 signer
             )
-            console.log(
+            logger.info(
                 'User signature receipt:',
                 userSignReceipt.status.toString()
             )
@@ -173,7 +175,7 @@ export function WithdrawDialog({
                 handleClose()
             }, 5000)
         } catch (err) {
-            console.error('Error signing Schedule Transaction:', err)
+            logger.error('Error signing Schedule Transaction:', err)
             setError(
                 err instanceof Error
                     ? err.message
@@ -211,7 +213,7 @@ export function WithdrawDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className='space-y-4'>
+                <form onSubmit={(e) => void handleSubmit(e)} className='space-y-4'>
                     {/* Progress indicator */}
                     {step && (
                         <div className='bg-blue-50 p-3 rounded-lg'>

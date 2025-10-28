@@ -45,11 +45,13 @@ export const GET = withAuthRoute(
 
             return NextResponse.json({
                 success: true,
-                user: result.user || null,
+                user: result.user ?? null,
                 accountId: accountId,
             })
         } catch (error) {
-            console.error('Server-side user fetch error:', error)
+            _logger.error('Server-side user fetch error', {
+                error: error instanceof Error ? error.message : String(error),
+            })
             return NextResponse.json(
                 {
                     error:

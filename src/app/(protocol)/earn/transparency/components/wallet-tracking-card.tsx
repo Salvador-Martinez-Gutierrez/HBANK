@@ -59,9 +59,9 @@ export default function WalletTrackingCard({
     error: propError,
     onRefresh,
 }: WalletTrackingCardProps) {
-    const [wallets, setWallets] = useState<WalletInfo[]>(propWallets || [])
+    const [wallets, setWallets] = useState<WalletInfo[]>(propWallets ?? [])
     const [lastUpdated, setLastUpdated] = useState<string>(
-        propLastUpdated || ''
+        propLastUpdated ?? ''
     )
     const [loading, setLoading] = useState(propLoading ?? true)
     const [error, setError] = useState<string | null>(propError ?? null)
@@ -121,7 +121,7 @@ export default function WalletTrackingCard({
     useEffect(() => {
         // Only fetch internally if no props provided
         if (propWallets === undefined && propLoading === undefined) {
-            fetchWalletBalances()
+            void fetchWalletBalances()
         }
     }, [propWallets, propLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -280,7 +280,7 @@ export default function WalletTrackingCard({
                 </CardHeader>
                 <CardContent>
                     <p className='text-red-600 mb-4'>{error}</p>
-                    <Button onClick={fetchWalletBalances} variant='outline'>
+                    <Button onClick={() => void fetchWalletBalances()} variant='outline'>
                         Try Again
                     </Button>
                 </CardContent>
@@ -303,7 +303,7 @@ export default function WalletTrackingCard({
                         </CardDescription>
                     </div>
                     <Button
-                        onClick={fetchWalletBalances}
+                        onClick={() => void fetchWalletBalances()}
                         variant='outline'
                         size='sm'
                         disabled={refreshing}

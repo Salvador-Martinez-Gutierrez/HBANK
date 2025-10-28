@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react'
+import { logger } from '@/lib/logger'
+
 
 const SYNC_COOLDOWN_KEY = 'portfolio_sync_cooldown'
 const COOLDOWN_DURATION = 60 * 60 * 1000 // 1 hour in milliseconds
@@ -17,7 +19,7 @@ export function useSyncCooldown() {
                 return JSON.parse(stored)
             }
         } catch (error) {
-            console.error(
+            logger.error(
                 'Error loading sync cooldown from localStorage:',
                 error
             )
@@ -30,7 +32,7 @@ export function useSyncCooldown() {
         try {
             localStorage.setItem(SYNC_COOLDOWN_KEY, JSON.stringify(data))
         } catch (error) {
-            console.error('Error saving sync cooldown to localStorage:', error)
+            logger.error('Error saving sync cooldown to localStorage:', error)
         }
     }, [])
 

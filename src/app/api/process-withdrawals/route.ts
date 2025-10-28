@@ -3,6 +3,9 @@ import { WithdrawService } from '@/services/withdrawService'
 import { HederaService } from '@/services/hederaService'
 import { TelegramService } from '@/services/telegramService'
 import { ACCOUNTS } from '@/app/backend-constants'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:process-withdrawals')
 
 interface WithdrawProcessingResult {
     success: boolean
@@ -15,7 +18,7 @@ interface WithdrawProcessingResult {
 
 export async function POST(_req: NextRequest): Promise<NextResponse> {
     try {
-        console.log('🔄 Starting withdrawal processing worker...')
+        logger.info('Starting withdrawal processing worker')
 
         const withdrawService = new WithdrawService()
         const hederaService = new HederaService()
@@ -23,9 +26,9 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
         // Get all pending withdrawals that are ready to be processed
         const pendingWithdrawals = await withdrawService.getPendingWithdrawals()
 
-        console.log(
-            `Found ${pendingWithdrawals.length} pending withdrawals to process`
-        )
+        logger.info('Found pending withdrawals', {
+            count: pendingWithdrawals.length,
+        })
 
         const results = {
             processed: pendingWithdrawals.length,
@@ -37,28 +40,29 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
         // Process each withdrawal
         for (const withdrawal of pendingWithdrawals) {
             try {
-                console.log(`Processing withdrawal ${withdrawal.requestId}...`)
+                logger.info('Processing withdrawal', {
+                    requestId: withdrawal.requestId,
+                })
 
                 // ⚠️ CRITICAL SECURITY CHECK ⚠️
                 // Verify that the user actually sent their HUSD before sending any USDC
 
-                console.log(`🔍 Verifying Schedule Transaction execution...`)
-                console.log(`   Schedule ID: ${withdrawal.scheduleId}`)
-                console.log(`   User: ${withdrawal.user}`)
-                console.log(`   Amount: ${withdrawal.amountHUSD} HUSD`)
+                logger.info('Verifying Schedule Transaction execution', {
+                    scheduleId: withdrawal.scheduleId,
+                    user: withdrawal.user,
+                    amountHUSD: withdrawal.amountHUSD,
+                })
 
                 // Check if this is a new-style withdrawal (HUSD already transferred)
                 const isNewStyleWithdrawal =
                     withdrawal.scheduleId === 'verified'
 
                 if (isNewStyleWithdrawal) {
-                    console.log(
-                        '🔍 New-style withdrawal: HUSD already transferred, skipping schedule verification'
+                    logger.info(
+                        'New-style withdrawal: HUSD already transferred, skipping schedule verification'
                     )
                 } else {
-                    console.log(
-                        '🔍 Legacy withdrawal: Verifying scheduled transaction...'
-                    )
+                    logger.info('Legacy withdrawal: Verifying scheduled transaction')
                 }
 
                 // Step 1: Verify the Schedule Transaction was executed (only for legacy withdrawals)
@@ -72,12 +76,10 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                 }
 
                 if (!scheduleExecuted) {
-                    console.log(
-                        `❌ Schedule Transaction ${withdrawal.scheduleId} not executed`
-                    )
-                    console.log(
-                        `📋 User must sign the Schedule Transaction to complete HUSD transfer`
-                    )
+                    logger.warn('Schedule Transaction not executed', {
+                        scheduleId: withdrawal.scheduleId,
+                        requestId: withdrawal.requestId,
+                    })
 
                     await hederaService.publishWithdrawResult(
                         withdrawal.requestId,
@@ -93,9 +95,9 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                     continue
                 }
 
-                console.log(
-                    `✅ Schedule Transaction ${withdrawal.scheduleId} was executed`
-                )
+                logger.info('Schedule Transaction executed', {
+                    scheduleId: withdrawal.scheduleId,
+                })
 
                 // Step 2: Verify HUSD was actually transferred to emissions wallet
                 // (Both standard and instant withdrawals now go to emissions wallet)
@@ -115,16 +117,17 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                             withdrawal.requestedAt
                         )
                 } else {
-                    console.log(
-                        '✅ New-style withdrawal: HUSD already verified during request, skipping verification'
+                    logger.info(
+                        'New-style withdrawal: HUSD already verified during request, skipping verification'
                     )
                 }
 
                 if (!husdTransferVerified) {
-                    console.log(`❌ HUSD transfer verification failed`)
-                    console.log(
-                        `📋 Expected ${withdrawal.amountHUSD} HUSD from ${withdrawal.user} to ${emissionsWalletId}`
-                    )
+                    logger.error('HUSD transfer verification failed', {
+                        expectedAmount: withdrawal.amountHUSD,
+                        from: withdrawal.user,
+                        to: emissionsWalletId,
+                    })
 
                     await hederaService.publishWithdrawResult(
                         withdrawal.requestId,
@@ -140,17 +143,15 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                     continue
                 }
 
-                console.log(
-                    `✅ HUSD transfer verified: ${withdrawal.amountHUSD} HUSD received`
-                )
+                logger.info('HUSD transfer verified', {
+                    amount: withdrawal.amountHUSD,
+                })
 
                 // Step 3: All verifications passed - proceed with USDC transfer
-                console.log(
-                    `🚀 All verifications passed, proceeding with USDC withdrawal...`
-                )
+                logger.info('All verifications passed, proceeding with USDC withdrawal')
 
                 const usdcAmount = withdrawal.amountHUSD * withdrawal.rate
-                const usdcTokenId = process.env.USDC_TOKEN_ID!
+                const usdcTokenId = process.env.USDC_TOKEN_ID ?? ''
 
                 // Check Standard Withdraw USDC balance (USDC payments come from standard withdraw wallet)
                 const standardWithdrawWalletId = ACCOUNTS.standardWithdraw
@@ -159,14 +160,16 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                         standardWithdrawWalletId,
                         usdcTokenId
                     )
-                console.log(
-                    `Standard Withdraw USDC balance: ${standardWithdrawBalance}, Required: ${usdcAmount}`
-                )
+                logger.info('Standard Withdraw USDC balance check', {
+                    balance: standardWithdrawBalance,
+                    required: usdcAmount,
+                })
 
                 if (standardWithdrawBalance >= usdcAmount) {
-                    console.log(
-                        `✅ Sufficient balance, transferring ${usdcAmount} USDC to ${withdrawal.user}`
-                    )
+                    logger.info('Sufficient balance, transferring USDC', {
+                        amount: usdcAmount,
+                        recipient: withdrawal.user,
+                    })
 
                     try {
                         const txId = await hederaService.transferUSDCToUser(
@@ -198,26 +201,32 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                                 walletBalanceAfter,
                             })
                         } catch (telegramError) {
-                            console.error(
-                                '❌ Telegram notification failed for standard withdrawal:',
-                                telegramError
+                            logger.error(
+                                'Telegram notification failed for standard withdrawal',
+                                {
+                                    error:
+                                        telegramError instanceof Error
+                                            ? telegramError.message
+                                            : String(telegramError),
+                                }
                             )
                             // Don't fail the entire withdrawal process due to notification error
                         }
 
                         results.completed++
-                        console.log(
-                            `✅ Withdrawal ${withdrawal.requestId} completed successfully`
-                        )
+                        logger.info('Withdrawal completed successfully', {
+                            requestId: withdrawal.requestId,
+                        })
                     } catch (transferError) {
-                        console.error(
-                            `Failed to transfer USDC for ${withdrawal.requestId}:`,
-                            transferError
-                        )
+                        logger.error('Failed to transfer USDC', {
+                            requestId: withdrawal.requestId,
+                            error:
+                                transferError instanceof Error
+                                    ? transferError.message
+                                    : String(transferError),
+                        })
 
-                        console.log(
-                            `🔄 USDC transfer failed, attempting to rollback HUSD...`
-                        )
+                        logger.info('USDC transfer failed, attempting to rollback HUSD')
 
                         try {
                             // Rollback the HUSD to the user since the USDC transfer failed
@@ -227,8 +236,9 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                                     withdrawal.amountHUSD
                                 )
 
-                            console.log(
-                                `✅ HUSD rollback completed after USDC transfer failure: ${rollbackTxId}`
+                            logger.info(
+                                'HUSD rollback completed after USDC transfer failure',
+                                { rollbackTxId }
                             )
 
                             await hederaService.publishWithdrawResult(
@@ -247,9 +257,14 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                                 `USDC transfer failed, HUSD returned: ${withdrawal.requestId}`
                             )
                         } catch (rollbackError) {
-                            console.error(
-                                `❌ Failed to rollback HUSD after USDC transfer failure:`,
-                                rollbackError
+                            logger.error(
+                                'Failed to rollback HUSD after USDC transfer failure',
+                                {
+                                    error:
+                                        rollbackError instanceof Error
+                                            ? rollbackError.message
+                                            : String(rollbackError),
+                                }
                             )
 
                             await hederaService.publishWithdrawResult(
@@ -274,10 +289,11 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                         }
                     }
                 } else {
-                    console.log(
-                        `❌ Insufficient Standard Withdraw USDC balance`
-                    )
-                    console.log(`🔄 Attempting to rollback HUSD to user...`)
+                    logger.warn('Insufficient Standard Withdraw USDC balance', {
+                        balance: standardWithdrawBalance,
+                        required: usdcAmount,
+                    })
+                    logger.info('Attempting to rollback HUSD to user')
 
                     try {
                         // Rollback the HUSD to the user since we can't complete the withdrawal
@@ -287,9 +303,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                                 withdrawal.amountHUSD
                             )
 
-                        console.log(
-                            `✅ HUSD rollback completed: ${rollbackTxId}`
-                        )
+                        logger.info('HUSD rollback completed', { rollbackTxId })
 
                         await hederaService.publishWithdrawResult(
                             withdrawal.requestId,
@@ -303,10 +317,12 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                             `Insufficient USDC balance, HUSD returned: ${withdrawal.requestId}`
                         )
                     } catch (rollbackError) {
-                        console.error(
-                            `❌ Failed to rollback HUSD:`,
-                            rollbackError
-                        )
+                        logger.error('Failed to rollback HUSD', {
+                            error:
+                                rollbackError instanceof Error
+                                    ? rollbackError.message
+                                    : String(rollbackError),
+                        })
 
                         await hederaService.publishWithdrawResult(
                             withdrawal.requestId,
@@ -326,10 +342,10 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                     }
                 }
             } catch (error) {
-                console.error(
-                    `Error processing withdrawal ${withdrawal.requestId}:`,
-                    error
-                )
+                logger.error('Error processing withdrawal', {
+                    requestId: withdrawal.requestId,
+                    error: error instanceof Error ? error.message : String(error),
+                })
                 results.errors.push(
                     `Error processing withdrawal ${withdrawal.requestId}: ${error}`
                 )
@@ -337,7 +353,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
             }
         }
 
-        console.log('✅ Withdrawal processing worker completed:', results)
+        logger.info('Withdrawal processing worker completed', results)
 
         const message =
             results.processed === 0
@@ -350,7 +366,9 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
             ...results,
         } as WithdrawProcessingResult)
     } catch (error) {
-        console.error('❌ Error in withdrawal processing worker:', error)
+        logger.error('Error in withdrawal processing worker', {
+            error: error instanceof Error ? error.message : String(error),
+        })
         return NextResponse.json(
             {
                 success: false,

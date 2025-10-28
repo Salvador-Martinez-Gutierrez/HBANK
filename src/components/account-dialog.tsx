@@ -11,6 +11,8 @@ import { useWallet } from '@buidlerlabs/hashgraph-react-wallets'
 import { Copy, LogOut, Check } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/logger'
+
 
 interface AccountDialogProps {
     open: boolean
@@ -28,21 +30,21 @@ export function AccountDialog({
 
     const handleDisconnect = async () => {
         try {
-            console.log(
+            logger.info(
                 '🚪 Disconnecting wallet and clearing portfolio session...'
             )
 
             // First, sign out from Supabase to clear portfolio session
             await supabase.auth.signOut()
-            console.log('✅ Portfolio session cleared')
+            logger.info('✅ Portfolio session cleared')
 
             // Then disconnect the wallet
             await disconnect()
-            console.log('✅ Wallet disconnected')
+            logger.info('✅ Wallet disconnected')
 
             onOpenChange(false)
         } catch (error) {
-            console.error('Error disconnecting wallet:', error)
+            logger.error('Error disconnecting wallet:', error)
         }
     }
 
@@ -50,9 +52,9 @@ export function AccountDialog({
         try {
             await navigator.clipboard.writeText(accountId)
             setIsCopied(true)
-            console.log('Account ID copied to clipboard')
+            logger.info('Account ID copied to clipboard')
         } catch (error) {
-            console.error('Error copying to clipboard:', error)
+            logger.error('Error copying to clipboard:', error)
         }
     }
 
@@ -83,7 +85,7 @@ export function AccountDialog({
 
                 <div className='flex flex-col gap-3 w-full mt-3'>
                     <Button
-                        onClick={handleCopyAddress}
+                        onClick={() => void handleCopyAddress()}
                         variant='outline'
                         className={`w-full flex items-center gap-2 py-3 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors ${
                             isCopied
@@ -100,7 +102,7 @@ export function AccountDialog({
                     </Button>
 
                     <Button
-                        onClick={handleDisconnect}
+                        onClick={() => void handleDisconnect()}
                         variant='outline'
                         className='w-full flex items-center gap-2 py-3 text-red-600 dark:text-red-400 border-neutral-200 dark:border-neutral-700 hover:bg-red-50 dark:hover:bg-red-950/20 hover:border-red-200 dark:hover:border-red-800'
                     >

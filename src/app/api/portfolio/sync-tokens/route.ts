@@ -45,7 +45,9 @@ export const POST = withAuthRoute(
                 message: 'Tokens synced successfully',
             })
         } catch (error) {
-            console.error('Error syncing tokens:', error)
+            _logger.error('Error syncing tokens', {
+                error: error instanceof Error ? error.message : String(error),
+            })
             return NextResponse.json(
                 {
                     success: false,

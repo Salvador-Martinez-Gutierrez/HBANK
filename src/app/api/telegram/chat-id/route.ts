@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import TelegramBot from 'node-telegram-bot-api'
+import { createScopedLogger } from '@/lib/logger'
+
+const logger = createScopedLogger('api:telegram:chat-id')
 
 export async function GET(_req: NextRequest): Promise<NextResponse> {
     try {
@@ -15,14 +18,14 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
             )
         }
 
-        console.log('🔍 Getting updates from Telegram bot...')
+        logger.info('Getting updates from Telegram bot')
 
         const bot = new TelegramBot(botToken, { polling: false })
 
         // Get recent updates
         const updates = await bot.getUpdates({ limit: 10 })
 
-        console.log(`Found ${updates.length} recent updates`)
+        logger.info('Retrieved Telegram updates', { updateCount: updates.length })
 
         if (updates.length === 0) {
             return NextResponse.json({
@@ -41,20 +44,20 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
         const chats = updates
             .map((update) => {
                 const message =
-                    update.message ||
-                    update.channel_post ||
-                    update.edited_message ||
+                    update.message ??
+                    update.channel_post ??
+                    update.edited_message ??
                     update.edited_channel_post
                 if (message) {
                     return {
                         chat_id: message.chat.id,
                         chat_type: message.chat.type,
                         chat_title:
-                            message.chat.title ||
-                            message.chat.first_name ||
+                            message.chat.title ??
+                            message.chat.first_name ??
                             'N/A',
-                        username: message.chat.username || 'N/A',
-                        message_text: message.text || 'N/A',
+                        username: message.chat.username ?? 'N/A',
+                        message_text: message.text ?? 'N/A',
                         date: new Date(message.date * 1000).toISOString(),
                     }
                 }
@@ -82,7 +85,9 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
             ],
         })
     } catch (error) {
-        console.error('❌ Error getting chat IDs:', error)
+        logger.error('Error getting chat IDs', {
+            error: error instanceof Error ? error.message : String(error),
+        })
         return NextResponse.json(
             {
                 success: false,

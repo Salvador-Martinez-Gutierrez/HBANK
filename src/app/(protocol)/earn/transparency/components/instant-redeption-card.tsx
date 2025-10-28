@@ -35,8 +35,8 @@ export default function InstantRedemptionCard({
         })
     }
 
-    const instantCapacity = instantWallet?.balances.usdc || 0
-    const standardCapacity = standardWallet?.balances.usdc || 0
+    const instantCapacity = instantWallet?.balances.usdc ?? 0
+    const standardCapacity = standardWallet?.balances.usdc ?? 0
     const totalCapacity = instantCapacity + standardCapacity
 
     if (loading) {
