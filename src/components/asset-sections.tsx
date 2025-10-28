@@ -596,10 +596,7 @@ export function AssetSections({
                                                             <TableCell>
                                                                 {apy ? (
                                                                     <span className='text-sm text-green-600'>
-                                                                        {(
-                                                                            apy *
-                                                                            100
-                                                                        ).toFixed(
+                                                                        {apy.toFixed(
                                                                             2
                                                                         )}
                                                                         %
