@@ -18,13 +18,13 @@
   - ✅ 1.5 Eliminar Tipos `any` (COMPLETADO)
   - ✅ 1.6 Pre-commit Hooks (COMPLETADO)
   - ✅ 1.7 Scripts de Calidad (COMPLETADO)
-- **Fase 2 - Arquitectura:** 2/5 (40%) 🔄 EN PROGRESO
+- **Fase 2 - Arquitectura:** 2/5 (45%) ⏸️ PAUSADA
   - ✅ 2.1 Migrar APIs a App Router (COMPLETADO)
-  - ⏸️ 2.2 Implementar DI (10% - Solo configuración, no implementado)
+  - ⏸️ 2.2 Implementar DI (30% - Interfaces creadas, falta implementar)
   - ⏸️ 2.3 Repository Pattern (50% - Solo Hedera, falta Supabase)
   - ⏸️ 2.4 Refactorizar Servicios Gigantes (5% - Solo validation services)
   - ✅ 2.5 Implementar Domain Models (COMPLETADO)
-- **Fase 3 - Clean Code:** 0/5 (0%) ⏸️ PENDIENTE
+- **Fase 3 - Clean Code:** 0/5 (0%) 🔄 EN PROGRESO
 - **Fase 4 - Testing & Calidad:** 0/4 (0%) ⏸️ PENDIENTE
 - **Fase 5 - Optimización:** 0/4 (0%) ⏸️ PENDIENTE
 
@@ -442,12 +442,12 @@ export const POST = withApiHandler(
 
 ---
 
-### 2.2 Implementar Inyección de Dependencias ⏸️ CONFIGURADO (10%)
+### 2.2 Implementar Inyección de Dependencias ⏸️ INTERFACES CREADAS (30%)
 - [x] Instalar InversifyJS: `npm install inversify reflect-metadata`
 - [x] Configurar `tsconfig.json` para decorators
 - [x] Crear `src/core/di/types.ts` (símbolos de DI)
 - [x] Crear `src/core/di/container.ts` (contenedor IoC)
-- [ ] Crear interfaces para todos los servicios (PENDIENTE)
+- [x] Crear interfaces para todos los servicios (✅ 7 interfaces creadas)
 - [ ] Migrar servicios a usar DI (PENDIENTE):
   - [ ] HederaService
   - [ ] DepositService
@@ -460,7 +460,12 @@ export const POST = withApiHandler(
 - [ ] Actualizar API routes para usar contenedor (PENDIENTE)
 - [ ] Actualizar tests para mockear dependencias (PENDIENTE)
 
-**Estado Actual:** Infraestructura configurada pero NO implementada. Todos los bindings están comentados en container.ts. Los servicios NO usan decorators @injectable ni @inject.
+**Estado Actual:**
+- ✅ Infraestructura configurada (InversifyJS, tsconfig, container, types)
+- ✅ 7 interfaces de servicios creadas
+- ❌ Servicios NO migrados a DI (sin decorators @injectable/@inject)
+- ❌ Container vacío (bindings comentados)
+- ⏸️ **PAUSADA** - Decidido continuar con Fase 3 para mayor ROI inmediato
 
 **Estructura propuesta:**
 ```typescript
