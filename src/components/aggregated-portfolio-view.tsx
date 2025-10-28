@@ -65,9 +65,10 @@ export function AggregatedPortfolioView({
 
         for (const wallet of wallets) {
             // Aggregate HBAR
-            const hbarBalance = parseFloat(wallet.hbar_balance || '0')
+            const hbarBalance = parseFloat(String(wallet.hbar_balance || '0'))
             totalHbar += hbarBalance
-            hbarPriceUsd = parseFloat(wallet.hbar_price_usd || '0') // Use last wallet's price
+            const priceUsd = wallet.hbar_price_usd
+            hbarPriceUsd = parseFloat(typeof priceUsd === 'number' ? priceUsd.toString() : String(priceUsd || '0'))
             totalValue += hbarBalance * hbarPriceUsd
 
             // Aggregate fungible tokens

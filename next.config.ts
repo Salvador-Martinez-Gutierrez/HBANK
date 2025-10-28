@@ -1,9 +1,6 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-    typescript: {
-        ignoreBuildErrors: true,
-    },
     webpack: (config, { isServer }) => {
         // Add polyfills for Node.js APIs in the browser
         if (!isServer) {

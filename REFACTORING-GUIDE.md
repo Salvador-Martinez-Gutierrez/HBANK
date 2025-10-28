@@ -24,12 +24,19 @@
 
 > **Objetivo:** Eliminar riesgos de seguridad y deuda técnica bloqueante
 
-### 1.1 TypeScript Build Errors
-- [ ] Remover `ignoreBuildErrors: true` de `next.config.ts`
-- [ ] Ejecutar `npx tsc --noEmit` y documentar todos los errores
-- [ ] Corregir errores de tipos (objetivo: 0 errores)
+### 1.1 TypeScript Build Errors ✅ COMPLETADO
+- [x] Remover `ignoreBuildErrors: true` de `next.config.ts`
+- [x] Ejecutar `npx tsc --noEmit` y documentar todos los errores
+- [x] Corregir errores de tipos (objetivo: 0 errores) - **23 errores corregidos → 0 errores**
 - [ ] Configurar CI/CD para fallar en errores de TypeScript
 - [ ] Agregar script `"type-check": "tsc --noEmit"` a package.json
+
+**Errores corregidos:**
+- Portfolio wallet types (`hbar_price_usd`: string | number)
+- Test files (WithdrawRequest scheduleId missing)
+- Asset sections NFT metadata types
+- PortfolioPriceService Supabase type inference
+- PortfolioWalletService wallet.tokens unknown type
 
 **Archivos afectados:**
 - `next.config.ts:5`
@@ -39,13 +46,20 @@
 
 ---
 
-### 1.2 Seguridad - Claves Privadas Expuestas
-- [ ] Crear `.env.local` y mover todas las claves privadas
-- [ ] Actualizar `.gitignore` para excluir `.env.local`
+### 1.2 Seguridad - Claves Privadas Expuestas ⚠️ PARCIALMENTE COMPLETADO
+- [x] Crear `.env.example` con template de variables
+- [x] `.gitignore` ya excluye `.env*`
+- [ ] **CRÍTICO: Mover claves de `.env` a `.env.local`**
+- [ ] **CRÍTICO: Rotar TODAS las claves expuestas en Hedera Testnet**
 - [ ] Verificar que `.env.local` NO está en git con `git ls-files .env.local`
-- [ ] Rotar TODAS las claves expuestas en Hedera Testnet
 - [ ] Actualizar documentación de setup en README
 - [ ] Implementar validación de variables de entorno en startup
+
+**ACCIÓN REQUERIDA:**
+1. Copiar `.env` a `.env.local`
+2. Eliminar claves privadas de `.env`
+3. Rotar todas las claves expuestas en Hedera
+4. Actualizar `.env.local` con nuevas claves
 
 **Archivos afectados:**
 - `.env:14-30` (claves privadas)

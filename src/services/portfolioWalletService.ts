@@ -1202,7 +1202,8 @@ export async function calculatePortfolioValue(userId: string): Promise<number> {
         let totalValue = 0
 
         for (const wallet of wallets) {
-            for (const token of wallet.tokens) {
+            const tokens = Array.isArray(wallet.tokens) ? wallet.tokens : []
+            for (const token of tokens) {
                 const balance = parseFloat(token.balance || '0')
                 const price = parseFloat(token.price_usd || '0')
                 const decimals = token.decimals || 0

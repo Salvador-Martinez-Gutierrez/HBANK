@@ -638,11 +638,11 @@ export function AssetSections({
                     <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'>
                         {nfts.map((nft) => {
                             // Get image from metadata or token_icon
-                            const nftImage =
-                                nft.metadata?.image || nft.token_icon
+                            const nftMeta = (nft.metadata || {}) as Record<string, unknown>
+                            const nftImage = nft.token_icon || (nftMeta.image ? String(nftMeta.image) : null) || null
                             const nftName =
-                                nft.metadata?.name ||
                                 nft.token_name ||
+                                (nftMeta.name ? String(nftMeta.name) : null) ||
                                 `NFT #${nft.serial_number}`
 
                             return (

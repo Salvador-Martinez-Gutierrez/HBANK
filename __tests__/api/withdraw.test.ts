@@ -93,15 +93,17 @@ describe('Withdrawal API Integration Tests', () => {
             )
             expect(transferTx).toBe('0.0.123456@1234567890')
 
-            const withdrawRequest =
+            const withdrawTxId =
                 await mockHederaService.publishWithdrawRequest(
+                    'req-123',
                     '0.0.123456',
                     100,
                     1.005,
-                    '12345'
+                    '12345',
+                    '0.0.99999'
                 )
-            expect(withdrawRequest.requestId).toBeDefined()
-            expect(withdrawRequest.status).toBe('pending')
+            expect(withdrawTxId).toBeDefined()
+            expect(typeof withdrawTxId).toBe('string')
         })
     })
 })

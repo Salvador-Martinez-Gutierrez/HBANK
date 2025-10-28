@@ -92,10 +92,10 @@ export function usePortfolioWallets(userId: string | null) {
                     update.token_address === 'HBAR' ||
                     update.token_address === '0.0.0'
                 ) {
-                    const oldPrice = parseFloat(wallet.hbar_price_usd || '0')
+                    const oldPrice = parseFloat(String(wallet.hbar_price_usd || '0'))
                     const newPrice = parseFloat(update.price_usd)
                     if (oldPrice !== newPrice) {
-                        newWallet.hbar_price_usd = update.price_usd
+                        newWallet.hbar_price_usd = parseFloat(update.price_usd)
                         walletChanged = true
                         console.log(
                             `  📊 HBAR price updated: $${oldPrice.toFixed(
@@ -358,8 +358,9 @@ export function usePortfolioWallets(userId: string | null) {
 
         for (const wallet of wallets) {
             // Include HBAR balance in total value calculation
-            const hbarBalance = parseFloat(wallet.hbar_balance || '0')
-            const hbarPrice = parseFloat(wallet.hbar_price_usd || '0')
+            const hbarBalance = parseFloat(String(wallet.hbar_balance || '0'))
+            const priceValue = wallet.hbar_price_usd
+            const hbarPrice = parseFloat(typeof priceValue === 'number' ? priceValue.toString() : String(priceValue || '0'))
             total += hbarBalance * hbarPrice
 
             // Include all fungible tokens

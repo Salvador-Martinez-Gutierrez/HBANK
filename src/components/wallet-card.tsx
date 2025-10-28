@@ -61,8 +61,9 @@ export function WalletCard({
         let total = 0
 
         // Add HBAR value
-        const hbarBalance = parseFloat(wallet.hbar_balance || '0')
-        const hbarPrice = parseFloat(wallet.hbar_price_usd || '0')
+        const hbarBalance = parseFloat(String(wallet.hbar_balance || '0'))
+        const priceUsd = wallet.hbar_price_usd
+        const hbarPrice = parseFloat(typeof priceUsd === 'number' ? priceUsd.toString() : String(priceUsd || '0'))
         total += hbarBalance * hbarPrice
 
         // Add fungible tokens value
@@ -89,8 +90,9 @@ export function WalletCard({
     }
 
     const totalValue = calculateTotalValue()
-    const hbarBalance = parseFloat(wallet.hbar_balance || '0')
-    const hbarPriceUsd = parseFloat(wallet.hbar_price_usd || '0')
+    const hbarBalance = parseFloat(String(wallet.hbar_balance || '0'))
+    const hbarPriceValue = wallet.hbar_price_usd
+    const hbarPriceUsd = parseFloat(typeof hbarPriceValue === 'number' ? hbarPriceValue.toString() : String(hbarPriceValue || '0'))
     const fungibleCount = wallet.wallet_tokens?.length || 0
     const defiCount = wallet.wallet_defi?.length || 0
     const nftCount = wallet.wallet_nfts?.length || 0

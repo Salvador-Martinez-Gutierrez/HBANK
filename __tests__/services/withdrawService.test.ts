@@ -152,6 +152,7 @@ describe('Withdrawal Types', () => {
             amountHUSD: 100,
             rate: 1.005,
             rateSequenceNumber: '12345',
+            scheduleId: '0.0.99999',
             requestedAt: new Date().toISOString(),
             unlockAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
             status: 'pending',
