@@ -20,8 +20,8 @@ import {
     Layers,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { WalletCard } from '@/components/wallet-card'
-import { AggregatedPortfolioView } from '@/components/aggregated-portfolio-view'
+import { WalletCard } from '@/features/portfolio/components/wallet-card'
+import { AggregatedPortfolioView } from '@/features/portfolio/components/aggregated-portfolio-view'
 import { useWalletCollapse } from '@/hooks/useWalletCollapse'
 import { useWalletOrder } from '@/hooks/useWalletOrder'
 import { useSyncCooldown } from '@/hooks/useSyncCooldown'

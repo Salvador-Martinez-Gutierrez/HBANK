@@ -10,10 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Coins, Droplet, ImageIcon, Loader2 } from 'lucide-react'
 import type { WalletDefiWithMetadata } from '@/types/portfolio'
-import type { TokenDisplay, NFTDisplay } from '@/types/portfolio-display'
-import { FungibleTokensTab } from './portfolio/FungibleTokensTab'
-import { DefiPositionsTab } from './portfolio/DefiPositionsTab'
-import { NftGalleryTab } from './portfolio/NftGalleryTab'
+import type { TokenDisplay, NFTDisplay } from '@/features/portfolio/types/portfolio-display'
+import { FungibleTokensTab } from '@/features/portfolio/components/FungibleTokensTab'
+import { DefiPositionsTab } from '@/features/portfolio/components/DefiPositionsTab'
+import { NftGalleryTab } from '@/features/portfolio/components/NftGalleryTab'
 
 interface AssetSectionsProps {
     hbarBalance: number

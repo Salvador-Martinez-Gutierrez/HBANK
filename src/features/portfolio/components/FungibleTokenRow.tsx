@@ -4,7 +4,7 @@
  * Displays a single fungible token with icon, balance, and USD value.
  */
 
-import type { TokenDisplay } from '@/types/portfolio-display'
+import type { TokenDisplay } from '@/features/portfolio/types/portfolio-display'
 
 interface FungibleTokenRowProps {
     token: TokenDisplay

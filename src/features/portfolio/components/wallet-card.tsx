@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { AssetSections } from './asset-sections'
+import { AssetSections } from '@/features/portfolio/components/asset-sections'
 import type { WalletWithAssets } from '@/types/portfolio'
 
 interface WalletCardProps {

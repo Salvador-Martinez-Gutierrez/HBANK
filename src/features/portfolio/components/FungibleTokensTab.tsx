@@ -5,9 +5,9 @@
  */
 
 import { Coins } from 'lucide-react'
-import { HbarBalanceCard } from './HbarBalanceCard'
-import { FungibleTokenRow } from './FungibleTokenRow'
-import type { TokenDisplay } from '@/types/portfolio-display'
+import { HbarBalanceCard } from '@/features/portfolio/components/HbarBalanceCard'
+import { FungibleTokenRow } from '@/features/portfolio/components/FungibleTokenRow'
+import type { TokenDisplay } from '@/features/portfolio/types/portfolio-display'
 
 interface FungibleTokensTabProps {
     hbarBalance: number
