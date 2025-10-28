@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Server-side Portfolio Authentication Service
  * ⚠️ WARNING: This file imports supabase-admin and should ONLY be used in API routes (server-side)
@@ -8,6 +7,16 @@
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import type { AuthPayload, AuthResponse } from '@/types/portfolio'
+
+/**
+ * Database user row type
+ */
+interface DbUser {
+    id: string
+    wallet_address: string
+    created_at?: string
+    updated_at?: string
+}
 
 /**
  * Verify the signature and authenticate the user
@@ -75,15 +84,18 @@ export async function registerOrGetUser(walletAddress: string) {
                     'Auth user exists, creating database record:',
                     existingAuthUser.id
                 )
-                const { data: newDbUser, error: insertError } = await (
-                    supabaseAdmin.from('users').upsert as any
-                )(
-                    {
-                        id: existingAuthUser.id,
-                        wallet_address: walletAddress,
-                    },
-                    { onConflict: 'id' }
-                )
+                // @ts-expect-error - Supabase type inference limitation with upsert operation
+                const { data: newDbUser, error: insertError } = await supabaseAdmin
+                    .from('users')
+                    .upsert(
+                        {
+                            id: existingAuthUser.id,
+                            wallet_address: walletAddress,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                        },
+                        { onConflict: 'id' }
+                    )
                     .select()
                     .maybeSingle()
 
@@ -140,10 +152,15 @@ export async function registerOrGetUser(walletAddress: string) {
         )
 
         // Insert user into our database table using upsert to handle potential duplicates
-        const { data: newUser, error: insertError } = await (
-            supabaseAdmin.from('users').upsert as any
+        const { data: newUser, error: insertError} = await (
+            supabaseAdmin.from('users').upsert as UpsertFunction<DbUser>
         )(
-            { id: userId, wallet_address: walletAddress },
+            {
+                id: userId,
+                wallet_address: walletAddress,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            },
             {
                 onConflict: 'id',
             }
@@ -354,11 +371,13 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
             )
 
             const { data: newUser, error: insertError } = await (
-                supabaseAdmin.from('users').upsert as any
+                supabaseAdmin.from('users').upsert as UpsertFunction<DbUser>
             )(
                 {
                     id: authUser.id,
                     wallet_address: walletAddress,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
                 },
                 { onConflict: 'id' }
             )

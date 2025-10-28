@@ -34,8 +34,7 @@ const Badge = React.forwardRef<
 
     return (
         <Comp
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            ref={ref as any}
+            ref={ref as React.Ref<HTMLElement>}
             data-slot='badge'
             className={cn(badgeVariants({ variant }), className)}
             {...props}

@@ -2,7 +2,6 @@
  * Service to manage portfolio users in Supabase
  * Synchronizes accountId from JWT with the users table in Supabase
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { logger } from '@/lib/logger'
 
@@ -72,12 +71,13 @@ export async function syncOrCreateUser(accountId: string) {
         }
 
         // If it doesn't exist, create it
-        const { data: newUser, error: insertError } = await (
-            supabaseAdmin.from('users').insert as any
-        )({
-            id: authUserId,
-            wallet_address: accountId,
-        })
+        // @ts-expect-error - Supabase type inference limitation with insert operation
+        const { data: newUser, error: insertError } = await supabaseAdmin
+            .from('users')
+            .insert({
+                id: authUserId,
+                wallet_address: accountId,
+            })
             .select()
             .single()
 

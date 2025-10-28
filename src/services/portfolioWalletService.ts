@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createTokenLookupMap, getHbarPrice } from './saucerSwapService'
 import {
@@ -10,6 +9,123 @@ import {
     isLpToken,
 } from './defiService'
 import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
+
+/**
+ * Supabase operation types
+ */
+type InsertFunction<T> = (
+    values: T
+) => {
+    select: () => {
+        single: () => Promise<{
+            data: T | null
+            error: { message: string } | null
+        }>
+    }
+}
+
+type UpsertFunction<T> = (
+    values: T,
+    options?: { onConflict?: string; ignoreDuplicates?: boolean }
+) => {
+    select: () => {
+        single: () => Promise<{
+            data: T | null
+            error: { message: string } | null
+        }>
+        maybeSingle: () => Promise<{
+            data: T | null
+            error: { message: string } | null
+        }>
+    }
+}
+
+type UpdateFunction<T> = (
+    values: Partial<T>
+) => {
+    eq: (column: string, value: string | number) => Promise<{
+        error: { message: string } | null
+    }>
+}
+
+/**
+ * Database table types
+ */
+interface WalletRow {
+    id?: string
+    user_id: string
+    wallet_address: string
+    label?: string
+    hbar_balance?: number
+    hbar_price_usd?: string
+    created_at?: string
+    updated_at?: string
+}
+
+interface TokenRegistryRow {
+    id?: string
+    token_address: string
+    token_name: string
+    token_symbol: string
+    token_icon?: string | null
+    token_type: string
+    decimals: number
+    price_usd?: string
+    last_price_update?: string
+}
+
+interface TokenMetadata {
+    tokenAddress?: string
+    decimals?: number
+    [key: string]: unknown
+}
+
+interface NftMetadata {
+    name?: string | unknown
+    description?: string | unknown
+    creator?: string | unknown
+    image?: string | unknown
+    properties?: Record<string, unknown>
+    [key: string]: unknown
+}
+
+interface WalletNftRow {
+    wallet_id: string
+    token_id: string
+    token_registry_id: string
+    serial_number: number
+    metadata: NftMetadata
+    last_synced_at: string
+}
+
+interface LpTokenRow {
+    wallet_id: string
+    token_id: string
+    balance: string
+    pool_metadata: TokenMetadata
+    last_synced_at: string
+}
+
+interface WalletTokenRow {
+    wallet_id: string
+    token_id: string
+    balance: string
+    last_synced_at: string
+}
+
+interface DefiMetadata {
+    [key: string]: unknown
+}
+
+interface WalletDefiRow {
+    wallet_id: string
+    token_id: string
+    position_type: string
+    balance: string
+    value_usd: string
+    defi_metadata: DefiMetadata
+    last_synced_at: string
+}
 
 /**
  * Get Validation Cloud Mirror Node URL
@@ -124,7 +240,7 @@ export async function addWallet(
 
         // Use admin client to bypass RLS policies in server-side operations
         const { data, error } = await (
-            supabaseAdmin.from('wallets').insert as any
+            supabaseAdmin.from('wallets').insert as InsertFunction<WalletRow>
         )({
             user_id: userId,
             wallet_address: walletAddress,
@@ -151,7 +267,7 @@ export async function addWallet(
  */
 export async function updateWalletLabel(walletId: string, label: string) {
     try {
-        const { error } = await (supabaseAdmin.from('wallets').update as any)({
+        const { error } = await (supabaseAdmin.from('wallets').update as UpdateFunction<WalletRow>)({
             label,
         }).eq('id', walletId)
 
@@ -354,7 +470,16 @@ export async function syncWalletTokens(
         // ========================================
         // First pass: identify which tokens are NFTs
         const nftTokenIds: string[] = []
-        const tokenMetadataMap = new Map<string, any>()
+
+        interface TokenMetadataResponse {
+            name: string
+            symbol: string
+            decimals: number
+            type: string
+            metadata?: string
+        }
+
+        const tokenMetadataMap = new Map<string, TokenMetadataResponse>()
 
         for (const token of activeTokens) {
             const tokenAddress = token.token_id
@@ -381,7 +506,7 @@ export async function syncWalletTokens(
         }
 
         // If there are NFTs, fetch proper metadata from /nfts endpoint
-        let nftMetadataMap = new Map<string, any>()
+        let nftMetadataMap = new Map<string, Record<string, unknown>>()
         if (nftTokenIds.length > 0) {
             console.log(
                 `🎨 Found ${nftTokenIds.length} NFTs, fetching proper metadata...`
@@ -471,7 +596,7 @@ export async function syncWalletTokens(
                 // Upsert NFT token in registry
                 // Force update to ensure we always have the latest image
                 const { data: registryToken, error: registryError } = await (
-                    supabaseAdmin.from('tokens_registry').upsert as any
+                    supabaseAdmin.from('tokens_registry').upsert as UpsertFunction<TokenRegistryRow>
                 )(
                     {
                         token_address: tokenAddress,
@@ -501,7 +626,7 @@ export async function syncWalletTokens(
                 // Insert into wallet_nfts table
                 // Using the serial number from the /nfts endpoint
                 const { error: nftError } = await (
-                    supabaseAdmin.from('wallet_nfts').upsert as any
+                    supabaseAdmin.from('wallet_nfts').upsert as UpsertFunction<WalletNftRow>
                 )(
                     {
                         wallet_id: walletId,
@@ -538,7 +663,7 @@ export async function syncWalletTokens(
 
                 // Upsert token in registry
                 const { data: registryToken, error: registryError } = await (
-                    supabaseAdmin.from('tokens_registry').upsert as any
+                    supabaseAdmin.from('tokens_registry').upsert as UpsertFunction<TokenRegistryRow>
                 )(
                     {
                         token_address: tokenAddress,
@@ -572,11 +697,11 @@ export async function syncWalletTokens(
                     // Insert into liquidity_pool_tokens
                     const { error: lpTokenError } = await (
                         supabaseAdmin.from('liquidity_pool_tokens')
-                            .upsert as any
+                            .upsert as UpsertFunction<LpTokenRow>
                     )(
                         {
                             wallet_id: walletId,
-                            token_id: registryToken.id,
+                            token_id: registryToken.id as string,
                             balance: token.balance.toString(),
                             pool_metadata: {
                                 tokenAddress,
@@ -602,11 +727,11 @@ export async function syncWalletTokens(
                 } else {
                     // Insert into wallet_tokens
                     const { error: walletTokenError } = await (
-                        supabaseAdmin.from('wallet_tokens').upsert as any
+                        supabaseAdmin.from('wallet_tokens').upsert as UpsertFunction<WalletTokenRow>
                     )(
                         {
                             wallet_id: walletId,
-                            token_id: registryToken.id,
+                            token_id: registryToken.id as string,
                             balance: token.balance.toString(),
                             last_synced_at: new Date().toISOString(),
                         },
@@ -642,8 +767,8 @@ export async function syncWalletTokens(
 
         // 5a. SaucerSwap V1 Pools (from LP tokens already processed)
         console.log(`\n🔵 Syncing SaucerSwap V1 Pools...`)
-        const lpTokens = activeTokens.filter((token: any) => {
-            const metadata = tokenMetadataMap.get(token.token_id)
+        const lpTokens = activeTokens.filter((token: Record<string, unknown>) => {
+            const metadata = tokenMetadataMap.get(token.token_id as string)
             return metadata && isLpToken(metadata.name)
         })
 
@@ -667,7 +792,7 @@ export async function syncWalletTokens(
                     // Get or create token registry entry for this LP token
                     const { data: registryToken, error: registryError } =
                         await (
-                            supabaseAdmin.from('tokens_registry').upsert as any
+                            supabaseAdmin.from('tokens_registry').upsert as UpsertFunction<TokenRegistryRow>
                         )(
                             {
                                 token_address: tokenAddress,
@@ -715,11 +840,11 @@ export async function syncWalletTokens(
 
                     // Save DeFi position
                     const { error: defiError } = await (
-                        supabaseAdmin.from('wallet_defi').upsert as any
+                        supabaseAdmin.from('wallet_defi').upsert as UpsertFunction<WalletDefiRow>
                     )(
                         {
                             wallet_id: walletId,
-                            token_id: registryToken.id,
+                            token_id: registryToken.id as string,
                             position_type: 'SAUCERSWAP_V1_POOL',
                             balance: balance.toString(),
                             value_usd: poolValue.toString(),
@@ -796,7 +921,7 @@ export async function syncWalletTokens(
                     // Get or create token registry entry
                     const { data: registryToken, error: registryError } =
                         await (
-                            supabaseAdmin.from('tokens_registry').upsert as any
+                            supabaseAdmin.from('tokens_registry').upsert as UpsertFunction<TokenRegistryRow>
                         )(
                             {
                                 token_address: lpData.lpToken.id,
@@ -844,11 +969,11 @@ export async function syncWalletTokens(
 
                     // Save farm position
                     const { error: farmError } = await (
-                        supabaseAdmin.from('wallet_defi').upsert as any
+                        supabaseAdmin.from('wallet_defi').upsert as UpsertFunction<WalletDefiRow>
                     )(
                         {
                             wallet_id: walletId,
-                            token_id: registryToken.id,
+                            token_id: registryToken.id as string,
                             position_type: 'SAUCERSWAP_V1_FARM',
                             balance: farm.total,
                             value_usd: farmValue.toString(),
@@ -917,13 +1042,14 @@ export async function syncWalletTokens(
                         const { data: registryToken, error: registryError } =
                             await (
                                 supabaseAdmin.from('tokens_registry')
-                                    .upsert as any
+                                    .upsert as UpsertFunction<TokenRegistryRow>
                             )(
                                 {
                                     token_address: position.tokenId,
                                     token_name: position.asset,
                                     token_symbol: position.asset,
                                     token_type: 'FUNGIBLE',
+                                    decimals: 0,
                                     last_price_update: new Date().toISOString(),
                                 },
                                 {
@@ -944,11 +1070,11 @@ export async function syncWalletTokens(
 
                         // Save lending position
                         const { error: bonzoError } = await (
-                            supabaseAdmin.from('wallet_defi').upsert as any
+                            supabaseAdmin.from('wallet_defi').upsert as UpsertFunction<WalletDefiRow>
                         )(
                             {
                                 wallet_id: walletId,
-                                token_id: registryToken.id,
+                                token_id: registryToken.id as string,
                                 position_type: 'BONZO_LENDING',
                                 balance: position.tokenAmount,
                                 value_usd: position.valueUsd
@@ -1005,7 +1131,7 @@ export async function syncWalletTokens(
         console.log(`💰 HBAR Price: $${hbarPriceUsd}`)
 
         const { error: hbarUpdateError } = await (
-            supabaseAdmin.from('wallets').update as any
+            supabaseAdmin.from('wallets').update as UpdateFunction<WalletRow>
         )({
             hbar_balance: hbarBalanceActual,
             hbar_price_usd: hbarPriceUsd.toString(),
@@ -1059,7 +1185,7 @@ async function getNFTMetadata(metadataBase64: string): Promise<{
     name?: string
     description?: string
     creator?: string
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
 }> {
     try {
         // Decode base64 metadata
@@ -1173,7 +1299,13 @@ export async function updateTokenMetadata(
             return { success: false, error: 'Failed to get metadata' }
         }
 
-        const { error } = await (supabaseAdmin.from('tokens').update as any)({
+        interface TokenRow {
+            token_name?: string
+            token_symbol?: string
+            decimals?: number
+        }
+
+        const { error } = await (supabaseAdmin.from('tokens').update as UpdateFunction<TokenRow>)({
             token_name: metadataResult.metadata.name,
             token_symbol: metadataResult.metadata.symbol,
             decimals: metadataResult.metadata.decimals,

@@ -251,9 +251,15 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
  * })
  * ```
  */
+interface HashConnect {
+    signMessage: (
+        accountId: string,
+        message: string
+    ) => Promise<{ signature: string; publicKey?: string }>
+}
+
 export async function signMessageWithHashPack(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    hashconnect: any,
+    hashconnect: HashConnect,
     accountId: string,
     message: string
 ): Promise<{ signature: string; publicKey?: string }> {

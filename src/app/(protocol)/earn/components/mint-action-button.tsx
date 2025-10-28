@@ -279,8 +279,16 @@ export function MintActionButton({
                 )
 
             // Freeze with signer
+            interface HederaSigner {
+                freezeWithSigner?: (signer: unknown) => Promise<unknown>
+                signWithSigner?: (signer: unknown) => Promise<unknown>
+                executeWithSigner?: (signer: unknown) => Promise<unknown>
+                getReceiptWithSigner?: (signer: unknown) => Promise<unknown>
+                [key: string]: unknown
+            }
+
             const frozenScheduleTx = await scheduleSignTx.freezeWithSigner(
-                signer as any // eslint-disable-line @typescript-eslint/no-explicit-any
+                signer as unknown as HederaSigner
             )
 
             let signedScheduleTx
@@ -289,15 +297,15 @@ export function MintActionButton({
             try {
                 // User signs the schedule
                 console.log('Requesting user signature...')
-                signedScheduleTx = await frozenScheduleTx.signWithSigner(
-                    signer as any // eslint-disable-line @typescript-eslint/no-explicit-any
+                signedScheduleTx = await (frozenScheduleTx as HederaSigner).signWithSigner?.(
+                    signer as unknown as HederaSigner
                 )
                 console.log('✅ User signature completed successfully')
 
                 // Execute the user's signature
                 console.log('Executing signed transaction...')
-                userSignResponse = await signedScheduleTx.executeWithSigner(
-                    signer as any // eslint-disable-line @typescript-eslint/no-explicit-any
+                userSignResponse = await (signedScheduleTx as HederaSigner).executeWithSigner?.(
+                    signer as unknown as HederaSigner
                 )
                 console.log(
                     'User signature executed:',
@@ -371,8 +379,8 @@ export function MintActionButton({
             }
 
             // Get receipt to confirm user signature
-            const userSignReceipt = await userSignResponse.getReceiptWithSigner(
-                signer as any // eslint-disable-line @typescript-eslint/no-explicit-any
+            const userSignReceipt = await (userSignResponse as HederaSigner).getReceiptWithSigner?.(
+                signer as unknown as HederaSigner
             )
             console.log(
                 'User signature receipt:',

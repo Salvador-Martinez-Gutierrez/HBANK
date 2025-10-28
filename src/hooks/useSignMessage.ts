@@ -92,13 +92,22 @@ export function useSignMessage() {
                     resultPublicKey = result.publicKey
                 } else if (walletType.includes('blade')) {
                     // Blade wallet
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    if (!(window as any).bladeWallet) {
+                    interface WindowWithBlade extends Window {
+                        bladeWallet?: {
+                            sign: (
+                                message: string,
+                                accountId: string
+                            ) => Promise<{ signature?: string; publicKey?: string }>
+                        }
+                    }
+
+                    const windowWithBlade = window as WindowWithBlade
+
+                    if (!windowWithBlade.bladeWallet) {
                         throw new Error('Blade wallet not found')
                     }
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const result = await (window as any).bladeWallet.sign(
+                    const result = await windowWithBlade.bladeWallet.sign(
                         message,
                         connectedAccountId
                     )
@@ -118,10 +127,15 @@ export function useSignMessage() {
                         Buffer.from(message, 'utf-8')
                     )
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    if (typeof (signer as any).sign === 'function') {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const signResult = await (signer as any).sign([
+                    interface SignerWithSignMethod {
+                        sign?: (messages: Uint8Array[]) => Promise<unknown>
+                        [key: string]: unknown
+                    }
+
+                    const signerWithSign = signer as SignerWithSignMethod
+
+                    if (typeof signerWithSign.sign === 'function') {
+                        const signResult = await signerWithSign.sign([
                             messageBytes,
                         ])
 
