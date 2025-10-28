@@ -1,10 +1,20 @@
+/**
+ * Hedera Rate Service
+ *
+ * Manages fetching and parsing of USDC/hUSD exchange rates from the Hedera Consensus Service (HCS) topic.
+ * Rates are published to an HCS topic and retrieved via the Hedera Mirror Node API.
+ * Supports multiple rate field names for backward compatibility (rate, valor, value).
+ */
+
 import { Client } from '@hashgraph/sdk'
 import axios from 'axios'
 import { createScopedLogger } from '@/lib/logger'
 
 const logger = createScopedLogger('service:hederaRateService')
 
-
+/**
+ * Rate message structure from HCS topic
+ */
 export interface RateMessage {
     rate: number
     timestamp: string
@@ -37,6 +47,26 @@ export class HederaRateService {
         this.mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
     }
 
+    /**
+     * Get the latest exchange rate from the HCS topic
+     *
+     * Fetches the most recent rate message published to the HCS topic via the Mirror Node API.
+     * Searches through the last 10 messages to find the first valid rate.
+     * Supports multiple field names (rate, valor, value) for backward compatibility.
+     *
+     * @returns The latest rate message with rate, timestamp, and sequence number, or null if no valid rate found
+     * @throws {Error} If the Mirror Node API request fails
+     *
+     * @example
+     * ```typescript
+     * const rateService = new HederaRateService()
+     * const latestRate = await rateService.getLatestRate()
+     * if (latestRate) {
+     *   console.log(`Current rate: ${latestRate.rate}`)
+     *   console.log(`Sequence: ${latestRate.sequenceNumber}`)
+     * }
+     * ```
+     */
     async getLatestRate(): Promise<RateMessage | null> {
         try {
             // Use Mirror Node API to get topic messages
@@ -96,7 +126,24 @@ export class HederaRateService {
         }
     }
 
-    // Alternative method to get all recent rates
+    /**
+     * Get multiple recent exchange rates from the HCS topic
+     *
+     * Fetches recent rate messages published to the HCS topic for historical analysis or validation.
+     * Returns up to the specified limit of valid rates found in the topic.
+     *
+     * @param limit - Maximum number of rate messages to retrieve (default: 10)
+     * @returns Array of rate messages ordered by recency (newest first)
+     *
+     * @example
+     * ```typescript
+     * const rateService = new HederaRateService()
+     * const recentRates = await rateService.getRecentRates(5)
+     * recentRates.forEach(rate => {
+     *   console.log(`${rate.timestamp}: ${rate.rate}`)
+     * })
+     * ```
+     */
     async getRecentRates(limit: number = 10): Promise<RateMessage[]> {
         try {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=${limit}`
@@ -147,7 +194,22 @@ export class HederaRateService {
         }
     }
 
-    // Debug method to see raw messages
+    /**
+     * Debug utility to inspect raw HCS topic messages
+     *
+     * Fetches and decodes recent messages from the HCS topic for debugging purposes.
+     * Shows both the raw base64 message and the decoded JSON structure.
+     * Useful for troubleshooting rate message format issues.
+     *
+     * @returns Array of decoded messages with metadata including sequence number and timestamp
+     *
+     * @example
+     * ```typescript
+     * const rateService = new HederaRateService()
+     * const debugMessages = await rateService.debugTopicMessages()
+     * console.log('Recent messages:', JSON.stringify(debugMessages, null, 2))
+     * ```
+     */
     async debugTopicMessages(): Promise<unknown[]> {
         try {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=5`

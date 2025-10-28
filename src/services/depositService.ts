@@ -1,3 +1,12 @@
+/**
+ * Deposit Service
+ *
+ * Handles deposit operations for converting USDC to hUSD on Hedera.
+ * Manages the creation of scheduled transactions that transfer USDC from users
+ * and mint hUSD tokens at a locked exchange rate. Implements a two-step signature
+ * process where users sign first, then the treasury (emissions wallet) signs to execute.
+ */
+
 import {
     AccountBalanceQuery,
     AccountId,
@@ -52,6 +61,13 @@ export class DepositService {
         this.logger = deps.logger ?? createScopedLogger('deposit-service')
     }
 
+    /**
+     * Fetch the latest exchange rate from Hedera
+     *
+     * @returns The most recent rate record from the HCS topic
+     * @throws {ServiceUnavailableError} If no rate is available
+     * @private
+     */
     private async fetchLatestRate(): Promise<RateRecord> {
         const rate = await this.rateService.getLatestRate()
         if (!rate) {
@@ -60,14 +76,65 @@ export class DepositService {
         return rate
     }
 
+    /**
+     * Get the USDC token ID from environment configuration
+     *
+     * @returns USDC token ID for Hedera transactions
+     * @private
+     */
     private getUsdcTokenId() {
         return TokenId.fromString(serverEnv.tokens.usdc.tokenId)
     }
 
+    /**
+     * Get the hUSD token ID from environment configuration
+     *
+     * @returns hUSD token ID for Hedera transactions
+     * @private
+     */
     private getHusdTokenId() {
         return TokenId.fromString(serverEnv.tokens.husd.tokenId)
     }
 
+    /**
+     * Initialize a new deposit transaction
+     *
+     * Creates a scheduled transaction that will transfer USDC from the user to the deposit wallet
+     * and transfer hUSD from the emissions wallet to the user at the current exchange rate.
+     * The transaction requires signatures from both the user and the emissions wallet to execute.
+     * Rate is validated to ensure it matches the latest published rate.
+     *
+     * @param payload - Deposit initialization data
+     * @param payload.userAccountId - Hedera account ID of the depositor (e.g., "0.0.123456")
+     * @param payload.amount - Amount of USDC to deposit
+     * @param payload.expectedRate - Expected USDC/hUSD exchange rate
+     * @param payload.rateSequenceNumber - Sequence number of the rate for validation
+     * @param payload.rateTimestamp - Timestamp of the rate for validation
+     * @returns Schedule details including schedule ID, amounts, rate, and transaction ID
+     * @throws {ServiceUnavailableError} If deposits are disabled or no rate is available
+     * @throws {ConflictError} If the submitted rate doesn't match the latest rate
+     * @throws {BadRequestError} If user has insufficient USDC or emissions wallet has insufficient hUSD
+     * @throws {InternalError} If schedule creation fails or amounts exceed safe integer range
+     *
+     * @example
+     * ```typescript
+     * const result = await depositService.initializeDeposit({
+     *   userAccountId: '0.0.123456',
+     *   amount: 100,
+     *   expectedRate: 1.05,
+     *   rateSequenceNumber: '42',
+     *   rateTimestamp: '2024-01-01T12:00:00.000Z'
+     * })
+     * // Returns: {
+     * //   success: true,
+     * //   scheduleId: '0.0.789012',
+     * //   amountHUSDC: 95.238,
+     * //   rate: 1.05,
+     * //   usdcAmount: 100,
+     * //   ...
+     * // }
+     * ```
+     */
     async initializeDeposit(payload: DepositInitPayload) {
         const scopedLogger = this.logger.child('initialize', {
             userAccountId: payload.userAccountId,
@@ -251,6 +318,36 @@ export class DepositService {
         }
     }
 
+    /**
+     * Complete the deposit by adding the treasury (emissions wallet) signature
+     *
+     * After the user has signed the scheduled transaction, this method adds the emissions wallet
+     * signature to execute the deposit. Validates that the schedule exists and hasn't been
+     * executed or deleted. Once both signatures are present, the transaction executes automatically.
+     *
+     * @param payload - Payload containing the schedule ID to sign
+     * @param payload.scheduleId - ID of the scheduled transaction (e.g., "0.0.789012")
+     * @returns Execution status including whether the transaction was executed and transaction ID
+     * @throws {ServiceUnavailableError} If deposits are disabled
+     * @throws {NotFoundError} If the schedule ID is invalid or doesn't exist
+     * @throws {GoneError} If the schedule was already deleted
+     * @throws {ConflictError} If the schedule was already executed
+     * @throws {InternalError} If the signature operation fails
+     *
+     * @example
+     * ```typescript
+     * const result = await depositService.completeTreasurySignature({
+     *   scheduleId: '0.0.789012'
+     * })
+     * // Returns: {
+     * //   success: true,
+     * //   executed: true,
+     * //   txId: '0.0.123456@1234567890.123456789',
+     * //   scheduleId: '0.0.789012',
+     * //   timestamp: '2024-01-01T12:00:00.000Z'
+     * // }
+     * ```
+     */
     async completeTreasurySignature(payload: DepositUserSignedPayload) {
         const scopedLogger = this.logger.child('treasury-sign', {
             scheduleId: payload.scheduleId,

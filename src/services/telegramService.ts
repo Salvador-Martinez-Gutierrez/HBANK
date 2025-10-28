@@ -1,9 +1,19 @@
+/**
+ * Telegram Service
+ *
+ * Manages Telegram bot notifications for withdrawal events.
+ * Sends formatted notifications to a configured Telegram channel when withdrawals are processed.
+ * Supports both instant and standard withdrawal notifications with detailed transaction information.
+ */
+
 import TelegramBot from 'node-telegram-bot-api'
 import { createScopedLogger } from '@/lib/logger'
 
 const logger = createScopedLogger('service:telegramService')
 
-
+/**
+ * Withdrawal notification data structure
+ */
 export interface WithdrawNotification {
     type: 'instant' | 'standard'
     userAccountId: string
@@ -13,7 +23,7 @@ export interface WithdrawNotification {
     txId: string
     fee?: number
     timestamp: string
-    walletBalanceAfter: number // Remaining balance in wallet after withdrawal
+    walletBalanceAfter: number
 }
 
 export class TelegramService {
@@ -47,7 +57,38 @@ export class TelegramService {
     }
 
     /**
-     * Send withdrawal notification to Telegram channel
+     * Send a withdrawal notification to the Telegram channel
+     *
+     * Formats and sends a withdrawal completion message to the configured Telegram channel.
+     * Includes transaction details, amounts, exchange rate, and wallet balance information.
+     * Silently fails if Telegram is not configured to avoid breaking withdrawal flow.
+     *
+     * @param notification - Withdrawal notification data
+     * @param notification.type - Type of withdrawal ('instant' or 'standard')
+     * @param notification.userAccountId - Hedera account ID of the user
+     * @param notification.amountHUSD - Amount of hUSD withdrawn
+     * @param notification.amountUSDC - Amount of USDC received
+     * @param notification.rate - Exchange rate used
+     * @param notification.txId - Hedera transaction ID
+     * @param notification.fee - Optional fee charged (for instant withdrawals)
+     * @param notification.timestamp - ISO timestamp of the withdrawal
+     * @param notification.walletBalanceAfter - Remaining balance in the withdrawal wallet
+     *
+     * @example
+     * ```typescript
+     * const telegramService = new TelegramService()
+     * await telegramService.sendWithdrawNotification({
+     *   type: 'instant',
+     *   userAccountId: '0.0.123456',
+     *   amountHUSD: 100,
+     *   amountUSDC: 95,
+     *   rate: 1.05,
+     *   txId: '0.0.789@1234567890.123',
+     *   fee: 0.5,
+     *   timestamp: new Date().toISOString(),
+     *   walletBalanceAfter: 1000
+     * })
+     * ```
      */
     async sendWithdrawNotification(
         notification: WithdrawNotification
@@ -71,7 +112,14 @@ export class TelegramService {
     }
 
     /**
-     * Format withdrawal notification message
+     * Format a withdrawal notification message for Telegram
+     *
+     * Creates a formatted Markdown message with withdrawal details including emojis and
+     * formatted amounts. Includes different messaging for instant vs standard withdrawals.
+     *
+     * @param notification - Withdrawal notification data to format
+     * @returns Formatted Markdown message ready for Telegram
+     * @private
      */
     private formatWithdrawMessage(notification: WithdrawNotification): string {
         const {
@@ -139,7 +187,24 @@ export class TelegramService {
     }
 
     /**
-     * Send test message to verify Telegram integration
+     * Send a test message to verify Telegram integration
+     *
+     * Sends a test message to the configured Telegram channel to verify the bot is working correctly.
+     * Useful for validating bot token, chat ID, and permissions during setup.
+     * Provides helpful error messages for common configuration issues.
+     *
+     * @returns True if the test message was sent successfully, false otherwise
+     *
+     * @example
+     * ```typescript
+     * const telegramService = new TelegramService()
+     * const success = await telegramService.sendTestMessage()
+     * if (success) {
+     *   console.log('Telegram integration is working!')
+     * } else {
+     *   console.log('Check bot token and chat ID configuration')
+     * }
+     * ```
      */
     async sendTestMessage(): Promise<boolean> {
         if (!this.isEnabled || !this.bot || !this.chatId) {
@@ -204,7 +269,17 @@ export class TelegramService {
     }
 
     /**
-     * Check if Telegram service is enabled and configured
+     * Check if the Telegram service is enabled and configured
+     *
+     * @returns True if Telegram bot token and chat ID are configured, false otherwise
+     *
+     * @example
+     * ```typescript
+     * const telegramService = new TelegramService()
+     * if (telegramService.isConfigured()) {
+     *   console.log('Telegram notifications are enabled')
+     * }
+     * ```
      */
     isConfigured(): boolean {
         return this.isEnabled
@@ -212,6 +287,20 @@ export class TelegramService {
 
     /**
      * Get bot information for debugging
+     *
+     * Retrieves details about the configured Telegram bot including ID, username,
+     * and capabilities. Useful for debugging bot configuration.
+     *
+     * @returns Bot information object or null if bot is not configured
+     *
+     * @example
+     * ```typescript
+     * const telegramService = new TelegramService()
+     * const botInfo = await telegramService.getBotInfo()
+     * if (botInfo) {
+     *   console.log(`Bot: @${botInfo.username}`)
+     * }
+     * ```
      */
     async getBotInfo(): Promise<Record<string, unknown> | null> {
         if (!this.isEnabled || !this.bot) {
@@ -245,7 +334,21 @@ export class TelegramService {
     }
 
     /**
-     * Get recent updates to help find chat IDs
+     * Get recent bot updates to help find chat IDs
+     *
+     * Retrieves recent messages and interactions with the bot to help identify
+     * the correct chat ID for configuration. Useful during initial setup.
+     *
+     * @returns Array of recent chat interactions with chat ID, type, and title
+     *
+     * @example
+     * ```typescript
+     * const telegramService = new TelegramService()
+     * const updates = await telegramService.getRecentUpdates()
+     * updates.forEach(update => {
+     *   console.log(`Chat: ${update.chat_title} (ID: ${update.chat_id})`)
+     * })
+     * ```
      */
     async getRecentUpdates(): Promise<
         Array<{

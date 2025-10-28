@@ -1,7 +1,13 @@
 /**
- * Server-side Portfolio Authentication Service
- * ⚠️ WARNING: This file imports supabase-admin and should ONLY be used in API routes (server-side)
- * For client-side auth utilities, use portfolioAuthClient.ts instead
+ * Portfolio Authentication Service
+ *
+ * Server-side authentication service for portfolio access using Hedera wallet signatures.
+ * Handles user registration, session management, and authentication via Supabase.
+ * Creates deterministic email/password credentials from Hedera account IDs for transparent
+ * authentication without requiring users to manage passwords.
+ *
+ * WARNING: This file imports supabase-admin and should ONLY be used in API routes (server-side).
+ * For client-side auth utilities, use portfolioAuthClient.ts instead.
  */
 
 import { supabase } from '@/lib/supabase'
@@ -12,10 +18,29 @@ const logger = createScopedLogger('service:portfolioAuthService')
 
 import type { AuthPayload, AuthResponse } from '@/types/portfolio'
 
-
 /**
- * Verify the signature and authenticate the user
- * This function should be called from an API route for security
+ * Verify wallet signature and authenticate the user
+ *
+ * Validates the signature timestamp to prevent replay attacks and authenticates the user.
+ * Currently performs timestamp validation only - full signature verification should be
+ * implemented in the API route using Hedera SDK.
+ *
+ * @param payload - Authentication payload from the wallet
+ * @param payload.timestamp - Unix timestamp when the message was signed
+ * @returns Authentication response indicating success or failure
+ *
+ * @example
+ * ```typescript
+ * const result = await verifyAndAuthenticate({
+ *   timestamp: Date.now(),
+ *   signature: '...',
+ *   publicKey: '...',
+ *   accountId: '0.0.123456'
+ * })
+ * if (result.success) {
+ *   console.log('Authentication successful')
+ * }
+ * ```
  */
 export async function verifyAndAuthenticate(
     payload: AuthPayload
@@ -40,8 +65,24 @@ export async function verifyAndAuthenticate(
 }
 
 /**
- * Register or get existing user by wallet address
- * This function should be called from the API route with proper credentials
+ * Register a new user or retrieve an existing user by wallet address
+ *
+ * Creates a new Supabase auth user and database record for first-time users,
+ * or retrieves existing user data for returning users. Converts Hedera account ID
+ * to a deterministic email/password combination for transparent authentication.
+ * Uses admin client to auto-confirm email addresses.
+ *
+ * @param walletAddress - Hedera account ID (e.g., "0.0.123456")
+ * @returns Object containing success status and user data
+ *
+ * @example
+ * ```typescript
+ * const result = await registerOrGetUser('0.0.123456')
+ * if (result.success && result.user) {
+ *   console.log(`User ID: ${result.user.id}`)
+ *   console.log(`Wallet: ${result.user.wallet_address}`)
+ * }
+ * ```
  */
 export async function registerOrGetUser(walletAddress: string) {
     try {
@@ -195,8 +236,24 @@ export async function registerOrGetUser(walletAddress: string) {
 }
 
 /**
- * Generate session credentials for the client
- * Returns credentials so the client can call signInWithPassword on their end
+ * Generate session credentials for client-side authentication
+ *
+ * Creates deterministic email/password credentials from a Hedera account ID
+ * so the client can authenticate with Supabase. These credentials are generated
+ * from the wallet address and returned to the client for signing in.
+ *
+ * @param userId - Supabase user ID (currently unused but available for future validation)
+ * @param walletAddress - Hedera account ID to generate credentials for
+ * @returns Object containing email and password for client-side sign-in
+ *
+ * @example
+ * ```typescript
+ * const result = await getSessionCredentials('uuid-123', '0.0.123456')
+ * if (result.success && result.credentials) {
+ *   // Client can now use these to sign in
+ *   await supabase.auth.signInWithPassword(result.credentials)
+ * }
+ * ```
  */
 export async function getSessionCredentials(
     userId: string,
@@ -222,7 +279,19 @@ export async function getSessionCredentials(
 }
 
 /**
- * Sign out the current user
+ * Sign out the current authenticated user
+ *
+ * Terminates the user's Supabase session and clears authentication state.
+ *
+ * @returns Object indicating success or failure of sign-out operation
+ *
+ * @example
+ * ```typescript
+ * const result = await signOut()
+ * if (result.success) {
+ *   console.log('User signed out successfully')
+ * }
+ * ```
  */
 export async function signOut() {
     try {
@@ -239,8 +308,33 @@ export async function signOut() {
 }
 
 /**
- * Get current authenticated user from API route (server-side)
- * For use in API routes - reads session from request cookies
+ * Get the current authenticated user
+ *
+ * Retrieves the authenticated user's data from Supabase, either from client-side session
+ * or server-side by parsing request cookies. Creates user database record if it doesn't exist
+ * but auth user is present. Uses admin client for database operations to bypass RLS.
+ *
+ * @param req - Optional request object with cookies (for server-side API routes)
+ * @param req.headers - Request headers
+ * @param req.headers.cookie - Cookie string containing session data
+ * @returns Object containing success status and user data (if authenticated)
+ *
+ * @example
+ * ```typescript
+ * // Client-side usage
+ * const result = await getCurrentUser()
+ *
+ * // Server-side API route usage
+ * export async function GET(request: Request) {
+ *   const result = await getCurrentUser({
+ *     headers: { cookie: request.headers.get('cookie') ?? '' }
+ *   })
+ *   if (result.success && result.user) {
+ *     return Response.json({ user: result.user })
+ *   }
+ *   return Response.json({ error: 'Not authenticated' }, { status: 401 })
+ * }
+ * ```
  */
 export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
     try {

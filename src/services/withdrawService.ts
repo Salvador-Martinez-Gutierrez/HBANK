@@ -1,3 +1,12 @@
+/**
+ * Withdraw Service
+ *
+ * Manages withdrawal operations for converting hUSD back to USDC.
+ * Handles fetching withdrawal requests and results from the Hedera Consensus Service (HCS) topic,
+ * tracking withdrawal status, and validating exchange rates. Supports both standard withdrawals
+ * (with 48-hour lock period) and instant withdrawals.
+ */
+
 import { HederaRateService } from './hederaRateService'
 import {
     WithdrawRequest,
@@ -21,7 +30,22 @@ export class WithdrawService {
     }
 
     /**
-     * Validates the rate against the latest published rate
+     * Validate the exchange rate against the latest published rate
+     *
+     * Verifies that the provided rate matches the current rate published on the HCS topic
+     * by comparing both the sequence number and rate value (with tolerance for floating point precision).
+     *
+     * @param expectedRate - Expected USDC/hUSD exchange rate
+     * @param rateSequenceNumber - Sequence number of the expected rate
+     * @returns True if the rate is valid and matches the latest published rate, false otherwise
+     *
+     * @example
+     * ```typescript
+     * const isValid = await withdrawService.validateRate(1.05, '42')
+     * if (!isValid) {
+     *   console.log('Rate has changed, please refresh')
+     * }
+     * ```
      */
     async validateRate(
         expectedRate: number,
@@ -55,7 +79,22 @@ export class WithdrawService {
     }
 
     /**
-     * Gets withdrawal messages from HCS topic
+     * Fetch withdrawal messages from the Hedera Consensus Service topic
+     *
+     * Retrieves and parses withdrawal requests and results published to the HCS topic.
+     * Handles both old and new message formats for backward compatibility.
+     * Messages are fetched from the Hedera Mirror Node API.
+     *
+     * @param startTimestamp - Optional ISO timestamp to filter messages from (not currently used)
+     * @param startSequenceNumber - Optional sequence number to filter messages from
+     * @returns Array of parsed withdrawal requests and results
+     *
+     * @example
+     * ```typescript
+     * const messages = await withdrawService.getWithdrawMessages()
+     * const requests = messages.filter(m => m.type === 'withdraw_request')
+     * const results = messages.filter(m => m.type === 'withdraw_result')
+     * ```
      */
     async getWithdrawMessages(
         startTimestamp?: string,
@@ -169,7 +208,22 @@ export class WithdrawService {
     }
 
     /**
-     * Gets pending withdrawal requests that are ready to be processed (past unlock time)
+     * Get pending withdrawal requests ready for processing
+     *
+     * Fetches withdrawal requests that have passed their 48-hour lock period and are ready
+     * to be executed. Filters out requests that already have results (completed or failed).
+     * Can skip the lock period in testing mode via SKIP_WITHDRAW_LOCK_PERIOD environment variable.
+     *
+     * @returns Array of withdrawal requests that are ready to be processed
+     *
+     * @example
+     * ```typescript
+     * const pending = await withdrawService.getPendingWithdrawals()
+     * for (const request of pending) {
+     *   console.log(`Processing withdrawal ${request.requestId} for ${request.amountHUSD} hUSD`)
+     *   // Process the withdrawal...
+     * }
+     * ```
      */
     async getPendingWithdrawals(): Promise<WithdrawRequest[]> {
         try {
@@ -252,7 +306,25 @@ export class WithdrawService {
     }
 
     /**
-     * Gets all withdrawal statuses for a user
+     * Get all withdrawal statuses for a specific user
+     *
+     * Fetches all withdrawal requests and their results for a given user from the last 30 days.
+     * Combines requests with their corresponding results to provide a complete status history.
+     * Results are sorted by request time with newest first.
+     *
+     * @param userAccountId - Hedera account ID of the user (e.g., "0.0.123456")
+     * @returns Array of withdrawal statuses including pending, completed, and failed withdrawals
+     *
+     * @example
+     * ```typescript
+     * const withdrawals = await withdrawService.getUserWithdrawals('0.0.123456')
+     * withdrawals.forEach(w => {
+     *   console.log(`${w.requestId}: ${w.status} - ${w.amountHUSD} hUSD`)
+     *   if (w.status === 'pending') {
+     *     console.log(`Unlocks at: ${w.unlockAt}`)
+     *   }
+     * })
+     * ```
      */
     async getUserWithdrawals(userAccountId: string): Promise<WithdrawStatus[]> {
         try {
