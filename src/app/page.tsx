@@ -257,7 +257,7 @@ export default function Home() {
                                     </CardTitle>
                                     <CardDescription className='text-base'>
                                         Generate yields automatically with optimized 
-                                        DeFistrategies
+                                        DeFi Strategies
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
