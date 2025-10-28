@@ -5,15 +5,7 @@
  */
 
 import { ImageIcon } from 'lucide-react'
-
-interface NFTDisplay {
-    id: string
-    token_id: string
-    serial_number: number
-    metadata: Record<string, unknown>
-    token_name?: string
-    token_icon?: string | null
-}
+import type { NFTDisplay } from '@/types/portfolio-display'
 
 interface NftGalleryTabProps {
     nfts: NFTDisplay[]

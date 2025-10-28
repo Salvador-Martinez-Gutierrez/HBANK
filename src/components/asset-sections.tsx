@@ -10,29 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Coins, Droplet, ImageIcon, Loader2 } from 'lucide-react'
 import type { WalletDefiWithMetadata } from '@/types/portfolio'
+import type { TokenDisplay, NFTDisplay } from '@/types/portfolio-display'
 import { FungibleTokensTab } from './portfolio/FungibleTokensTab'
 import { DefiPositionsTab } from './portfolio/DefiPositionsTab'
 import { NftGalleryTab } from './portfolio/NftGalleryTab'
-
-interface TokenDisplay {
-    id: string
-    balance: string
-    token_name?: string
-    token_symbol?: string
-    token_address: string
-    token_icon?: string | null
-    decimals: number
-    price_usd: string
-}
-
-interface NFTDisplay {
-    id: string
-    token_id: string
-    serial_number: number
-    metadata: Record<string, unknown>
-    token_name?: string
-    token_icon?: string | null
-}
 
 interface AssetSectionsProps {
     hbarBalance: number

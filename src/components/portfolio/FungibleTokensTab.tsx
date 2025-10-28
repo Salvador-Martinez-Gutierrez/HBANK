@@ -7,17 +7,7 @@
 import { Coins } from 'lucide-react'
 import { HbarBalanceCard } from './HbarBalanceCard'
 import { FungibleTokenRow } from './FungibleTokenRow'
-
-interface TokenDisplay {
-    id: string
-    balance: string
-    token_name?: string
-    token_symbol?: string
-    token_address: string
-    token_icon?: string | null
-    decimals: number
-    price_usd: string
-}
+import type { TokenDisplay } from '@/types/portfolio-display'
 
 interface FungibleTokensTabProps {
     hbarBalance: number
