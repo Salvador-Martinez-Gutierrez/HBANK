@@ -1,24 +1,24 @@
 /**
- * Servicio para gestionar usuarios de portfolio en Supabase
- * Sincroniza accountId de JWT con la tabla users en Supabase
+ * Service to manage portfolio users in Supabase
+ * Synchronizes accountId from JWT with the users table in Supabase
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { logger } from '@/lib/logger'
 
 /**
- * Sincroniza o crea usuario en Supabase basado en accountId autenticado
- * Esto asegura que el usuario existe en la tabla users y puede usar RLS policies
+ * Synchronizes or creates user in Supabase based on authenticated accountId
+ * This ensures the user exists in the users table and can use RLS policies
  */
 export async function syncOrCreateUser(accountId: string) {
     try {
-        // Convertir accountId a formato de email para Supabase Auth
+        // Convert accountId to email format for Supabase Auth
         const emailSafeAddress = accountId.replace(/\./g, '-')
         const email = `wallet-${emailSafeAddress}@hbank.app`
 
         logger.info('Syncing user with Supabase', { accountId, email })
 
-        // Buscar si el usuario ya existe en auth.users
+        // Check if user already exists in auth.users
         const { data: existingAuthUsers } =
             await supabaseAdmin.auth.admin.listUsers()
 
@@ -31,9 +31,9 @@ export async function syncOrCreateUser(accountId: string) {
             authUserId = existingAuthUser.id
             logger.info('Auth user found', { authUserId, accountId })
         } else {
-            // Crear usuario en Supabase Auth
-            // Usamos un password aleatorio fuerte ya que no se usará para login
-            // (el login es mediante firma de wallet)
+            // Create user in Supabase Auth
+            // We use a strong random password since it won't be used for login
+            // (login is via wallet signature)
             const randomPassword = generateSecurePassword()
 
             const { data: newAuthUser, error: createError } =
@@ -59,7 +59,7 @@ export async function syncOrCreateUser(accountId: string) {
             logger.info('Auth user created', { authUserId, accountId })
         }
 
-        // Verificar que el usuario existe en la tabla users
+        // Verify that the user exists in the users table
         const { data: existingUser } = await supabaseAdmin
             .from('users')
             .select('*')
@@ -71,7 +71,7 @@ export async function syncOrCreateUser(accountId: string) {
             return { success: true, userId: authUserId, user: existingUser }
         }
 
-        // Si no existe, crearlo
+        // If it doesn't exist, create it
         const { data: newUser, error: insertError } = await (
             supabaseAdmin.from('users').insert as any
         )({
@@ -102,7 +102,7 @@ export async function syncOrCreateUser(accountId: string) {
 }
 
 /**
- * Obtener usuario por accountId (wallet address)
+ * Get user by accountId (wallet address)
  */
 export async function getUserByAccountId(accountId: string) {
     try {
@@ -123,7 +123,7 @@ export async function getUserByAccountId(accountId: string) {
 }
 
 /**
- * Generar password seguro aleatorio
+ * Generate secure random password
  */
 function generateSecurePassword(): string {
     const chars =

@@ -24,7 +24,7 @@ export interface VerifyRequest {
     accountId: string
     nonce: string
     signature: string
-    publicKey?: string // Opcional: la wallet puede enviarlo
+    publicKey?: string // Optional: the wallet can send it
 }
 
 /**

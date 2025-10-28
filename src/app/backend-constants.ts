@@ -1,6 +1,6 @@
 // ===================================
 // BACKEND CONSTANTS
-// Constantes solo para uso en el backend (API routes, servicios)
+// Constants for backend use only (API routes, services)
 // No incluye imports de browser/frontend
 // ===================================
 

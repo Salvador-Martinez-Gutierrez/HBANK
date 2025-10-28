@@ -9,7 +9,7 @@ export interface WithdrawNotification {
     txId: string
     fee?: number
     timestamp: string
-    walletBalanceAfter: number // Balance restante en el wallet después del retiro
+    walletBalanceAfter: number // Remaining balance in wallet after withdrawal
 }
 
 export class TelegramService {

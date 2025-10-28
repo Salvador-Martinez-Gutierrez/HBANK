@@ -10,7 +10,7 @@ import {
 import { HederaTestnet } from '@buidlerlabs/hashgraph-react-wallets/chains'
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
-    // Obtener el projectId de las variables de entorno
+    // Get projectId from environment variables
     const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
 
     // IMPORTANTE: No usar fallback hardcodeado en producción

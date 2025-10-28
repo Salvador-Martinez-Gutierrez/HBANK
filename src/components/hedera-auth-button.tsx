@@ -38,7 +38,7 @@ export function HederaAuthButton() {
                 return
             }
 
-            // Iniciar el proceso de autenticación
+            // Start the authentication process
             const result = await signIn(connectedAccountId, signMessage)
 
             if (result.success) {

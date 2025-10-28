@@ -1,8 +1,8 @@
 /**
- * Hook para autenticación con Hedera Wallet (sin fees)
+ * Hook for Hedera Wallet authentication (no fees)
  *
- * Este hook reemplaza el sistema de autenticación con Supabase por uno basado en
- * firma de mensajes off-chain y JWT seguros.
+ * This hook replaces the Supabase authentication system with one based on
+ * off-chain message signing and secure JWT.
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -50,7 +50,7 @@ export function useHederaAuth(options: UseHederaAuthOptions = {}) {
 
             // Call a protected endpoint to verify the JWT
             const response = await fetch('/api/auth/me', {
-                // Evitar caché para obtener estado actualizado
+                // Avoid cache to get updated state
                 cache: 'no-store',
                 credentials: 'include',
             })

@@ -323,7 +323,7 @@ async function fetchUserDeposits(
 /* 
 async function getInstantWithdrawals(userAccountId: string): Promise<HistoryTransaction[]> {
     const TESTNET_MIRROR_NODE_ENDPOINT = 'https://testnet.mirrornode.hedera.com'
-    const WITHDRAW_TOPIC_ID = TOPICS.WITHDRAW // Topic para withdrawals
+    const WITHDRAW_TOPIC_ID = TOPICS.WITHDRAW // Topic for withdrawals
     
     try {
         // Get messages from the last 30 days

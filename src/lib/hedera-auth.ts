@@ -61,8 +61,8 @@ export function verifyHederaSignature(
     publicKeyString: string
 ): boolean {
     try {
-        // IMPORTANTE: Los wallets de Hedera añaden un prefijo al mensaje antes de firmarlo
-        // Similar al estándar de Ethereum: "\x19Hedera Signed Message:\n" + length + message
+        // IMPORTANT: Hedera wallets add a prefix to the message before signing it
+        // Similar to Ethereum standard: "\x19Hedera Signed Message:\n" + length + message
         const messageBuffer = Buffer.from(message, 'utf-8')
         const hederaPrefix = `\x19Hedera Signed Message:\n${messageBuffer.length}`
         const hederaPrefixedMessage = Buffer.concat([
@@ -72,7 +72,7 @@ export function verifyHederaSignature(
 
         const messageBytes = hederaPrefixedMessage
 
-        // Convertir la firma a Uint8Array si viene como string
+        // Convert signature to Uint8Array if it comes as string
         let signatureBytes: Uint8Array
         if (typeof signature === 'string') {
             if (!signature || signature === '0x' || signature === '') {
@@ -91,13 +91,13 @@ export function verifyHederaSignature(
             return false
         }
 
-        // Crear instancia de PublicKey desde el string DER
+        // Create PublicKey instance from DER string
         const publicKey = PublicKey.fromString(publicKeyString)
 
-        // Verificar la firma con el mensaje prefijado (Hedera standard)
+        // Verify signature with prefixed message (Hedera standard)
         let isValid = publicKey.verify(messageBytes, signatureBytes)
 
-        // Si falla, intentar con prefijo de Ethereum como fallback
+        // If it fails, try with Ethereum prefix as fallback
         if (!isValid) {
             const ethPrefix = `\x19Ethereum Signed Message:\n${messageBuffer.length}`
             const ethPrefixedMessage = Buffer.concat([
@@ -108,7 +108,7 @@ export function verifyHederaSignature(
             isValid = publicKey.verify(ethPrefixedMessage, signatureBytes)
         }
 
-        // Si aún falla, intentar sin prefijo (raw message)
+        // If it still fails, try without prefix (raw message)
         if (!isValid) {
             isValid = publicKey.verify(messageBuffer, signatureBytes)
         }
@@ -143,7 +143,7 @@ export async function verifyHederaSignatureWithAccountId(
     accountId: string
 ): Promise<boolean> {
     try {
-        // Obtener la public key del Mirror Node
+        // Get public key from Mirror Node
         const publicKeyString = await getPublicKeyFromMirrorNode(accountId)
 
         if (!publicKeyString) {
@@ -153,7 +153,7 @@ export async function verifyHederaSignatureWithAccountId(
             return false
         }
 
-        // Verificar la firma
+        // Verify signature
         return verifyHederaSignature(message, signature, publicKeyString)
     } catch (error) {
         logger.error('Error in verifyHederaSignatureWithAccountId', {

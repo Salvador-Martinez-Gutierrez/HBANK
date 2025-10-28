@@ -29,7 +29,7 @@ export default async function handler(
                 .json({ error: 'Unauthorized: No token provided' })
         }
 
-        // Verificar el JWT
+        // Verify JWT
         const payload = await verifyJWT(token)
 
         if (!payload || !payload.sub) {

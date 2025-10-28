@@ -1,6 +1,6 @@
 // ===================================
 // VALORA PROTOCOL - CONSOLIDATED CONSTANTS
-// Todas las constantes del proyecto centralizadas
+// All project constants centralized
 // ===================================
 
 import {
@@ -122,7 +122,7 @@ export const SUPPORTED_WALLETS = [
 ] as const
 
 // ===================================
-// LEGACY EXPORTS (para compatibilidad)
+// LEGACY EXPORTS (for compatibility)
 // ===================================
 
 // Mirror node endpoint

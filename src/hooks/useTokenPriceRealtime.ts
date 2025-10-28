@@ -35,7 +35,7 @@ export function useTokenPriceRealtime(
 
         console.log('🔴 Subscribing to token price updates...')
 
-        // Crear canal para escuchar cambios en tokens_registry
+        // Create channel to listen for changes in tokens_registry
         const channel = supabase
             .channel('token-price-updates')
             .on(
@@ -49,7 +49,7 @@ export function useTokenPriceRealtime(
                 (payload) => {
                     console.log('💰 Token price update:', payload)
 
-                    // Extraer datos del token actualizado
+                    // Extract updated token data
                     if (payload.new && 'token_address' in payload.new) {
                         const update: TokenPriceUpdate = {
                             token_address: payload.new.token_address as string,
@@ -105,10 +105,10 @@ export function useAllTokenPricesRealtime(
                         const tokenAddress = payload.new.token_address as string
                         const priceUsd = payload.new.price_usd as string
 
-                        // Actualizar el mapa de precios
+                        // Update price map
                         priceMap.set(tokenAddress, priceUsd)
 
-                        // Notificar con el mapa actualizado
+                        // Notify with updated map
                         onUpdate(new Map(priceMap))
 
                         console.log(

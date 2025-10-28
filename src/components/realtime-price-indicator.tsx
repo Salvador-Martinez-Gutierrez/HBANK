@@ -23,7 +23,7 @@ export function RealtimePriceIndicator({
 
     useEffect(() => {
         if (enabled) {
-            // Simular conexión establecida después de un momento
+            // Simulate connection established after a moment
             const timer = setTimeout(() => setIsConnected(true), 1000)
             return () => clearTimeout(timer)
         } else {

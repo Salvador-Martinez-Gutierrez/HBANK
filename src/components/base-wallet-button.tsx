@@ -43,7 +43,7 @@ const BaseWalletButton = ({
             setError(null)
             onWalletSelect?.()
 
-            // Verificar si es WalletConnect y hay projectId
+            // Verify if it is WalletConnect and there is projectId
             if (config.id === 'walletconnect') {
                 const projectId =
                     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
@@ -60,7 +60,7 @@ const BaseWalletButton = ({
                 error instanceof Error ? error.message : 'Connection failed'
             setError(errorMessage)
 
-            // Mostrar mensaje específico para WalletConnect
+            // Show specific message for WalletConnect
             if (
                 config.id === 'walletconnect' &&
                 errorMessage.includes('Subscribing')

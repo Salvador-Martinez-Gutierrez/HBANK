@@ -74,15 +74,15 @@ export function usePortfolioWallets(userId: string | null) {
         fetchWallets()
     }, [fetchWallets])
 
-    // 🔴 REALTIME: Actualizar precios de tokens automáticamente
-    // SEGURIDAD: ✅ Solo lectura, datos públicos, no requiere auth
+    // REALTIME: Update token prices automatically
+    // SECURITY: Read-only, public data, no auth required
     const handlePriceUpdate = useCallback((update: TokenPriceUpdate) => {
         console.log('💰 Updating token price in wallets:', update.token_address)
 
         setWallets((currentWallets) => {
             let hasChanges = false
 
-            // Crear una copia profunda para evitar mutaciones
+            // Create a deep copy to avoid mutations
             const updatedWallets = currentWallets.map((wallet) => {
                 let walletChanged = false
                 const newWallet = { ...wallet }
@@ -108,7 +108,7 @@ export function usePortfolioWallets(userId: string | null) {
                 // Update fungible tokens (wallet_tokens)
                 const updatedWalletTokens = (wallet.wallet_tokens || []).map(
                     (wt) => {
-                        // Si este token coincide con el actualizado
+                        // If this token matches the updated one
                         if (
                             wt.tokens_registry?.token_address ===
                             update.token_address
@@ -142,7 +142,7 @@ export function usePortfolioWallets(userId: string | null) {
                 const updatedLpTokens = (
                     wallet.liquidity_pool_tokens || []
                 ).map((lpt) => {
-                    // Si este LP token coincide con el actualizado
+                    // If this LP token matches the updated one
                     if (
                         lpt.tokens_registry?.token_address ===
                         update.token_address
@@ -183,7 +183,7 @@ export function usePortfolioWallets(userId: string | null) {
                 return wallet
             })
 
-            // Solo actualizar el estado si hubo cambios
+            // Only update state if there were changes
             if (hasChanges) {
                 console.log('✅ Portfolio balance recalculated with new prices')
                 return updatedWallets
@@ -192,11 +192,11 @@ export function usePortfolioWallets(userId: string | null) {
             return currentWallets
         })
 
-        // Actualizar timestamp para el indicador UI
+        // Update timestamp for UI indicator
         setLastPriceUpdate(new Date().toISOString())
     }, [])
 
-    // Suscribirse a actualizaciones de precios solo si hay wallets
+    // Subscribe to price updates only if there are wallets
     useTokenPriceRealtime(handlePriceUpdate, wallets.length > 0)
 
     const addWallet = useCallback(
@@ -393,8 +393,8 @@ export function usePortfolioWallets(userId: string | null) {
         updateWalletLabel,
         deleteWallet,
         syncTokens,
-        syncAllWallets, // 🚀 Optimized batch sync
+        syncAllWallets, // Optimized batch sync
         refetch: fetchWallets,
-        lastPriceUpdate, // Para el indicador de realtime
+        lastPriceUpdate, // For the realtime indicator
     }
 }

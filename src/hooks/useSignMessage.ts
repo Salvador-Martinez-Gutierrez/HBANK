@@ -35,7 +35,7 @@ export function useSignMessage() {
                 let resultSignature: string = ''
                 let resultPublicKey: string | undefined
 
-                // Detectar el tipo de wallet y usar el método apropiado
+                // Detect the wallet type and use the appropriate method
                 const walletAny = wallet as unknown as {
                     walletType?: string
                     connector?: {
@@ -70,7 +70,7 @@ export function useSignMessage() {
 
                 if (walletType.includes('hashpack')) {
                     // HashPack wallet
-                    // HashPack usa hashconnect
+                    // HashPack uses hashconnect
                     const hashconnect =
                         walletAny.connector?.hashconnect ||
                         walletAny.hashconnect
@@ -105,7 +105,7 @@ export function useSignMessage() {
                     resultSignature = result.signature || ''
                     resultPublicKey = result.publicKey
                 } else {
-                    // Wallet genérico - intentar con el signer
+                    // Generic wallet - try with the signer
                     const signer = wallet.signer
                     if (!signer) {
                         throw new Error(
@@ -113,7 +113,7 @@ export function useSignMessage() {
                         )
                     }
 
-                    // Intentar el método sign estándar del SDK de Hedera
+                    // Try the standard sign method from the Hedera SDK
                     const messageBytes = new Uint8Array(
                         Buffer.from(message, 'utf-8')
                     )
@@ -125,11 +125,11 @@ export function useSignMessage() {
                             messageBytes,
                         ])
 
-                        // Manejar diferentes formatos de respuesta
+                        // Handle different response formats
                         let signatureBytes: Uint8Array | null = null
 
                         if (Array.isArray(signResult)) {
-                            // Si es un array, tomar el primer elemento
+                            // If it's an array, take the first element
                             const firstElement = signResult[0]
 
                             if (firstElement instanceof Uint8Array) {
@@ -138,14 +138,14 @@ export function useSignMessage() {
                                 firstElement &&
                                 typeof firstElement === 'object'
                             ) {
-                                // Puede ser un objeto con propiedades signature o bytes
+                                // It may be an object with signature or bytes properties
                                 if (firstElement.signature) {
                                     signatureBytes = firstElement.signature
 
-                                    // También intentar obtener la public key si está disponible
+                                    // Also try to get the public key if available
                                     if (firstElement.publicKey) {
                                         try {
-                                            // La public key puede ser un objeto que necesita toString()
+                                            // The public key may be an object that needs toString()
                                             if (
                                                 typeof firstElement.publicKey
                                                     .toString === 'function'
@@ -166,13 +166,13 @@ export function useSignMessage() {
                                 } else if (firstElement.bytes) {
                                     signatureBytes = firstElement.bytes
                                 } else {
-                                    // Puede ser que el objeto mismo sea la firma con propiedades numéricas
+                                    // The object itself may be the signature with numeric properties
                                     const keys = Object.keys(firstElement)
                                     if (
                                         keys.length > 0 &&
                                         keys.every((k) => !isNaN(Number(k)))
                                     ) {
-                                        // Es un objeto indexado numéricamente, convertir a Uint8Array
+                                        // It's a numerically indexed object, convert to Uint8Array
                                         signatureBytes = new Uint8Array(
                                             Object.values(
                                                 firstElement
@@ -187,7 +187,7 @@ export function useSignMessage() {
                             signResult &&
                             typeof signResult === 'object'
                         ) {
-                            // Es un objeto, buscar la firma dentro
+                            // It's an object, look for the signature inside
                             if (signResult.signature instanceof Uint8Array) {
                                 signatureBytes = signResult.signature
                             } else if (signResult.bytes instanceof Uint8Array) {
@@ -195,7 +195,7 @@ export function useSignMessage() {
                             } else if (
                                 typeof signResult.signature === 'string'
                             ) {
-                                // Ya es hex string
+                                // Already a hex string
                                 resultSignature = signResult.signature
                             }
                         }
@@ -217,7 +217,7 @@ export function useSignMessage() {
                     }
                 }
 
-                // Validar que la firma no esté vacía
+                // Validate that the signature is not empty
                 if (
                     !resultSignature ||
                     resultSignature.length === 0 ||
@@ -233,7 +233,7 @@ export function useSignMessage() {
                     publicKey: resultPublicKey,
                 }
             } catch (error) {
-                // Proporcionar mensajes de error más específicos
+                // Provide more specific error messages
                 if (error instanceof Error) {
                     if (
                         error.message.includes('rejected') ||

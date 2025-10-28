@@ -140,7 +140,7 @@ class RateManager {
 
         const errorMessage = err instanceof Error ? err.message : String(err)
 
-        // Detectar rate limit
+        // Detect rate limit
         if (
             response?.status === 429 ||
             errorMessage.includes('429') ||
@@ -157,7 +157,7 @@ class RateManager {
                 }s`
             )
         }
-        // Detectar errores de red/servidor
+        // Detect network/server errors
         else if (
             (response?.status && response.status >= 500) ||
             errorMessage.includes('fetch')
@@ -239,7 +239,7 @@ class RateManager {
                 }
             )
 
-            // ✅ Verificar rate limit antes de procesar
+            // Verify rate limit before processing
             if (response.status === 429) {
                 throw new Error(`Rate limit exceeded: ${response.status}`)
             }
@@ -311,7 +311,7 @@ class RateManager {
                 return null
             }
 
-            // ✅ Manejar error con el sistema adaptativo
+            // Handle error with adaptive system
             this.handleError(err, response)
             console.error('Mirror Node fetch failed:', err)
             const errorMessage =

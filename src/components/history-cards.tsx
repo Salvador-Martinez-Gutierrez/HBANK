@@ -19,7 +19,7 @@ import { useHistory } from '@/hooks/useHistory'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 
-// Componente para el icono de USDC
+// Component for USDC icon
 const USDCIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
     <Image
         alt='USDC'
@@ -30,7 +30,7 @@ const USDCIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
     />
 )
 
-// Componente para el icono de hUSD (versión en escala de grises del USDC)
+// Component for hUSD icon (grayscale version of USDC)
 const HUSDIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
     <Image
         alt='hUSD'

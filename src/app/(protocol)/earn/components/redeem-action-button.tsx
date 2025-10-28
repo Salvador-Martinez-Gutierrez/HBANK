@@ -140,8 +140,8 @@ export function RedeemActionButton({
                 await handleStandardWithdraw(amount)
             }
         } catch (err) {
-            // Para instant withdraw, manejamos el error aquí
-            // Para standard withdraw, el error ya se maneja internamente
+            // For instant withdraw, we handle the error here
+            // For standard withdraw, the error is already handled internally
             if (redeemType === 'instant') {
                 const errorMessage =
                     err instanceof Error ? err.message : 'Unknown error'
@@ -151,7 +151,7 @@ export function RedeemActionButton({
                     errorMessage
                 )
             }
-            // Para standard withdraw, no hacemos nada adicional aquí
+            // For standard withdraw, we don't do anything additional here
         } finally {
             setIsSubmitting(false)
         }
@@ -170,7 +170,7 @@ export function RedeemActionButton({
             return
         }
 
-        // INICIAR EL MODAL DE PROCESO PARA INSTANT REDEEM
+        // START THE PROCESS MODAL FOR INSTANT REDEEM
         instantProcessModal.startProcess(
             'redeem-instant',
             REDEEM_INSTANT_STEPS,
@@ -181,7 +181,7 @@ export function RedeemActionButton({
             }
         )
 
-        // Paso 1: Usuario firma transferencia de hUSD
+        // Step 1: User signs hUSD transfer
         instantProcessModal.updateStep('user-sign', 'active')
 
         if (!isValidSigner(signer)) {
@@ -223,7 +223,7 @@ export function RedeemActionButton({
             throw new Error(`HUSD transfer failed: ${receipt.status}`)
         }
 
-        // Paso 2: Procesar retiro instantáneo
+        // Step 2: Process instant withdrawal
         instantProcessModal.nextStep()
 
         const result = await submitInstantWithdraw(
@@ -237,15 +237,15 @@ export function RedeemActionButton({
             throw new Error(result.error || 'Instant withdrawal failed')
         }
 
-        // Paso 3: Finalizar
+        // Step 3: Finalize
         instantProcessModal.nextStep()
 
-        // Completar el proceso
+        // Complete the process
         instantProcessModal.completeProcess()
     }
 
     const handleStandardWithdraw = async (amount: number) => {
-        // INICIAR EL MODAL DE PROCESO PARA STANDARD REDEEM
+        // START THE PROCESS MODAL FOR STANDARD REDEEM
         standardProcessModal.startProcess(
             'redeem-standard',
             REDEEM_STANDARD_STEPS,
@@ -257,7 +257,7 @@ export function RedeemActionButton({
         )
 
         try {
-            // Paso 1: Crear solicitud de retiro (initialize) - ya está activo por startProcess
+            // Step 1: Create withdrawal request (initialize) - already active from startProcess
             console.log('🔄 [STANDARD WITHDRAW] Step 1: Initialize active')
 
             if (!isValidSigner(signer)) {
@@ -289,11 +289,11 @@ export function RedeemActionButton({
                 )
                 .setTransactionMemo(`Standard withdrawal: ${amount} hUSD`)
 
-            // Paso 2: Usuario debe firmar la transferencia (user-sign)
+            // Step 2: User must sign the transfer (user-sign)
             console.log('🔄 [STANDARD WITHDRAW] Moving to Step 2: User sign')
             standardProcessModal.nextStep()
 
-            // Execute transaction (este es el momento donde el usuario firma)
+            // Execute transaction (this is the moment when the user signs)
             const frozenTx = await transferTx.freezeWithSigner(signer)
             const signedTx = await frozenTx.signWithSigner(signer)
             const txResponse = await signedTx.executeWithSigner(signer)
@@ -305,7 +305,7 @@ export function RedeemActionButton({
 
             console.log('✅ [STANDARD WITHDRAW] HUSD transfer completed')
 
-            // Paso 3: Registrar solicitud de retiro (finalize)
+            // Step 3: Register withdrawal request (finalize)
             console.log('🔄 [STANDARD WITHDRAW] Moving to Step 3: Finalize')
             standardProcessModal.nextStep()
 
@@ -323,7 +323,7 @@ export function RedeemActionButton({
 
             console.log('✅ [STANDARD WITHDRAW] Withdrawal request submitted')
 
-            // Completar el proceso
+            // Complete the process
             standardProcessModal.completeProcess()
         } catch (error) {
             const errorMessage =
@@ -335,7 +335,7 @@ export function RedeemActionButton({
                 standardProcessModal.currentStep,
                 errorMessage
             )
-            // No lanzar el error para evitar doble manejo
+            // Don't throw the error to avoid double handling
         }
     }
 
@@ -376,10 +376,10 @@ export function RedeemActionButton({
     //             )
     //         }
 
-    //         // Paso 3: Finalizar proceso
+    //         // Step 3: Finalize process
     //         standardProcessModal.nextStep()
 
-    //         // Completar el proceso - el callback onComplete manejará la limpieza
+    //         // Complete the process - the onComplete callback will handle cleanup
     //         standardProcessModal.completeProcess()
     //     } catch (err) {
     //         console.error('Error signing Schedule Transaction:', err)

@@ -1,32 +1,32 @@
 /**
- * Servicio de gestión de nonces para autenticación con Hedera Wallet
+ * Nonce management service for Hedera Wallet authentication
  *
- * Los nonces se almacenan en memoria (Map) con expiración de 5 minutos.
- * Para producción, considerar usar Redis para ambientes multi-instancia.
+ * Nonces are stored in memory (Map) with 5-minute expiration.
+ * For production, consider using Redis for multi-instance environments.
  */
 
 import { v4 as uuidv4 } from 'uuid'
 import type { StoredNonce } from '@/types/auth'
 
-// Tiempo de expiración del nonce (5 minutos)
+// Nonce expiration time (5 minutes)
 const NONCE_EXPIRATION_MS = 5 * 60 * 1000
 
-// 🔥 Usar globalThis para persistir el Map en desarrollo (HMR)
-// Esto previene que se pierdan los nonces cuando Next.js recarga módulos
+// Use globalThis to persist the Map in development (HMR)
+// This prevents losing nonces when Next.js reloads modules
 declare global {
     var __nonceStore: Map<string, StoredNonce> | undefined
 }
 
-// Almacenamiento en memoria de nonces
+// In-memory storage of nonces
 // Key: nonce, Value: StoredNonce
 const nonceStore = global.__nonceStore || new Map<string, StoredNonce>()
 
-// Persistir en global para desarrollo
+// Persist in global for development
 if (process.env.NODE_ENV === 'development') {
     global.__nonceStore = nonceStore
 }
 
-// Limpiar nonces expirados cada 2 minutos (solo inicializar una vez)
+// Clean expired nonces every 2 minutes (initialize only once)
 if (!global.__nonceStore) {
     setInterval(() => {
         const now = Date.now()
@@ -59,7 +59,7 @@ export class NonceService {
             used: false,
         }
 
-        // Almacenar el nonce
+        // Store the nonce
         nonceStore.set(nonce, storedNonce)
 
         return { nonce, message }
@@ -85,7 +85,7 @@ export class NonceService {
             }
         }
 
-        // Verificar que el accountId coincida
+        // Verify that the accountId matches
         if (storedNonce.accountId !== accountId) {
             return {
                 valid: false,
@@ -93,7 +93,7 @@ export class NonceService {
             }
         }
 
-        // Verificar que no haya expirado
+        // Verify that it hasn't expired
         if (storedNonce.expiresAt < Date.now()) {
             nonceStore.delete(nonce)
             return {
@@ -102,7 +102,7 @@ export class NonceService {
             }
         }
 
-        // Verificar que no haya sido usado
+        // Verify that it hasn't been used
         if (storedNonce.used) {
             return {
                 valid: false,

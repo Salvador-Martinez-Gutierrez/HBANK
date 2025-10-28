@@ -177,7 +177,7 @@ export function MintActionButton({
             rateData,
         })
 
-        // Validaciones iniciales antes de iniciar el modal de proceso
+        // Initial validations before starting the process modal
         if (!rateData) {
             toast.error(
                 'Exchange rate not available. Please wait for rate to load.'
@@ -204,7 +204,7 @@ export function MintActionButton({
 
         console.log('✅ All validations passed, starting process modal...')
 
-        // INICIAR EL MODAL DE PROCESO
+        // START THE PROCESS MODAL
         processModal.startProcess('mint', MINT_STEPS, {
             amount: `${amountNum}`,
             fromToken: 'USDC',
@@ -222,7 +222,7 @@ export function MintActionButton({
             console.log('Starting atomic mint for:', amountNum, 'USDC')
             console.log('Using rate data:', rateData)
 
-            // Paso 1: Inicializar depósito atómico (ya está activo por startProcess)
+            // Step 1: Initialize atomic deposit (already active from startProcess)
             const initResponse = await fetch('/api/deposit/init', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -267,7 +267,7 @@ export function MintActionButton({
 
             const { scheduleId, amountHUSDC } = initResult
 
-            // Paso 2: Usuario firma el schedule
+            // Step 2: User signs the schedule
             processModal.nextStep()
             console.log('Requesting schedule signature for:', scheduleId)
 
@@ -385,7 +385,7 @@ export function MintActionButton({
                 )
             }
 
-            // Paso 3: Completar transacción atómica
+            // Step 3: Complete atomic transaction
             processModal.nextStep()
             console.log('Notifying backend of user signature...')
 
@@ -413,10 +413,10 @@ export function MintActionButton({
             const completeResult = await completeResponse.json()
             console.log('Complete success:', completeResult)
 
-            // Paso 4: Finalizar
+            // Step 4: Finalize
             processModal.nextStep()
 
-            // Completar el proceso - el callback onComplete manejará la limpieza
+            // Complete the process - the onComplete callback will handle cleanup
             processModal.completeProcess()
         } catch (error: unknown) {
             console.error('❌ Atomic mint failed:', error)

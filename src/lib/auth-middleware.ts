@@ -42,7 +42,7 @@ export type AuthenticatedHandler = (
 export function withAuth(handler: AuthenticatedHandler) {
     return async (req: NextApiRequest, res: NextApiResponse) => {
         try {
-            // Extraer token de la cookie
+            // Extract token from cookie
             const token = req.cookies['hbank-auth-token']
 
             if (!token) {
@@ -52,7 +52,7 @@ export function withAuth(handler: AuthenticatedHandler) {
                     .json({ error: 'Unauthorized: No token provided' })
             }
 
-            // Verificar el JWT
+            // Verify JWT
             const payload = await verifyJWT(token)
 
             if (!payload || !payload.sub) {
@@ -62,7 +62,7 @@ export function withAuth(handler: AuthenticatedHandler) {
                     .json({ error: 'Unauthorized: Invalid token' })
             }
 
-            // Agregar el usuario al request
+            // Add user to request
             const authenticatedReq = req as AuthenticatedRequest
             authenticatedReq.user = {
                 accountId: payload.sub,
@@ -72,7 +72,7 @@ export function withAuth(handler: AuthenticatedHandler) {
                 accountId: payload.sub,
             })
 
-            // Ejecutar el handler
+            // Execute handler
             return handler(authenticatedReq, res)
         } catch (error) {
             logger.error('Error in auth middleware', {
@@ -84,21 +84,21 @@ export function withAuth(handler: AuthenticatedHandler) {
 }
 
 /**
- * Middleware opcional: valida JWT pero no retorna error si no está presente
- * Útil para endpoints que funcionan con y sin autenticación
+ * Optional middleware: validates JWT but doesn't return error if not present
+ * Useful for endpoints that work with and without authentication
  */
 export function withOptionalAuth(handler: AuthenticatedHandler) {
     return async (req: NextApiRequest, res: NextApiResponse) => {
         try {
-            // Extraer token de la cookie
+            // Extract token from cookie
             const token = req.cookies['hbank-auth-token']
 
             if (token) {
-                // Verificar el JWT
+                // Verify JWT
                 const payload = await verifyJWT(token)
 
                 if (payload && payload.sub) {
-                    // Agregar el usuario al request
+                    // Add user to request
                     const authenticatedReq = req as AuthenticatedRequest
                     authenticatedReq.user = {
                         accountId: payload.sub,
@@ -110,20 +110,20 @@ export function withOptionalAuth(handler: AuthenticatedHandler) {
                 }
             }
 
-            // Ejecutar el handler (con o sin usuario)
+            // Execute handler (with or without user)
             return handler(req as AuthenticatedRequest, res)
         } catch (error) {
             logger.error('Error in optional auth middleware', {
                 error: error instanceof Error ? error.message : String(error),
             })
-            // En modo opcional, no retornamos error
+            // In optional mode, we don't return error
             return handler(req as AuthenticatedRequest, res)
         }
     }
 }
 
 /**
- * Utilidad para extraer el accountId del request (si está autenticado)
+ * Utility to extract accountId from request (if authenticated)
  */
 export function getAuthenticatedAccountId(req: NextApiRequest): string | null {
     const authenticatedReq = req as AuthenticatedRequest

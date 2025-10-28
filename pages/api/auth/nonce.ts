@@ -24,13 +24,13 @@ export default async function handler(
     try {
         const { accountId } = req.query
 
-        // Validar que accountId esté presente
+        // Validate that accountId is present
         if (!accountId || typeof accountId !== 'string') {
             logger.warn('Missing or invalid accountId in nonce request')
             return res.status(400).json({ error: 'accountId is required' })
         }
 
-        // Validar formato de accountId
+        // Validate accountId format
         if (!isValidHederaAccountId(accountId)) {
             logger.warn('Invalid Hedera accountId format', { accountId })
             return res
@@ -38,7 +38,7 @@ export default async function handler(
                 .json({ error: 'Invalid Hedera accountId format' })
         }
 
-        // Generar nonce
+        // Generate nonce
         const { nonce, message } = NonceService.generateNonce(accountId)
 
         logger.info('Nonce generated successfully', {
