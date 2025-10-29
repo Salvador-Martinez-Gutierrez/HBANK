@@ -11,9 +11,7 @@
  */
 
 import { Withdrawal, WithdrawalStatus, WithdrawalType } from '../Withdrawal'
-import { Money } from '@/domain/value-objects/Money'
 import { Rate } from '@/domain/value-objects/Rate'
-import { AccountId } from '@/domain/value-objects/AccountId'
 import {
     WithdrawalError,
     InvalidStateError,

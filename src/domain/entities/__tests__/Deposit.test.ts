@@ -11,10 +11,8 @@
  */
 
 import { Deposit, DepositStatus } from '../Deposit'
-import { Money } from '@/domain/value-objects/Money'
 import { Rate } from '@/domain/value-objects/Rate'
-import { AccountId } from '@/domain/value-objects/AccountId'
-import { DepositError, InvalidStateError, InvalidValueError } from '@/domain/errors/DomainError'
+import { DepositError, InvalidStateError } from '@/domain/errors/DomainError'
 
 describe('Deposit Entity', () => {
     let validRate: Rate
