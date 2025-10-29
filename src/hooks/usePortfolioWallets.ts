@@ -87,25 +87,7 @@ export function usePortfolioWallets(userId: string | null) {
                 let walletChanged = false
                 const newWallet = { ...wallet }
 
-                // Check if this is HBAR price update (token_address: 'HBAR' or '0.0.0')
-                if (
-                    update.token_address === 'HBAR' ||
-                    update.token_address === '0.0.0'
-                ) {
-                    const oldPrice = parseFloat(wallet.hbar_price_usd || '0')
-                    const newPrice = parseFloat(update.price_usd)
-                    if (oldPrice !== newPrice) {
-                        newWallet.hbar_price_usd = update.price_usd
-                        walletChanged = true
-                        console.log(
-                            `  📊 HBAR price updated: $${oldPrice.toFixed(
-                                4
-                            )} → $${newPrice.toFixed(4)}`
-                        )
-                    }
-                }
-
-                // Update fungible tokens (wallet_tokens)
+                // Update fungible tokens (wallet_tokens) - including HBAR
                 const updatedWalletTokens = (wallet.wallet_tokens || []).map(
                     (wt) => {
                         // If this token matches the updated one
@@ -357,12 +339,7 @@ export function usePortfolioWallets(userId: string | null) {
         let total = 0
 
         for (const wallet of wallets) {
-            // Include HBAR balance in total value calculation
-            const hbarBalance = parseFloat(wallet.hbar_balance || '0')
-            const hbarPrice = parseFloat(wallet.hbar_price_usd || '0')
-            total += hbarBalance * hbarPrice
-
-            // Include all fungible tokens
+            // Include all fungible tokens (including HBAR)
             for (const walletToken of wallet.wallet_tokens || []) {
                 const balance = parseFloat(walletToken.balance || '0')
                 const price =
@@ -376,6 +353,12 @@ export function usePortfolioWallets(userId: string | null) {
                 const decimals = walletToken.tokens_registry?.decimals || 0
                 const normalizedBalance = balance / Math.pow(10, decimals)
                 total += normalizedBalance * price
+            }
+
+            // Include DeFi positions value
+            for (const defiPosition of wallet.wallet_defi || []) {
+                const valueUsd = parseFloat(defiPosition.value_usd || '0')
+                total += valueUsd
             }
         }
 

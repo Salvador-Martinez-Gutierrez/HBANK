@@ -62,7 +62,6 @@ export default function PortfolioPage() {
         syncAllWallets,
         addWallet,
         deleteWallet,
-        lastPriceUpdate,
     } = usePortfolioWallets(user?.id || null)
     const [syncing, setSyncing] = useState(false)
     const [syncingWallets, setSyncingWallets] = useState<Set<string>>(new Set())
@@ -398,7 +397,10 @@ export default function PortfolioPage() {
                     </div>
                     <p className='text-muted-foreground mt-1'>
                         {wallets.length}{' '}
-                        {wallets.length === 1 ? 'Mainnet Wallet' : 'Mainnet Wallets'} Tracked 
+                        {wallets.length === 1
+                            ? 'Mainnet Wallet'
+                            : 'Mainnet Wallets'}{' '}
+                        Tracked
                     </p>
                 </div>
                 <div className='flex items-center gap-2'>

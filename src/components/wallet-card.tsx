@@ -60,12 +60,7 @@ export function WalletCard({
     const calculateTotalValue = () => {
         let total = 0
 
-        // Add HBAR value
-        const hbarBalance = parseFloat(wallet.hbar_balance || '0')
-        const hbarPrice = parseFloat(wallet.hbar_price_usd || '0')
-        total += hbarBalance * hbarPrice
-
-        // Add fungible tokens value
+        // Add fungible tokens value (including HBAR which is now in wallet_tokens)
         for (const walletToken of wallet.wallet_tokens || []) {
             const balance = parseFloat(walletToken.balance || '0')
             const priceUsd = walletToken.tokens_registry?.price_usd
@@ -89,41 +84,57 @@ export function WalletCard({
     }
 
     const totalValue = calculateTotalValue()
-    const hbarBalance = parseFloat(wallet.hbar_balance || '0')
-    const hbarPriceUsd = parseFloat(wallet.hbar_price_usd || '0')
     const fungibleCount = wallet.wallet_tokens?.length || 0
     const defiCount = wallet.wallet_defi?.length || 0
     const nftCount = wallet.wallet_nfts?.length || 0
 
-    // Count HBAR as a token if it has balance
-    const hbarTokenCount = hbarBalance > 0 ? 1 : 0
-    const totalTokenCount = fungibleCount + hbarTokenCount
+    // Get HBAR token from wallet_tokens
+    const hbarToken = wallet.wallet_tokens?.find(
+        (wt) => wt.tokens_registry?.token_address === 'HBAR'
+    )
+    const hbarBalance = hbarToken
+        ? parseFloat(hbarToken.balance || '0') /
+          Math.pow(10, hbarToken.tokens_registry?.decimals || 8)
+        : 0
+    const hbarPriceUsd = hbarToken
+        ? parseFloat(
+              typeof hbarToken.tokens_registry?.price_usd === 'number'
+                  ? hbarToken.tokens_registry.price_usd.toString()
+                  : hbarToken.tokens_registry?.price_usd || '0'
+          )
+        : 0
+
+    const totalTokenCount = fungibleCount
 
     // Prepare data for AssetSections component
     const fungibleTokens = useMemo(() => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const tokens = (wallet.wallet_tokens || []).map((wt: any) => {
-            const balance = wt.balance
-            const decimals = wt.tokens_registry?.decimals || 0
-            const price_usd = wt.tokens_registry?.price_usd || '0'
+        const tokens = (wallet.wallet_tokens || [])
+            // Filter out HBAR as it's displayed separately
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .filter((wt: any) => wt.tokens_registry?.token_address !== 'HBAR')
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .map((wt: any) => {
+                const balance = wt.balance
+                const decimals = wt.tokens_registry?.decimals || 0
+                const price_usd = wt.tokens_registry?.price_usd || '0'
 
-            // Calculate value in USD for sorting
-            const normalizedBalance =
-                parseFloat(balance) / Math.pow(10, decimals)
-            const valueUsd = normalizedBalance * parseFloat(price_usd)
+                // Calculate value in USD for sorting
+                const normalizedBalance =
+                    parseFloat(balance) / Math.pow(10, decimals)
+                const valueUsd = normalizedBalance * parseFloat(price_usd)
 
-            return {
-                id: wt.id,
-                balance: balance,
-                token_name: wt.tokens_registry?.token_name,
-                token_symbol: wt.tokens_registry?.token_symbol,
-                token_address: wt.tokens_registry?.token_address,
-                token_icon: wt.tokens_registry?.token_icon,
-                decimals: decimals,
-                price_usd: price_usd,
-                valueUsd: valueUsd,
-            }
-        })
+                return {
+                    id: wt.id,
+                    balance: balance,
+                    token_name: wt.tokens_registry?.token_name,
+                    token_symbol: wt.tokens_registry?.token_symbol,
+                    token_address: wt.tokens_registry?.token_address,
+                    token_icon: wt.tokens_registry?.token_icon,
+                    decimals: decimals,
+                    price_usd: price_usd,
+                    valueUsd: valueUsd,
+                }
+            })
 
         // Sort by USD value (descending)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

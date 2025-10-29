@@ -64,13 +64,7 @@ export function AggregatedPortfolioView({
         let totalValue = 0
 
         for (const wallet of wallets) {
-            // Aggregate HBAR
-            const hbarBalance = parseFloat(wallet.hbar_balance || '0')
-            totalHbar += hbarBalance
-            hbarPriceUsd = parseFloat(wallet.hbar_price_usd || '0') // Use last wallet's price
-            totalValue += hbarBalance * hbarPriceUsd
-
-            // Aggregate fungible tokens
+            // Aggregate fungible tokens (including HBAR)
             for (const walletToken of wallet.wallet_tokens || []) {
                 const tokenAddress =
                     walletToken.tokens_registry?.token_address || ''
@@ -82,6 +76,15 @@ export function AggregatedPortfolioView({
                         : priceUsd || '0'
                 )
                 const decimals = walletToken.tokens_registry?.decimals || 0
+
+                // Check if this is HBAR
+                if (tokenAddress === 'HBAR') {
+                    const normalizedBalance = balance / Math.pow(10, decimals)
+                    totalHbar += normalizedBalance
+                    hbarPriceUsd = price
+                    totalValue += normalizedBalance * price
+                    continue // Skip adding HBAR to fungibleMap, handle separately
+                }
 
                 if (fungibleMap.has(tokenAddress)) {
                     // Aggregate balance
