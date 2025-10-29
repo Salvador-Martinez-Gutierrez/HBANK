@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import '../lib/polyfills'
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from '@vercel/analytics/next'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -16,13 +16,52 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-    title: 'Hbank',
+    title: 'HBank - The Onchain Neobank on Hedera',
     description:
-        'The Onchain Neobank to Grow Your Wealth.',
+        'Your complete onchain banking alternative on Hedera. Earn yield, track your portfolio, trade assets, and spend crypto—all self-custodial and fully transparent.',
+    keywords: [
+        'Hedera',
+        'Neobank',
+        'DeFi',
+        'Yield',
+        'Portfolio Tracker',
+        'Crypto Swaps',
+        'Credit Card',
+        'Self-Custodial',
+        'Hedera Hashgraph',
+        'HBAR',
+        'Onchain Banking',
+    ],
     icons: {
         icon: '/HB.png',
         shortcut: '/HB.png',
         apple: '/HB.png',
+    },
+    openGraph: {
+        title: 'HBank - The Onchain Neobank on Hedera',
+        description:
+            'Earn, trade, spend and manage your onchain assets on Hedera. Fully self-custodial with total transparency.',
+        url: 'https://hbank.cash',
+        siteName: 'HBank',
+        images: [
+            {
+                url: '/HB.png',
+                width: 1200,
+                height: 630,
+                alt: 'HBank Logo',
+            },
+        ],
+        type: 'website',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'HBank - The Onchain Neobank on Hedera',
+        description:
+            'Earn, trade, spend and manage your onchain assets on Hedera. Fully self-custodial with total transparency.',
+        images: ['/HB.png'],
+    },
+    alternates: {
+        canonical: 'https://hbank.cash',
     },
 }
 
