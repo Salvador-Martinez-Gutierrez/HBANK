@@ -141,19 +141,14 @@ export default function Home() {
                         <div className='grid items-center gap-12 lg:grid-cols-2'>
                             <div>
                                 <h2 className='mb-6 text-3xl font-bold sm:text-4xl'>
-                                    Your Complete
+                                    Banking Freedom
                                     <br />
                                     <span className='bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent'>
-                                        Onchain Banking Alternative
+                                      Built Onchain
                                     </span>
                                 </h2>
                                 <p className='mb-8 text-lg text-muted-foreground'>
-                                    Everything you need to manage your digital
-                                    assets in one place. Earn yield, track your
-                                    portfolio, trade, and spend — all while
-                                    maintaining full self-custody and complete
-                                    transparency.
-                                </p>
+                                  Unlock a new era of personal finance — transparent, efficient, and truly yours. Take control of your wealth with on-chain banking that works for you, not against you.                                </p>
                             </div>
                             <div className='relative'>
                                 <div className='absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20 blur-3xl ml-10' />
