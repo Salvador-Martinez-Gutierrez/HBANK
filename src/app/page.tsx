@@ -61,8 +61,8 @@ export default function Home() {
                                 To Grow Your Wealth
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                                The onchain banking alternative on Hedera
-                                Hashgraph. Earn, spend and manage your assets
+                                The Onchain Banking alternative on Hedera
+                                Hashgraph. Earn, spend and manage your digital assets
                                 all in one place.
                             </p>
                             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
