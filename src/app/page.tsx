@@ -628,7 +628,7 @@ export default function Home() {
                                             rel='noopener noreferrer'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
-                                            Documentation
+                                            Docs
                                         </Link>
                                     </li>
                                     <li>
