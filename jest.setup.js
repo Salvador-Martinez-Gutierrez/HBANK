@@ -20,3 +20,44 @@ global.console = {
 jest.mock('uuid', () => ({
     v4: jest.fn(() => 'test-uuid-123'),
 }))
+
+// Mock Hedera SDK globally to avoid TextEncoder issues
+jest.mock('@hashgraph/sdk', () => {
+    const mockAccountId = {
+        fromString: jest.fn((str) => ({ toString: () => str, shard: 0, realm: 0, num: parseInt(str.split('.').pop()) })),
+    }
+
+    const mockClient = {
+        forTestnet: jest.fn(() => ({
+            setOperator: jest.fn(),
+            close: jest.fn(),
+        })),
+        forMainnet: jest.fn(() => ({
+            setOperator: jest.fn(),
+            close: jest.fn(),
+        })),
+    }
+
+    const mockPrivateKey = {
+        generateED25519: jest.fn(() => ({
+            publicKey: { toString: () => 'mock-public-key' },
+            toString: () => 'mock-private-key',
+        })),
+        fromString: jest.fn((str) => ({
+            publicKey: { toString: () => 'mock-public-key' },
+            toString: () => str,
+        })),
+    }
+
+    return {
+        Client: mockClient,
+        AccountId: mockAccountId,
+        PrivateKey: mockPrivateKey,
+        PublicKey: {
+            fromString: jest.fn((str) => ({ toString: () => str })),
+        },
+        TokenId: {
+            fromString: jest.fn((str) => ({ toString: () => str })),
+        },
+    }
+})
