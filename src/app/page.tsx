@@ -595,12 +595,12 @@ export default function Home() {
                                             href='/earn'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
-                                            Vault
+                                            Earn
                                         </Link>
                                     </li>
                                     <li>
                                         <Link
-                                            href='/transparency'
+                                            href='/earn/transparency'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
                                             Transparency
