@@ -9,15 +9,32 @@ const createJestConfig = nextJest({
 // Add any custom config to be passed to Jest
 const customJestConfig = {
     setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
-    testEnvironment: 'node',
+    testEnvironment: 'jest-environment-jsdom',
     testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx'],
-    collectCoverageFrom: ['src/**/*.{js,jsx,ts,tsx}', '!src/**/*.d.ts'],
+    collectCoverageFrom: [
+        'src/**/*.{js,jsx,ts,tsx}',
+        '!src/**/*.d.ts',
+        '!src/**/*.stories.{js,jsx,ts,tsx}',
+        '!src/**/__tests__/**',
+        '!src/app/**/layout.tsx',
+        '!src/app/**/page.tsx',
+        '!src/middleware.ts',
+    ],
+    coverageThreshold: {
+        global: {
+            branches: 80,
+            functions: 80,
+            lines: 80,
+            statements: 80,
+        },
+    },
+    coverageReporters: ['text', 'lcov', 'html'],
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
     },
     // Transform ESM modules to CommonJS for Jest
     transformIgnorePatterns: [
-        'node_modules/(?!(@buidlerlabs/hashgraph-react-wallets)/)',
+        'node_modules/(?!(@buidlerlabs/hashgraph-react-wallets|uuid)/)',
     ],
     // Remove preset since Next.js handles TypeScript compilation
 }
