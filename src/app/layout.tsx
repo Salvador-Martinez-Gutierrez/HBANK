@@ -45,9 +45,9 @@ export const metadata: Metadata = {
         siteName: 'HBank',
         images: [
             {
-                url: '/HB.png',
-                width: 1200,
-                height: 630,
+                url: '/HB-200.png',
+                width: 200,
+                height: 200,
                 alt: 'HBank Logo',
             },
         ],
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
         title: 'HBank - The Onchain Neobank on Hedera',
         description:
             'Earn, trade, spend and manage your onchain assets on Hedera. Fully self-custodial with total transparency.',
-        images: ['/HB.png'],
+        images: ['/HB-200.png'],
     },
     alternates: {
         canonical: 'https://hbank.cash',
