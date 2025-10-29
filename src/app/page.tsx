@@ -49,7 +49,7 @@ export default function Home() {
                 />
                 <meta property='og:type' content='website' />
                 <meta name='twitter:card' content='summary_large_image' />
-                <link rel='canonical' href='https://hbank.pro' />
+                <link rel='canonical' href='https://hbank.cash' />
             </Head>
 
             <div className='min-h-screen'>
