@@ -499,19 +499,12 @@ export default function PortfolioPage() {
                         <p className='text-muted-foreground mb-4'>
                             Add a wallet to start tracking your portfolio.
                         </p>
-                        <Button
-                            type='button'
-                            onClick={() => {
-                                if (wallets[0]) {
-                                    handleSyncWallet(
-                                        wallets[0].id,
-                                        wallets[0].wallet_address
-                                    )
-                                }
-                            }}
-                        >
-                            Sync Tokens
-                        </Button>
+                        <AddWalletDialog
+                            onAddWallet={addWallet}
+                            canAddMore={canAddMoreWallets}
+                            walletsRemaining={walletsRemaining}
+                            onSyncWallet={handleSyncWallet}
+                        />
                     </CardContent>
                 </Card>
             ) : viewMode === 'aggregated' ? (
