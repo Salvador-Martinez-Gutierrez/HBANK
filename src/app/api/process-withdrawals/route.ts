@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WithdrawService } from '@/services/withdrawService'
-import { HederaService } from '@/services/hederaService'
 import { TelegramService } from '@/services/telegramService'
 import { ACCOUNTS } from '@/app/backend-constants'
 import { createScopedLogger } from '@/lib/logger'
+import { container } from '@/core/di/container'
+import { TYPES } from '@/core/di/types'
+import {
+    HederaBalanceService,
+    HederaMirrorNodeService,
+    HederaWithdrawalService,
+} from '@/infrastructure/hedera'
 
 const logger = createScopedLogger('api:process-withdrawals')
 
@@ -21,7 +27,11 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
         logger.info('Starting withdrawal processing worker')
 
         const withdrawService = new WithdrawService()
-        const hederaService = new HederaService()
+
+        // Get Hedera services from DI container
+        const balanceService = container.get<HederaBalanceService>(TYPES.HederaBalanceService)
+        const mirrorNodeService = container.get<HederaMirrorNodeService>(TYPES.HederaMirrorNodeService)
+        const withdrawalService = container.get<HederaWithdrawalService>(TYPES.HederaWithdrawalService)
 
         // Get all pending withdrawals that are ready to be processed
         const pendingWithdrawals = await withdrawService.getPendingWithdrawals()
@@ -70,7 +80,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
 
                 if (!isNewStyleWithdrawal) {
                     scheduleExecuted =
-                        await hederaService.verifyScheduleTransactionExecuted(
+                        await mirrorNodeService.verifyScheduleTransactionExecuted(
                             withdrawal.scheduleId
                         )
                 }
@@ -81,7 +91,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                         requestId: withdrawal.requestId,
                     })
 
-                    await hederaService.publishWithdrawResult(
+                    await withdrawalService.publishWithdrawResult(
                         withdrawal.requestId,
                         'failed',
                         undefined,
@@ -110,7 +120,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                 if (!isNewStyleWithdrawal) {
                     // Only verify for legacy withdrawals
                     husdTransferVerified =
-                        await hederaService.verifyHUSDTransfer(
+                        await mirrorNodeService.verifyHUSDTransfer(
                             withdrawal.user,
                             emissionsWalletId,
                             withdrawal.amountHUSD,
@@ -129,7 +139,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                         to: emissionsWalletId,
                     })
 
-                    await hederaService.publishWithdrawResult(
+                    await withdrawalService.publishWithdrawResult(
                         withdrawal.requestId,
                         'failed',
                         undefined,
@@ -156,7 +166,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                 // Check Standard Withdraw USDC balance (USDC payments come from standard withdraw wallet)
                 const standardWithdrawWalletId = ACCOUNTS.standardWithdraw
                 const standardWithdrawBalance =
-                    await hederaService.checkBalance(
+                    await balanceService.checkBalance(
                         standardWithdrawWalletId,
                         usdcTokenId
                     )
@@ -172,12 +182,12 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                     })
 
                     try {
-                        const txId = await hederaService.transferUSDCToUser(
+                        const txId = await withdrawalService.transferUSDCToUser(
                             withdrawal.user,
                             usdcAmount
                         )
 
-                        await hederaService.publishWithdrawResult(
+                        await withdrawalService.publishWithdrawResult(
                             withdrawal.requestId,
                             'completed',
                             txId
@@ -231,7 +241,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                         try {
                             // Rollback the HUSD to the user since the USDC transfer failed
                             const rollbackTxId =
-                                await hederaService.rollbackHUSDToUser(
+                                await withdrawalService.rollbackHUSDToUser(
                                     withdrawal.user,
                                     withdrawal.amountHUSD
                                 )
@@ -241,7 +251,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                                 { rollbackTxId }
                             )
 
-                            await hederaService.publishWithdrawResult(
+                            await withdrawalService.publishWithdrawResult(
                                 withdrawal.requestId,
                                 'failed',
                                 rollbackTxId,
@@ -267,7 +277,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                                 }
                             )
 
-                            await hederaService.publishWithdrawResult(
+                            await withdrawalService.publishWithdrawResult(
                                 withdrawal.requestId,
                                 'failed',
                                 undefined,
@@ -298,14 +308,14 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                     try {
                         // Rollback the HUSD to the user since we can't complete the withdrawal
                         const rollbackTxId =
-                            await hederaService.rollbackHUSDToUser(
+                            await withdrawalService.rollbackHUSDToUser(
                                 withdrawal.user,
                                 withdrawal.amountHUSD
                             )
 
                         logger.info('HUSD rollback completed', { rollbackTxId })
 
-                        await hederaService.publishWithdrawResult(
+                        await withdrawalService.publishWithdrawResult(
                             withdrawal.requestId,
                             'failed',
                             rollbackTxId,
@@ -324,7 +334,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                                     : String(rollbackError),
                         })
 
-                        await hederaService.publishWithdrawResult(
+                        await withdrawalService.publishWithdrawResult(
                             withdrawal.requestId,
                             'failed',
                             undefined,
