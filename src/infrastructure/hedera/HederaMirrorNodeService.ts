@@ -36,19 +36,27 @@ interface MirrorNodeSchedule {
 export class HederaMirrorNodeService {
     private readonly mirrorNodeUrl: string
     private readonly husdTokenId: string
+    private readonly husdDecimals: number
 
     constructor() {
         this.mirrorNodeUrl =
-            process.env.TESTNET_MIRROR_NODE_ENDPOINT ?? 'https://testnet.mirrornode.hedera.com'
+            process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
+            'https://testnet.mirrornode.hedera.com'
 
         const husdTokenId = process.env.HUSD_TOKEN_ID
         if (!husdTokenId) {
-            throw new Error('Missing required environment variable: HUSD_TOKEN_ID')
+            throw new Error(
+                'Missing required environment variable: HUSD_TOKEN_ID'
+            )
         }
         this.husdTokenId = husdTokenId
 
+        // Get HUSD decimals from environment variable
+        this.husdDecimals = parseInt(process.env.HUSD_DECIMALS ?? '3')
+
         logger.info('Mirror Node service initialized', {
             mirrorNodeUrl: this.mirrorNodeUrl,
+            husdDecimals: this.husdDecimals,
         })
     }
 
@@ -62,7 +70,9 @@ export class HederaMirrorNodeService {
         try {
             logger.debug('Checking transaction in Mirror Node', { txId })
 
-            const response = await fetch(`${this.mirrorNodeUrl}/api/v1/transactions/${txId}`)
+            const response = await fetch(
+                `${this.mirrorNodeUrl}/api/v1/transactions/${txId}`
+            )
 
             if (response.ok) {
                 const txData = (await response.json()) as MirrorNodeTransaction
@@ -99,11 +109,15 @@ export class HederaMirrorNodeService {
      * @param scheduleId - Schedule ID to verify
      * @returns True if schedule has been executed
      */
-    async verifyScheduleTransactionExecuted(scheduleId: string): Promise<boolean> {
+    async verifyScheduleTransactionExecuted(
+        scheduleId: string
+    ): Promise<boolean> {
         try {
             logger.info('Verifying schedule transaction', { scheduleId })
 
-            const response = await fetch(`${this.mirrorNodeUrl}/api/v1/schedules/${scheduleId}`)
+            const response = await fetch(
+                `${this.mirrorNodeUrl}/api/v1/schedules/${scheduleId}`
+            )
 
             if (!response.ok) {
                 logger.info('Schedule not found in Mirror Node', {
@@ -163,7 +177,9 @@ export class HederaMirrorNodeService {
             })
 
             // Add buffer time to account for clock differences
-            const sinceWithBuffer = new Date(new Date(since).getTime() - 60000).toISOString()
+            const sinceWithBuffer = new Date(
+                new Date(since).getTime() - 60000
+            ).toISOString()
 
             logger.debug('Using buffered timestamp', {
                 original: since,
@@ -172,7 +188,9 @@ export class HederaMirrorNodeService {
 
             // Retry logic for Mirror Node synchronization
             const maxRetries = 8
-            const retryDelays = [500, 1000, 2000, 3000, 5000, 8000, 12000, 15000]
+            const retryDelays = [
+                500, 1000, 2000, 3000, 5000, 8000, 12000, 15000,
+            ]
 
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
                 logger.debug('Verification attempt', {
@@ -292,6 +310,18 @@ export class HederaMirrorNodeService {
                 attempt,
             })
 
+            // Convert expected amount to tiny units
+            // Mirror Node returns amounts in tiny units, so we need to compare apples to apples
+            const expectedAmountTiny = Math.floor(
+                expectedAmount * Math.pow(10, this.husdDecimals)
+            )
+
+            logger.debug('Amount conversion for verification', {
+                expectedAmount,
+                expectedAmountTiny,
+                husdDecimals: this.husdDecimals,
+            })
+
             // Search for the expected transfer
             for (const tx of data.transactions || []) {
                 if (!tx.token_transfers) continue
@@ -302,16 +332,40 @@ export class HederaMirrorNodeService {
                 )
 
                 // Check if we find the expected transfer
+                // We need to verify:
+                // 1. User sent HUSD (negative amount from user's account)
+                // 2. Emissions wallet received HUSD (positive amount to emissions wallet)
+                // 3. Amount matches expected amount (in tiny units)
                 for (const transfer of husdTransfers) {
-                    const isFromUser = transfer.account === userAccountId && transfer.amount < 0
-                    const amountMatches = Math.abs(transfer.amount) === expectedAmount
+                    const isFromUser =
+                        transfer.account === userAccountId &&
+                        transfer.amount < 0
+                    const isToTreasury =
+                        transfer.account === treasuryId && transfer.amount > 0
+                    const amountMatchesFromUser =
+                        Math.abs(transfer.amount) === expectedAmountTiny
+                    const amountMatchesToTreasury =
+                        transfer.amount === expectedAmountTiny
 
-                    if (isFromUser && amountMatches) {
-                        logger.info('Matching transfer found', {
+                    if (isFromUser && amountMatchesFromUser) {
+                        logger.info('Matching transfer found (user side)', {
                             tokenId: transfer.token_id,
                             from: transfer.account,
-                            amount: transfer.amount,
-                            expected: expectedAmount,
+                            amountTiny: transfer.amount,
+                            amountHUSD: expectedAmount,
+                            expectedTiny: expectedAmountTiny,
+                        })
+
+                        return true
+                    }
+
+                    if (isToTreasury && amountMatchesToTreasury) {
+                        logger.info('Matching transfer found (treasury side)', {
+                            tokenId: transfer.token_id,
+                            to: transfer.account,
+                            amountTiny: transfer.amount,
+                            amountHUSD: expectedAmount,
+                            expectedTiny: expectedAmountTiny,
                         })
 
                         return true
