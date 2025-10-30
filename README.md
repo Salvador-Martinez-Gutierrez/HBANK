@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🏦 Hbank Protocol
+# 🏦 Hbank
 
-### **Decentralized Yield-Bearing Stablecoin Platform on Hedera Hashgraph**
+### **The Onchain Neobank on Hedera Hashgraph**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-15.5-black?logo=next.js)](https://nextjs.org/)
@@ -10,19 +10,17 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?logo=supabase)](https://supabase.com/)
 
-<img src="public/hbank-logo.png" alt="Hbank Protocol" width="120" />
+<img src="public/hbank_logo-no-bg.png" alt="Hbank Protocol" width="120" />
 
-**Transparent onchain asset management with decentralized infrastructure**
-
-[🚀 Launch App](https://hbank.pro) • [📖 Documentation](https://hbank.gitbook.io/hbank-docs/) • [🐦 Twitter](https://twitter.com/hbankprotocol)
+[🚀 Launch App](https://hbank.cash)• [🔈 Pitch](https://drive.google.com/file/d/1Ho4N9kTXHvQ7RiAvBBnApqd_rFIz1Myp/view?usp=sharing)  • [📖 Docs](https://hbank.gitbook.io/hbank-docs/) • [🐦 Twitter](https://twitter.com/hbankcash)
 
 </div>
 
 ---
 
-## 🎯 **What is Hbank Protocol?**
+## 🎯 **What is Hbank?**
 
-Hbank Protocol is a **fully decentralized yield-bearing stablecoin platform** built on Hedera Hashgraph. The protocol specializes in creating transparent, auditable financial products that leverage Hedera's speed and security while maintaining complete decentralization through on-chain verification mechanisms.
+HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We provide a complete suite of financial services including liquid yield tokens for earning passive income, a multi-wallet portfolio tracker, crypto swaps through aggregated liquidity, and a credit card for seamless spending. Unlike traditional neobanks, you maintain full custody of your assets with complete transparency and verifiability on-chain.
 
 ### **Core Products**
 
