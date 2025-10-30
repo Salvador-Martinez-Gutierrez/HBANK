@@ -10,6 +10,7 @@ import {
 } from './defiService'
 import { MAX_WALLETS_PER_USER } from '@/constants/portfolio'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('service:portfolioWalletService')
 
@@ -134,16 +135,13 @@ interface _WalletDefiRow {
  * Uses environment variables for API key and base URL
  */
 function getValidationCloudUrl(): string {
-    const apiKey = process.env.VALIDATION_CLOUD_API_KEY
-    const baseUrl =
-        process.env.VALIDATION_CLOUD_BASE_URL ??
-        'https://mainnet.hedera.validationcloud.io/v1'
-
-    if (!apiKey) {
+    if (!serverEnv.externalApis.validationCloud?.apiKey) {
         throw new Error('VALIDATION_CLOUD_API_KEY is not configured')
     }
 
-    return `${baseUrl}/${apiKey}/api/v1`
+    const baseUrl = serverEnv.externalApis.validationCloud.url
+
+    return `${baseUrl}/${serverEnv.externalApis.validationCloud.apiKey}/api/v1`
 }
 
 /**

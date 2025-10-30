@@ -10,6 +10,7 @@ import {
     HederaMirrorNodeService,
     HederaWithdrawalService,
 } from '@/infrastructure/hedera'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:process-withdrawals')
 
@@ -161,7 +162,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                 logger.info('All verifications passed, proceeding with USDC withdrawal')
 
                 const usdcAmount = withdrawal.amountHUSD * withdrawal.rate
-                const usdcTokenId = process.env.USDC_TOKEN_ID ?? ''
+                const usdcTokenId = serverEnv.tokens.usdc.tokenId
 
                 // Check Standard Withdraw USDC balance (USDC payments come from standard withdraw wallet)
                 const standardWithdrawWalletId = ACCOUNTS.standardWithdraw

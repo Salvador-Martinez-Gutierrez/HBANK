@@ -1,4 +1,5 @@
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('service:defiService')
 
@@ -7,10 +8,10 @@ const logger = createScopedLogger('service:defiService')
  * Integrates with SaucerSwap and Bonzo Finance APIs to fetch DeFi positions
  */
 
-// Environment variables - will fail at runtime if not set
-const SAUCERSWAP_API = process.env.SAUCERSWAP_API_URL ?? ''
-const SAUCERSWAP_API_KEY = process.env.SAUCERSWAP_API_KEY ?? ''
-const BONZO_API = process.env.BONZO_API_URL ?? ''
+// External API URLs from serverEnv
+const SAUCERSWAP_API = serverEnv.externalApis.saucerSwap?.url ?? ''
+const SAUCERSWAP_API_KEY = serverEnv.externalApis.saucerSwap?.apiKey ?? ''
+const BONZO_API = serverEnv.externalApis.bonzo?.url ?? ''
 
 // ========================================
 // TYPES

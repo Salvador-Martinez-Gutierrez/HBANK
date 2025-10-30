@@ -1,4 +1,5 @@
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('service:saucerSwapService')
 
@@ -7,9 +8,9 @@ const logger = createScopedLogger('service:saucerSwapService')
  * Integrates with SaucerSwap API to fetch token prices and metadata for Hedera mainnet
  */
 
-// Environment variables - will fail at runtime if not set
-const SAUCERSWAP_API = process.env.SAUCERSWAP_API_URL ?? ''
-const SAUCERSWAP_API_KEY = process.env.SAUCERSWAP_API_KEY ?? ''
+// SaucerSwap API configuration from serverEnv
+const SAUCERSWAP_API = serverEnv.externalApis.saucerSwap?.url ?? ''
+const SAUCERSWAP_API_KEY = serverEnv.externalApis.saucerSwap?.apiKey ?? ''
 
 interface SaucerSwapToken {
     id: string

@@ -8,6 +8,7 @@
 import { injectable } from 'inversify'
 import { Client, AccountId, PrivateKey, TopicId, Hbar } from '@hashgraph/sdk'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('hedera-client-factory')
 
@@ -50,7 +51,7 @@ export class HederaClientFactory {
 
     constructor() {
         // Check environment mode
-        this.useRealTestnet = process.env.USE_REAL_TESTNET === 'true'
+        this.useRealTestnet = serverEnv.hedera.useRealTestnet
 
         if (!this.useRealTestnet) {
             logger.warn(
@@ -59,24 +60,24 @@ export class HederaClientFactory {
         }
 
         // Load operator credentials
-        const operatorIdStr = process.env.OPERATOR_ID
-        const operatorKeyStr = process.env.OPERATOR_KEY
-        const topicIdStr = process.env.TOPIC_ID
-
-        if (!operatorIdStr || !operatorKeyStr || !topicIdStr) {
+        if (!serverEnv.operators.legacy) {
             throw new Error(
-                'Missing required Hedera credentials: OPERATOR_ID, OPERATOR_KEY, TOPIC_ID'
+                'Missing required Hedera credentials: OPERATOR_ID, OPERATOR_KEY'
             )
         }
 
-        this.operatorId = AccountId.fromString(operatorIdStr)
-        this.operatorKey = PrivateKey.fromString(operatorKeyStr)
-        this.topicId = TopicId.fromString(topicIdStr)
+        this.operatorId = AccountId.fromString(serverEnv.operators.legacy.accountId)
+        this.operatorKey = PrivateKey.fromString(serverEnv.operators.legacy.privateKey)
+
+        if (!serverEnv.topics.main) {
+            throw new Error('Missing required TOPIC_ID')
+        }
+        this.topicId = TopicId.fromString(serverEnv.topics.main)
 
         // Initialize decimal multipliers
-        this.HBAR_MULTIPLIER = Math.pow(10, parseInt(process.env.HBAR_DECIMALS ?? '8'))
-        this.USDC_MULTIPLIER = Math.pow(10, parseInt(process.env.USDC_DECIMALS ?? '6'))
-        this.HUSD_MULTIPLIER = Math.pow(10, parseInt(process.env.HUSD_DECIMALS ?? '3'))
+        this.HBAR_MULTIPLIER = Math.pow(10, serverEnv.decimals.hbar)
+        this.USDC_MULTIPLIER = Math.pow(10, serverEnv.decimals.usdc)
+        this.HUSD_MULTIPLIER = Math.pow(10, serverEnv.decimals.husd)
 
         logger.info('✅ Hedera client factory initialized')
         logger.info(`   Operator: ${this.operatorId.toString()}`)
@@ -135,33 +136,42 @@ export class HederaClientFactory {
         switch (walletType) {
             case 'deposit':
                 return {
-                    id: this.getRequiredEnv('DEPOSIT_WALLET_ID'),
-                    key: this.getRequiredEnv('DEPOSIT_WALLET_KEY'),
+                    id: serverEnv.operators.deposit.accountId,
+                    key: serverEnv.operators.deposit.privateKey,
                 }
             case 'instant-withdraw':
                 return {
-                    id: this.getRequiredEnv('INSTANT_WITHDRAW_WALLET_ID'),
-                    key: this.getRequiredEnv('INSTANT_WITHDRAW_WALLET_KEY'),
+                    id: serverEnv.operators.instantWithdraw.accountId,
+                    key: serverEnv.operators.instantWithdraw.privateKey,
                 }
             case 'standard-withdraw':
+                if (!serverEnv.operators.standardWithdraw) {
+                    throw new Error('STANDARD_WITHDRAW_WALLET credentials not configured')
+                }
                 return {
-                    id: this.getRequiredEnv('STANDARD_WITHDRAW_WALLET_ID'),
-                    key: this.getRequiredEnv('STANDARD_WITHDRAW_WALLET_KEY'),
+                    id: serverEnv.operators.standardWithdraw.accountId,
+                    key: serverEnv.operators.standardWithdraw.privateKey,
                 }
             case 'treasury':
+                if (!serverEnv.operators.treasury) {
+                    throw new Error('TREASURY credentials not configured')
+                }
                 return {
-                    id: this.getRequiredEnv('TREASURY_ID'),
-                    key: this.getRequiredEnv('TREASURY_KEY'),
+                    id: serverEnv.operators.treasury.accountId,
+                    key: serverEnv.operators.treasury.privateKey,
                 }
             case 'emissions':
                 return {
-                    id: this.getRequiredEnv('EMISSIONS_ID'),
-                    key: this.getRequiredEnv('EMISSIONS_KEY'),
+                    id: serverEnv.operators.emissions.accountId,
+                    key: serverEnv.operators.emissions.privateKey,
                 }
             case 'rate-publisher':
+                if (!serverEnv.operators.ratePublisher) {
+                    throw new Error('RATE_PUBLISHER credentials not configured')
+                }
                 return {
-                    id: this.getRequiredEnv('RATE_PUBLISHER_ID'),
-                    key: this.getRequiredEnv('RATE_PUBLISHER_KEY'),
+                    id: serverEnv.operators.ratePublisher.accountId,
+                    key: serverEnv.operators.ratePublisher.privateKey,
                 }
             default:
                 throw new Error(`Unknown wallet type: ${walletType}`)
@@ -206,17 +216,4 @@ export class HederaClientFactory {
         client.setDefaultMaxQueryPayment(new Hbar(5))
     }
 
-    /**
-     * Gets required environment variable or throws error
-     *
-     * @param key - Environment variable name
-     * @returns Environment variable value
-     */
-    private getRequiredEnv(key: string): string {
-        const value = process.env[key]
-        if (!value) {
-            throw new Error(`Missing required environment variable: ${key}`)
-        }
-        return value
-    }
 }

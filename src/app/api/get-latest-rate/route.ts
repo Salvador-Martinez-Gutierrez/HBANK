@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { HederaRateService } from '@/services/hederaRateService'
-
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:get-latest-rate')
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             return NextResponse.json({
                 success: true,
                 debug: true,
-                topicId: process.env.TOPIC_ID,
+                topicId: serverEnv.topics.main,
                 messages: debugMessages,
             })
         }
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             return NextResponse.json(
                 {
                     error: 'No rate messages found in topic',
-                    topicId: process.env.TOPIC_ID,
+                    topicId: serverEnv.topics.main,
                     debug: debugMessages.slice(0, 2), // Show only the first 2 messages for debugging
                 },
                 { status: 404 }

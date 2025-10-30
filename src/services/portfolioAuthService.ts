@@ -13,6 +13,7 @@
 import { supabase } from '@/lib/supabase'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('service:portfolioAuthService')
 
@@ -357,8 +358,8 @@ export async function getCurrentUser(req?: { headers?: { cookie?: string } }) {
             }
 
             const serverClient = createServerClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
+                serverEnv.supabase?.url ?? '',
+                serverEnv.supabase?.anonKey ?? '',
                 {
                     cookies: {
                         getAll() {

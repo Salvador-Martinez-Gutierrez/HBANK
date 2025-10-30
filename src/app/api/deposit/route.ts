@@ -20,6 +20,7 @@ import {
 } from '@hashgraph/sdk'
 import { HederaRateService } from '@/services/hederaRateService'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:deposit:route.ts')
 
@@ -137,23 +138,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             sequenceNumber: latestRate.sequenceNumber,
         })
 
-        // Validate environment variables
-        const depositWalletId = process.env.DEPOSIT_WALLET_ID
-        const depositWalletKey = process.env.DEPOSIT_WALLET_KEY
-
-        if (!depositWalletId || !depositWalletKey) {
-            logger.error('Missing environment variables:', {
-                DEPOSIT_WALLET_ID: !!depositWalletId,
-                DEPOSIT_WALLET_KEY: !!depositWalletKey,
-            })
-            return NextResponse.json(
-                {
-                    error: 'Server configuration error',
-                    message: 'Missing required environment variables',
-                },
-                { status: 500 }
-            )
-        }
+        // Get deposit wallet credentials from serverEnv
+        const depositWalletId = serverEnv.operators.deposit.accountId
+        const depositWalletKey = serverEnv.operators.deposit.privateKey
 
         // Configure Hedera client
         const client = Client.forTestnet()
@@ -230,8 +217,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         })
 
         // Create hUSD transfer (from emissions wallet to user)
-        const emissionsWalletId = process.env.EMISSIONS_ID ?? ''
-        const husdTokenId = process.env.HUSD_TOKEN_ID ?? ''
+        const emissionsWalletId = serverEnv.operators.emissions.accountId
+        const husdTokenId = serverEnv.tokens.husd.tokenId
         const hUSDTransfer = new TransferTransaction()
             .addTokenTransfer(
                 husdTokenId,
@@ -246,7 +233,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             .setTransactionMemo(`hUSD for deposit ${depositTxId}`)
 
         // Freeze and sign with emissions wallet key
-        const emissionsWalletKey = process.env.EMISSIONS_KEY ?? ''
+        const emissionsWalletKey = serverEnv.operators.emissions.privateKey
         const emissionsPrivateKey = PrivateKey.fromString(emissionsWalletKey)
         const frozenTx = hUSDTransfer.freezeWith(client)
         const signedTx = await frozenTx.sign(emissionsPrivateKey)
@@ -292,7 +279,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                 error: 'Deposit failed',
                 message: errorMessage,
                 details:
-                    process.env.NODE_ENV === 'development'
+                    serverEnv.nodeEnv === 'development'
                         ? errorStack
                         : undefined,
             },

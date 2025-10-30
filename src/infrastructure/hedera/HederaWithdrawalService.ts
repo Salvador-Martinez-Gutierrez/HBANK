@@ -11,6 +11,7 @@ import { TYPES } from '@/core/di/types'
 import { HederaClientFactory } from './HederaClientFactory'
 import { WithdrawRequest, WithdrawResult } from '@/types/withdrawal'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('hedera-withdrawal')
 
@@ -53,7 +54,7 @@ export class HederaWithdrawalService {
     async transferUSDCToUser(user: string, amountUSDC: number): Promise<string> {
         try {
             const standardWithdrawWallet = this.clientFactory.getWalletCredentials('standard-withdraw')
-            const usdcTokenId = process.env.USDC_TOKEN_ID
+            const usdcTokenId = serverEnv.tokens.usdc.tokenId
 
             if (!usdcTokenId) {
                 throw new Error('Missing required token ID')
@@ -131,7 +132,7 @@ export class HederaWithdrawalService {
     async rollbackHUSDToUser(user: string, amountHUSD: number): Promise<string> {
         try {
             const treasuryWallet = this.clientFactory.getWalletCredentials('treasury')
-            const husdTokenId = process.env.HUSD_TOKEN_ID
+            const husdTokenId = serverEnv.tokens.husd.tokenId
 
             if (!husdTokenId) {
                 throw new Error('Missing required token ID')
@@ -224,7 +225,7 @@ export class HederaWithdrawalService {
         scheduleId: string
     ): Promise<string> {
         try {
-            const withdrawTopicId = process.env.WITHDRAW_TOPIC_ID
+            const withdrawTopicId = serverEnv.topics.withdraw
 
             if (!withdrawTopicId) {
                 throw new Error('Missing WITHDRAW_TOPIC_ID')
@@ -305,7 +306,7 @@ export class HederaWithdrawalService {
         error?: string
     ): Promise<string> {
         try {
-            const withdrawTopicId = process.env.WITHDRAW_TOPIC_ID
+            const withdrawTopicId = serverEnv.topics.withdraw
 
             if (!withdrawTopicId) {
                 throw new Error('Missing WITHDRAW_TOPIC_ID')
@@ -352,7 +353,7 @@ export class HederaWithdrawalService {
      * @throws Error if withdrawal topic ID is not configured
      */
     getWithdrawalTopicId(): string {
-        const withdrawTopicId = process.env.WITHDRAW_TOPIC_ID
+        const withdrawTopicId = serverEnv.topics.withdraw
 
         if (!withdrawTopicId) {
             throw new Error('Missing WITHDRAW_TOPIC_ID')

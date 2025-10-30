@@ -1,5 +1,6 @@
 import pino, { Logger as PinoInstance } from 'pino'
 import { ILogger, LogContext } from './Logger'
+import { serverEnv } from '@/config/serverEnv'
 
 /**
  * Pino Logger Implementation
@@ -9,8 +10,8 @@ export class PinoLogger implements ILogger {
     private logger: PinoInstance
 
     constructor(context?: string, baseContext?: LogContext) {
-        const isDevelopment = process.env.NODE_ENV === 'development'
-        const logLevel = (process.env.LOG_LEVEL as pino.Level) ?? 'info'
+        const isDevelopment = serverEnv.nodeEnv === 'development'
+        const logLevel = (serverEnv.logLevel as pino.Level) ?? 'info'
 
         this.logger = pino({
             level: logLevel,

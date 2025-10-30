@@ -14,6 +14,7 @@ import {
     WithdrawStatus,
 } from '@/types/withdrawal'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('service:withdrawService')
 
@@ -258,8 +259,7 @@ export class WithdrawService {
             // Filter for pending requests that are past unlock time
             const now = new Date()
             const pendingRequests: WithdrawRequest[] = []
-            const skipLockPeriod =
-                process.env.SKIP_WITHDRAW_LOCK_PERIOD === 'true'
+            const skipLockPeriod = serverEnv.features.skipWithdrawLockPeriod
 
             if (skipLockPeriod) {
                 logger.info(

@@ -9,6 +9,7 @@
 import { Client } from '@hashgraph/sdk'
 import axios from 'axios'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('service:hederaRateService')
 
@@ -28,23 +29,25 @@ export class HederaRateService {
     private mirrorNodeUrl: string
 
     constructor() {
-        this.client = Client.forTestnet()
+        this.client = serverEnv.hedera.network === 'mainnet'
+            ? Client.forMainnet()
+            : Client.forTestnet()
 
-        if (!process.env.RATE_PUBLISHER_ID || !process.env.RATE_PUBLISHER_KEY) {
+        if (!serverEnv.operators.ratePublisher) {
             throw new Error('Rate publisher credentials not configured')
         }
 
         this.client.setOperator(
-            process.env.RATE_PUBLISHER_ID,
-            process.env.RATE_PUBLISHER_KEY
+            serverEnv.operators.ratePublisher.accountId,
+            serverEnv.operators.ratePublisher.privateKey
         )
 
-        if (!process.env.TOPIC_ID) {
+        if (!serverEnv.topics.main) {
             throw new Error('Topic ID not configured')
         }
 
-        this.topicId = process.env.TOPIC_ID
-        this.mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
+        this.topicId = serverEnv.topics.main
+        this.mirrorNodeUrl = serverEnv.hedera.mirrorNodeUrl
     }
 
     /**
@@ -73,8 +76,8 @@ export class HederaRateService {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=10`
 
             const headers: Record<string, string> = {}
-            if (process.env.MIRROR_NODE_API_KEY) {
-                headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
+            if (serverEnv.hedera.mirrorNodeApiKey) {
+                headers['x-api-key'] = serverEnv.hedera.mirrorNodeApiKey
             }
 
             const response = await axios.get(url, { headers })
@@ -149,8 +152,8 @@ export class HederaRateService {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=${limit}`
 
             const headers: Record<string, string> = {}
-            if (process.env.MIRROR_NODE_API_KEY) {
-                headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
+            if (serverEnv.hedera.mirrorNodeApiKey) {
+                headers['x-api-key'] = serverEnv.hedera.mirrorNodeApiKey
             }
 
             const response = await axios.get(url, { headers })
@@ -215,8 +218,8 @@ export class HederaRateService {
             const url = `${this.mirrorNodeUrl}/api/v1/topics/${this.topicId}/messages?order=desc&limit=5`
 
             const headers: Record<string, string> = {}
-            if (process.env.MIRROR_NODE_API_KEY) {
-                headers['x-api-key'] = process.env.MIRROR_NODE_API_KEY
+            if (serverEnv.hedera.mirrorNodeApiKey) {
+                headers['x-api-key'] = serverEnv.hedera.mirrorNodeApiKey
             }
 
             const response = await axios.get(url, { headers })

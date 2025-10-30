@@ -1,4 +1,5 @@
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('service:hederaService')
 
@@ -22,55 +23,46 @@ export class HederaService {
     private operatorKey: PrivateKey
     private topicId: TopicId
 
-    // Decimal constants from environment
-    private readonly HBAR_MULTIPLIER = Math.pow(
-        10,
-        parseInt(process.env.HBAR_DECIMALS ?? '8')
-    )
-    private readonly USDC_MULTIPLIER = Math.pow(
-        10,
-        parseInt(process.env.USDC_DECIMALS ?? '6')
-    )
-    private readonly HUSD_MULTIPLIER = Math.pow(
-        10,
-        parseInt(process.env.HUSD_DECIMALS ?? '3')
-    )
+    // Decimal constants from serverEnv
+    private readonly HBAR_MULTIPLIER = Math.pow(10, serverEnv.decimals.hbar)
+    private readonly USDC_MULTIPLIER = Math.pow(10, serverEnv.decimals.usdc)
+    private readonly HUSD_MULTIPLIER = Math.pow(10, serverEnv.decimals.husd)
 
     constructor() {
         // Check if we are using real testnet
-        const useRealTestnet = process.env.USE_REAL_TESTNET === 'true'
-
-        if (!useRealTestnet) {
+        if (!serverEnv.hedera.useRealTestnet) {
             logger.info(
                 '⚠️ Running in mock mode. Set USE_REAL_TESTNET=true for real transactions'
             )
         }
 
         // Configure credentials (using legacy operator for backward compatibility)
-        const operatorIdStr = process.env.OPERATOR_ID
-        const operatorKeyStr = process.env.OPERATOR_KEY
-        const topicIdStr = process.env.TOPIC_ID
-
-        if (!operatorIdStr || !operatorKeyStr || !topicIdStr) {
+        if (!serverEnv.operators.legacy) {
             throw new Error(
-                'Missing required Hedera credentials in environment variables'
+                'Missing required OPERATOR_ID and OPERATOR_KEY in environment variables'
             )
         }
 
         // Initialize Hedera client
-        this.operatorId = AccountId.fromString(operatorIdStr)
-        this.operatorKey = PrivateKey.fromString(operatorKeyStr)
-        this.topicId = TopicId.fromString(topicIdStr)
+        this.operatorId = AccountId.fromString(serverEnv.operators.legacy.accountId)
+        this.operatorKey = PrivateKey.fromString(serverEnv.operators.legacy.privateKey)
 
-        // Configure client for testnet
-        this.client = Client.forTestnet()
+        if (!serverEnv.topics.main) {
+            throw new Error('Missing required TOPIC_ID in environment variables')
+        }
+        this.topicId = TopicId.fromString(serverEnv.topics.main)
+
+        // Configure client based on network
+        this.client = serverEnv.hedera.network === 'mainnet'
+            ? Client.forMainnet()
+            : Client.forTestnet()
         this.client.setOperator(this.operatorId, this.operatorKey)
 
         // Configure transaction limits
         this.client.setDefaultMaxTransactionFee(new Hbar(10))
         this.client.setDefaultMaxQueryPayment(new Hbar(5))
 
-        logger.info('✅ Hedera client initialized for testnet')
+        logger.info(`✅ Hedera client initialized for ${serverEnv.hedera.network}`)
         logger.info(`   Operator: ${this.operatorId.toString()}`)
         logger.info(`   Topic: ${this.topicId.toString()}`)
     }
@@ -79,7 +71,9 @@ export class HederaService {
      * Creates a client configured for a specific wallet
      */
     private createClientForWallet(walletId: string, walletKey: string): Client {
-        const client = Client.forTestnet()
+        const client = serverEnv.hedera.network === 'mainnet'
+            ? Client.forMainnet()
+            : Client.forTestnet()
         client.setOperator(
             AccountId.fromString(walletId),
             PrivateKey.fromString(walletKey)
@@ -104,33 +98,42 @@ export class HederaService {
         switch (walletType) {
             case 'deposit':
                 return {
-                    id: process.env.DEPOSIT_WALLET_ID ?? '',
-                    key: process.env.DEPOSIT_WALLET_KEY ?? '',
+                    id: serverEnv.operators.deposit.accountId,
+                    key: serverEnv.operators.deposit.privateKey,
                 }
             case 'instant-withdraw':
                 return {
-                    id: process.env.INSTANT_WITHDRAW_WALLET_ID ?? '',
-                    key: process.env.INSTANT_WITHDRAW_WALLET_KEY ?? '',
+                    id: serverEnv.operators.instantWithdraw.accountId,
+                    key: serverEnv.operators.instantWithdraw.privateKey,
                 }
             case 'standard-withdraw':
+                if (!serverEnv.operators.standardWithdraw) {
+                    throw new Error('STANDARD_WITHDRAW_WALLET credentials not configured')
+                }
                 return {
-                    id: process.env.STANDARD_WITHDRAW_WALLET_ID ?? '',
-                    key: process.env.STANDARD_WITHDRAW_WALLET_KEY ?? '',
+                    id: serverEnv.operators.standardWithdraw.accountId,
+                    key: serverEnv.operators.standardWithdraw.privateKey,
                 }
             case 'treasury':
+                if (!serverEnv.operators.treasury) {
+                    throw new Error('TREASURY credentials not configured')
+                }
                 return {
-                    id: process.env.TREASURY_ID ?? '',
-                    key: process.env.TREASURY_KEY ?? '',
+                    id: serverEnv.operators.treasury.accountId,
+                    key: serverEnv.operators.treasury.privateKey,
                 }
             case 'emissions':
                 return {
-                    id: process.env.EMISSIONS_ID ?? '',
-                    key: process.env.EMISSIONS_KEY ?? '',
+                    id: serverEnv.operators.emissions.accountId,
+                    key: serverEnv.operators.emissions.privateKey,
                 }
             case 'rate-publisher':
+                if (!serverEnv.operators.ratePublisher) {
+                    throw new Error('RATE_PUBLISHER credentials not configured')
+                }
                 return {
-                    id: process.env.RATE_PUBLISHER_ID ?? '',
-                    key: process.env.RATE_PUBLISHER_KEY ?? '',
+                    id: serverEnv.operators.ratePublisher.accountId,
+                    key: serverEnv.operators.ratePublisher.privateKey,
                 }
             default:
                 throw new Error(`Unknown wallet type: ${walletType}`)
@@ -255,12 +258,8 @@ export class HederaService {
         try {
             const depositWallet = this.getWalletCredentials('deposit')
             const emissionsWallet = this.getWalletCredentials('emissions')
-            const usdcTokenId = process.env.USDC_TOKEN_ID
-            const husdTokenId = process.env.HUSD_TOKEN_ID
-
-            if (!usdcTokenId || !husdTokenId) {
-                throw new Error('Missing required token IDs')
-            }
+            const usdcTokenId = serverEnv.tokens.usdc.tokenId
+            const husdTokenId = serverEnv.tokens.husd.tokenId
 
             // Calculate hUSD amount based on current rate
             const currentRate = await this.getCurrentRate()
@@ -344,7 +343,7 @@ export class HederaService {
         amountHUSD: number
     ): Promise<string> {
         const treasuryWallet = this.getWalletCredentials('treasury')
-        const husdTokenId = process.env.HUSD_TOKEN_ID
+        const husdTokenId = serverEnv.tokens.husd.tokenId
 
         if (!husdTokenId) {
             throw new Error('Missing required token ID')
@@ -428,7 +427,7 @@ export class HederaService {
         try {
             const standardWithdrawWallet =
                 this.getWalletCredentials('standard-withdraw')
-            const usdcTokenId = process.env.USDC_TOKEN_ID
+            const usdcTokenId = serverEnv.tokens.usdc.tokenId
 
             if (!usdcTokenId) {
                 throw new Error('Missing required token ID')
@@ -503,7 +502,7 @@ export class HederaService {
         scheduleId: string
     ): Promise<string> {
         try {
-            const withdrawTopicId = process.env.WITHDRAW_TOPIC_ID
+            const withdrawTopicId = serverEnv.topics.withdraw
 
             if (!withdrawTopicId) {
                 throw new Error('Missing WITHDRAW_TOPIC_ID')
@@ -559,7 +558,7 @@ export class HederaService {
         error?: string
     ): Promise<string> {
         try {
-            const withdrawTopicId = process.env.WITHDRAW_TOPIC_ID
+            const withdrawTopicId = serverEnv.topics.withdraw
 
             if (!withdrawTopicId) {
                 throw new Error('Missing WITHDRAW_TOPIC_ID')
@@ -607,7 +606,7 @@ export class HederaService {
     ): Promise<string> {
         try {
             const treasuryWallet = this.getWalletCredentials('treasury')
-            const husdTokenId = process.env.HUSD_TOKEN_ID
+            const husdTokenId = serverEnv.tokens.husd.tokenId
 
             if (!husdTokenId) {
                 throw new Error('Missing required token ID')
@@ -675,8 +674,7 @@ export class HederaService {
 
             // Query the Mirror Node for the schedule information
             const mirrorNodeUrl =
-                process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
-                'https://testnet.mirrornode.hedera.com'
+                serverEnv.hedera.mirrorNodeUrl
             const response = await fetch(
                 `${mirrorNodeUrl}/api/v1/schedules/${scheduleId}`
             )
@@ -727,7 +725,7 @@ export class HederaService {
             logger.info(`   Expected amount: ${expectedAmount} HUSD`)
             logger.info(`   Since: ${since}`)
 
-            const husdTokenId = process.env.HUSD_TOKEN_ID
+            const husdTokenId = serverEnv.tokens.husd.tokenId
             if (!husdTokenId) {
                 throw new Error('Missing HUSD_TOKEN_ID')
             }
@@ -808,9 +806,7 @@ export class HederaService {
         attempt: number
     ): Promise<boolean> {
         // Query Mirror Node for token transfers
-        const mirrorNodeUrl =
-            process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
-            'https://testnet.mirrornode.hedera.com'
+        const mirrorNodeUrl = serverEnv.hedera.mirrorNodeUrl
         const sinceTimestamp = new Date(since).getTime() / 1000 // Convert to seconds
 
         const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=100` // Increased limit to 100
@@ -951,8 +947,7 @@ export class HederaService {
     async checkTransactionInMirrorNode(txId: string): Promise<boolean> {
         try {
             const mirrorNodeUrl =
-                process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
-                'https://testnet.mirrornode.hedera.com'
+                serverEnv.hedera.mirrorNodeUrl
             const response = await fetch(
                 `${mirrorNodeUrl}/api/v1/transactions/${txId}`
             )

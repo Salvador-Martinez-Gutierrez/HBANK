@@ -5,6 +5,7 @@
 import { PublicKey } from '@hashgraph/sdk'
 import axios from 'axios'
 import { logger } from './logger'
+import { serverEnv } from '@/config/serverEnv'
 
 /**
  * Obtiene la clave pública de un accountId desde el Mirror Node
@@ -13,10 +14,7 @@ export async function getPublicKeyFromMirrorNode(
     accountId: string
 ): Promise<string | null> {
     try {
-        const mirrorNodeUrl =
-            process.env.HEDERA_NETWORK === 'mainnet'
-                ? 'https://mainnet-public.mirrornode.hedera.com'
-                : 'https://testnet.mirrornode.hedera.com'
+        const mirrorNodeUrl = serverEnv.hedera.mirrorNodeUrl
 
         const url = `${mirrorNodeUrl}/api/v1/accounts/${accountId}`
 
@@ -24,8 +22,8 @@ export async function getPublicKeyFromMirrorNode(
 
         const response = await axios.get(url, {
             timeout: 10000,
-            headers: process.env.MIRROR_NODE_API_KEY
-                ? { 'x-api-key': process.env.MIRROR_NODE_API_KEY }
+            headers: serverEnv.hedera.mirrorNodeApiKey
+                ? { 'x-api-key': serverEnv.hedera.mirrorNodeApiKey }
                 : {},
         })
 

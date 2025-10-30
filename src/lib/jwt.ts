@@ -1,13 +1,11 @@
 import { SignJWT, jwtVerify } from 'jose'
 import type { JWTPayload } from '@/types/auth'
 import { logger } from './logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const getJWTSecret = (): Uint8Array => {
-    const secret = process.env.JWT_SECRET
-    if (!secret) {
-        throw new Error('JWT_SECRET environment variable is not defined')
-    }
-    return new TextEncoder().encode(secret)
+    // serverEnv already validates that JWT_SECRET exists and is at least 32 characters
+    return new TextEncoder().encode(serverEnv.jwtSecret)
 }
 
 const JWT_EXPIRATION = '24h'

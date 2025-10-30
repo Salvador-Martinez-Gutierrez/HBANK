@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/supabase'
+import { serverEnv } from '@/config/serverEnv'
 
 // This module should ONLY be imported in server-side code (API routes, server components)
 // Never import this in client components
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseUrl = serverEnv.supabase?.url
+const supabaseServiceKey = serverEnv.supabase?.serviceRoleKey
 
 if (!supabaseUrl || !supabaseServiceKey) {
     // Only throw error on server side (where these vars should exist)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { updateAllTokenPrices } from '@/services/portfolioPriceService'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:portfolio:update-prices')
 
@@ -9,7 +10,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     try {
         // Optional: Add API key validation for security
         const apiKey = req.headers.get('x-api-key')
-        const expectedKey = process.env.CRON_API_KEY
+        const expectedKey = serverEnv.apiKeys.cron
 
         if (expectedKey && apiKey !== expectedKey) {
             return NextResponse.json(
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     try {
         // Optional: Add API key validation for security
         const apiKey = req.headers.get('x-api-key')
-        const expectedKey = process.env.CRON_API_KEY
+        const expectedKey = serverEnv.apiKeys.cron
 
         if (expectedKey && apiKey !== expectedKey) {
             return NextResponse.json(

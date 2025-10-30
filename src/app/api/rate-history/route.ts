@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { HederaRateService } from '@/services/hederaRateService'
-
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:rate-history')
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             return NextResponse.json(
                 {
                     error: 'No rate history found',
-                    topicId: process.env.TOPIC_ID,
+                    topicId: serverEnv.topics.main,
                     data: [],
                 },
                 { status: 404 }

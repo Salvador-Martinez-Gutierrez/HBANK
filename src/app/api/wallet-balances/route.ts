@@ -3,6 +3,7 @@ import { createScopedLogger } from '@/lib/logger'
 import { container } from '@/core/di/container'
 import { TYPES } from '@/core/di/types'
 import { HederaBalanceService } from '@/infrastructure/hedera'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:wallet-balances')
 
@@ -29,48 +30,48 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
         // Get HederaBalanceService from DI container
         const balanceService = container.get<HederaBalanceService>(TYPES.HederaBalanceService)
 
-        // Define all wallets from .env
+        // Define all wallets from serverEnv
         const wallets = [
             {
-                id: process.env.RATE_PUBLISHER_ID ?? '',
+                id: serverEnv.operators.ratePublisher?.accountId ?? '',
                 name: 'Rate Publisher',
                 description: 'Publishes exchange rates to HCS',
                 envKey: 'RATE_PUBLISHER_ID',
             },
             {
-                id: process.env.TREASURY_ID ?? '',
+                id: serverEnv.operators.treasury?.accountId ?? '',
                 name: 'Treasury',
                 description: 'Holds hUSD tokens',
                 envKey: 'TREASURY_ID',
             },
             {
-                id: process.env.DEPOSIT_WALLET_ID ?? '',
+                id: serverEnv.operators.deposit.accountId,
                 name: 'Deposit Wallet',
                 description: 'Receives USDC deposits',
                 envKey: 'DEPOSIT_WALLET_ID',
             },
             {
-                id: process.env.INSTANT_WITHDRAW_WALLET_ID ?? '',
+                id: serverEnv.operators.instantWithdraw.accountId,
                 name: 'Instant Withdrawal',
                 description: 'Processes instant USDC withdrawals',
                 envKey: 'INSTANT_WITHDRAW_WALLET_ID',
             },
             {
-                id: process.env.STANDARD_WITHDRAW_WALLET_ID ?? '',
+                id: serverEnv.operators.standardWithdraw?.accountId ?? '',
                 name: 'Standard Withdrawal',
                 description: 'Processes standard USDC withdrawals',
                 envKey: 'STANDARD_WITHDRAW_WALLET_ID',
             },
             {
-                id: process.env.EMISSIONS_ID ?? '',
+                id: serverEnv.operators.emissions.accountId,
                 name: 'Emissions',
                 description: 'Mints hUSD tokens',
                 envKey: 'EMISSIONS_ID',
             },
         ]
 
-        const usdcTokenId = process.env.USDC_TOKEN_ID ?? ''
-        const husdTokenId = process.env.HUSD_TOKEN_ID ?? ''
+        const usdcTokenId = serverEnv.tokens.usdc.tokenId
+        const husdTokenId = serverEnv.tokens.husd.tokenId
 
         const walletBalances: WalletInfo[] = []
 
@@ -158,10 +159,7 @@ async function getHbarBalance(accountId: string): Promise<number> {
         const data = await response.json()
 
         // Convert tinybars to HBAR using environment decimal setting
-        const HBAR_MULTIPLIER = Math.pow(
-            10,
-            parseInt(process.env.HBAR_DECIMALS ?? '8')
-        )
+        const HBAR_MULTIPLIER = Math.pow(10, serverEnv.decimals.hbar)
         return data.balance ? data.balance.balance / HBAR_MULTIPLIER : 0
     } catch (error) {
         logger.error('Error fetching HBAR balance', {

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import TelegramBot from 'node-telegram-bot-api'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:telegram:chat-id')
 
 export async function GET(_req: NextRequest): Promise<NextResponse> {
     try {
-        const botToken = process.env.TELEGRAM_BOT_TOKEN
+        const botToken = serverEnv.telegram.botToken
 
         if (!botToken) {
             return NextResponse.json(

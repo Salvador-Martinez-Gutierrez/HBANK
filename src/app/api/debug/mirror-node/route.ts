@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:debug:mirror-node')
 
@@ -38,8 +39,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
             )
         }
 
-        const husdTokenId = process.env.HUSD_TOKEN_ID
-        const treasuryId = process.env.HEDERA_ACCOUNT_ID
+        const husdTokenId = serverEnv.tokens.husd.tokenId
+        const treasuryId = serverEnv.operators.treasury?.accountId ?? ''
 
         logger.info('Debug Mirror Node Query', {
             userAccount: userAccountId,
@@ -49,9 +50,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         })
 
         // Query Mirror Node for token transfers
-        const mirrorNodeUrl =
-            process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
-            'https://testnet.mirrornode.hedera.com'
+        const mirrorNodeUrl = serverEnv.hedera.mirrorNodeUrl
         const sinceTimestamp = new Date(since).getTime() / 1000
 
         const queryUrl = `${mirrorNodeUrl}/api/v1/transactions?account.id=${userAccountId}&timestamp=gte:${sinceTimestamp}&transactiontype=cryptotransfer&order=desc&limit=50`

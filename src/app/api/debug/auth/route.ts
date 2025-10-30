@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:debug:auth')
 
-// Environment variables - will fail at runtime if not set
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+// Get Supabase credentials from serverEnv
+const supabaseUrl = serverEnv.supabase?.url ?? ''
+const supabaseServiceKey = serverEnv.supabase?.serviceRoleKey ?? ''
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
     try {

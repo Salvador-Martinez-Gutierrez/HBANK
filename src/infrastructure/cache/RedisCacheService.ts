@@ -9,6 +9,7 @@ import { injectable } from 'inversify'
 import Redis, { RedisOptions } from 'ioredis'
 import { BaseCacheService } from './CacheService'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('redis-cache')
 
@@ -42,10 +43,10 @@ export class RedisCacheService extends BaseCacheService {
         this.keyPrefix = config.keyPrefix ?? 'hbank:'
 
         const redisOptions: RedisOptions = {
-            host: config.host ?? process.env.REDIS_HOST ?? 'localhost',
-            port: config.port ?? parseInt(process.env.REDIS_PORT ?? '6379'),
-            password: config.password ?? process.env.REDIS_PASSWORD,
-            db: config.db ?? parseInt(process.env.REDIS_DB ?? '0'),
+            host: config.host ?? serverEnv.redis?.host ?? 'localhost',
+            port: config.port ?? serverEnv.redis?.port ?? 6379,
+            password: config.password ?? serverEnv.redis?.password,
+            db: config.db ?? serverEnv.redis?.db ?? 0,
             maxRetriesPerRequest: config.maxRetries ?? 3,
             enableOfflineQueue: config.enableOfflineQueue ?? true,
             retryStrategy: (times: number) => {

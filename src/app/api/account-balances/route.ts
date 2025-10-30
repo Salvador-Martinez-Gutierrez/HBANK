@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TOKENS, RATES_TOPIC_ID } from '@/app/backend-constants'
-
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:account-balances')
 // Function to get the latest rate from the topic
 async function getLatestRate(): Promise<number> {
     try {
-        const topicId = process.env.TOPIC_ID ?? RATES_TOPIC_ID
-        const mirrorNodeUrl = 'https://testnet.mirrornode.hedera.com'
+        const topicId = serverEnv.topics.main
+        const mirrorNodeUrl = serverEnv.hedera.mirrorNodeUrl
         const url = `${mirrorNodeUrl}/api/v1/topics/${topicId}/messages?limit=1&order=desc`
 
         logger.info(
@@ -79,13 +78,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         let data
         let dataSource = 'validation-cloud'
 
-        const apiKey = process.env.VALIDATION_CLOUD_API_KEY
+        const apiKey = serverEnv.externalApis.validationCloud?.apiKey
 
         if (apiKey) {
             try {
-                const baseUrl =
-                    process.env.VALIDATION_CLOUD_BASE_URL ??
-                    'https://testnet.hedera.validationcloud.io/v1'
+                const baseUrl = serverEnv.externalApis.validationCloud.url
                 const url = `${baseUrl}/${apiKey}/api/v1/accounts/${accountId}`
                 logger.info(
                     '📡 [account-balances] Trying Validation Cloud:',
@@ -139,10 +136,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         logger.info(`📊 [account-balances] Using data source: ${dataSource}`)
 
         const tinybar = data?.balance?.balance ?? 0
-        const HBAR_MULTIPLIER = Math.pow(
-            10,
-            parseInt(process.env.HBAR_DECIMALS ?? '8')
-        )
+        const HBAR_MULTIPLIER = Math.pow(10, serverEnv.decimals.hbar)
         // Use higher precision for HBAR as well for consistency
         const hbarBalance = tinybar / HBAR_MULTIPLIER
         const hbar = hbarBalance.toFixed(6).replace(/\.?0+$/, '')
@@ -151,8 +145,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         let husd = '0.00'
 
         const TOKEN_IDS = {
-            USDC: process.env.USDC_TOKEN_ID ?? TOKENS.usdc,
-            hUSD: process.env.HUSD_TOKEN_ID ?? TOKENS.husd,
+            USDC: serverEnv.tokens.usdc.tokenId,
+            hUSD: serverEnv.tokens.husd.tokenId,
         } as const
 
         const DECIMALS_BY_TOKEN_ID: Record<string, number> = {

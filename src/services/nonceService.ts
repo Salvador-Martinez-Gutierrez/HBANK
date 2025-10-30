@@ -7,6 +7,7 @@
 
 import { v4 as uuidv4 } from 'uuid'
 import type { StoredNonce } from '@/types/auth'
+import { serverEnv } from '@/config/serverEnv'
 
 // Nonce expiration time (5 minutes)
 const NONCE_EXPIRATION_MS = 5 * 60 * 1000
@@ -22,7 +23,7 @@ declare global {
 const nonceStore = global.__nonceStore ?? new Map<string, StoredNonce>()
 
 // Persist in global for development
-if (process.env.NODE_ENV === 'development') {
+if (serverEnv.nodeEnv === 'development') {
     global.__nonceStore = nonceStore
 }
 

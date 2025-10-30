@@ -24,6 +24,7 @@ import { NextRequest } from 'next/server'
 import { withAPIWrapper } from '@/lib/api-wrapper'
 import { getHederaRateService, getCacheService } from '@/lib/di-helpers'
 import { CacheKeyBuilder } from '@/infrastructure/cache'
+import { serverEnv } from '@/config/serverEnv'
 
 interface RateResponse {
     rate: number
@@ -57,7 +58,7 @@ export const GET = withAPIWrapper(
         }
 
         // Store in cache for 5 minutes (300 seconds)
-        const ttl = parseInt(process.env.CACHE_TTL_RATE ?? '300', 10)
+        const ttl = serverEnv.cacheTTL.rate
         await cacheService.set(cacheKey, response, ttl)
 
         return response

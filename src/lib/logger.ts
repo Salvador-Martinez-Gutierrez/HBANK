@@ -6,6 +6,7 @@
  */
 
 import pino from 'pino'
+import { serverEnv } from '@/config/serverEnv'
 
 type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
 
@@ -75,9 +76,9 @@ const sanitize = (
  * with Next.js hot-reload. Instead, we use basic formatting.
  */
 const pinoConfig: pino.LoggerOptions = {
-    level: process.env.LOG_LEVEL ?? (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+    level: serverEnv.logLevel ?? (serverEnv.nodeEnv === 'production' ? 'info' : 'debug'),
     // Development: Basic formatting without worker threads
-    ...(process.env.NODE_ENV !== 'production' && {
+    ...(serverEnv.nodeEnv !== 'production' && {
         formatters: {
             level: (label) => {
                 return { level: label }
@@ -85,7 +86,7 @@ const pinoConfig: pino.LoggerOptions = {
         },
     }),
     // Production: structured JSON logs
-    ...(process.env.NODE_ENV === 'production' && {
+    ...(serverEnv.nodeEnv === 'production' && {
         formatters: {
             level: (label) => {
                 return { level: label }

@@ -8,6 +8,7 @@
 
 import TelegramBot from 'node-telegram-bot-api'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('service:telegramService')
 
@@ -36,10 +37,7 @@ export class TelegramService {
     }
 
     private initializeBot() {
-        const botToken = process.env.TELEGRAM_BOT_TOKEN
-        const chatId = process.env.TELEGRAM_CHAT_ID
-
-        if (!botToken || !chatId) {
+        if (!serverEnv.telegram.enabled) {
             logger.info(
                 '⚠️ Telegram service disabled. Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID environment variables'
             )
@@ -47,8 +45,8 @@ export class TelegramService {
         }
 
         try {
-            this.bot = new TelegramBot(botToken, { polling: false })
-            this.chatId = chatId
+            this.bot = new TelegramBot(serverEnv.telegram.botToken, { polling: false })
+            this.chatId = serverEnv.telegram.chatId
             this.isEnabled = true
             logger.info('✅ Telegram service initialized successfully')
         } catch (error) {

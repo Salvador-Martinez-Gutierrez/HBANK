@@ -4,41 +4,39 @@
 // No incluye imports de browser/frontend
 // ===================================
 
+import { serverEnv } from '@/config/serverEnv'
+
 // ===================================
 // HEDERA CONFIGURATION
 // ===================================
 
 // Hedera Network
 export const HEDERA_CONFIG = {
-    network: 'testnet',
-    mirrorNode:
-        process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
-        'https://testnet.mirrornode.hedera.com',
+    network: serverEnv.hedera.network,
+    mirrorNode: serverEnv.hedera.mirrorNodeUrl,
 }
 
 // Environment endpoints
-export const TESTNET_MIRROR_NODE_ENDPOINT =
-    process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
-    'https://testnet.mirrornode.hedera.com'
+export const TESTNET_MIRROR_NODE_ENDPOINT = serverEnv.hedera.mirrorNodeUrl
 
 // ===================================
 // TOPIC IDS
 // ===================================
 
-export const WITHDRAW_TOPIC_ID = process.env.WITHDRAW_TOPIC_ID ?? '0.0.6908400'
-export const RATES_TOPIC_ID = process.env.RATES_TOPIC_ID ?? '0.0.6908395'
+export const WITHDRAW_TOPIC_ID = serverEnv.topics.withdraw
+export const RATES_TOPIC_ID = serverEnv.topics.main
 
 // ===================================
 // ACCOUNT IDS
 // ===================================
 
 export const ACCOUNTS = {
-    treasury: process.env.TREASURY_WALLET_ID ?? '0.0.6887438',
-    emissions: process.env.EMISSIONS_WALLET_ID ?? '0.0.6887460',
-    instantWithdraw: process.env.INSTANT_WITHDRAW_WALLET_ID ?? '0.0.6887450',
-    standardWithdraw: process.env.STANDARD_WITHDRAW_WALLET_ID ?? '0.0.6887453',
-    operator: process.env.HEDERA_OPERATOR_ID ?? '0.0.6887438',
-    deposit: process.env.DEPOSIT_WALLET_ID ?? '0.0.6887448', // Wallet de depósitos
+    treasury: serverEnv.operators.treasury?.accountId ?? '',
+    emissions: serverEnv.operators.emissions.accountId,
+    instantWithdraw: serverEnv.operators.instantWithdraw.accountId,
+    standardWithdraw: serverEnv.operators.standardWithdraw?.accountId ?? '',
+    operator: serverEnv.operators.legacy?.accountId ?? serverEnv.operators.treasury?.accountId ?? '',
+    deposit: serverEnv.operators.deposit.accountId,
 }
 
 // ===================================
@@ -47,8 +45,8 @@ export const ACCOUNTS = {
 
 export const TOKENS = {
     hbar: '0.0.0', // Native HBAR
-    usdc: process.env.USDC_TOKEN_ID ?? '0.0.429274',
-    husd: process.env.HUSD_TOKEN_ID ?? '0.0.6889338',
+    usdc: serverEnv.tokens.usdc.tokenId,
+    husd: serverEnv.tokens.husd.tokenId,
 }
 
 // ===================================
@@ -57,14 +55,14 @@ export const TOKENS = {
 
 export const NUMERIC = {
     // Token decimals
-    USDC_DECIMALS: 6,
-    HUSD_DECIMALS: 3, // FIXED: HUSD uses 3 decimals, not 8
-    HBAR_DECIMALS: 8,
+    USDC_DECIMALS: serverEnv.decimals.usdc,
+    HUSD_DECIMALS: serverEnv.decimals.husd,
+    HBAR_DECIMALS: serverEnv.decimals.hbar,
 
     // Multipliers based on decimals
-    USDC_MULTIPLIER: 1_000_000, // 10^6
-    HUSD_MULTIPLIER: 1_000, // 10^3 - FIXED: HUSD uses 3 decimals
-    HBAR_MULTIPLIER: 100_000_000, // 10^8
+    USDC_MULTIPLIER: Math.pow(10, serverEnv.decimals.usdc),
+    HUSD_MULTIPLIER: Math.pow(10, serverEnv.decimals.husd),
+    HBAR_MULTIPLIER: Math.pow(10, serverEnv.decimals.hbar),
 
     // Fees and limits
     INSTANT_WITHDRAW_FEE: 0.005, // 0.5%

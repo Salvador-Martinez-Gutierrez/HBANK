@@ -7,6 +7,7 @@
 
 import { injectable } from 'inversify'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('hedera-mirror-node')
 
@@ -39,20 +40,12 @@ export class HederaMirrorNodeService {
     private readonly husdDecimals: number
 
     constructor() {
-        this.mirrorNodeUrl =
-            process.env.TESTNET_MIRROR_NODE_ENDPOINT ??
-            'https://testnet.mirrornode.hedera.com'
+        this.mirrorNodeUrl = serverEnv.hedera.mirrorNodeUrl
 
-        const husdTokenId = process.env.HUSD_TOKEN_ID
-        if (!husdTokenId) {
-            throw new Error(
-                'Missing required environment variable: HUSD_TOKEN_ID'
-            )
-        }
-        this.husdTokenId = husdTokenId
+        this.husdTokenId = serverEnv.tokens.husd.tokenId
 
-        // Get HUSD decimals from environment variable
-        this.husdDecimals = parseInt(process.env.HUSD_DECIMALS ?? '3')
+        // Get HUSD decimals from serverEnv
+        this.husdDecimals = serverEnv.decimals.husd
 
         logger.info('Mirror Node service initialized', {
             mirrorNodeUrl: this.mirrorNodeUrl,

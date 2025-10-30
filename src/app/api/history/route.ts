@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WithdrawService } from '@/services/withdrawService'
 import { TOKENS, ACCOUNTS } from '@/app/backend-constants'
-
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:history')
 interface HistoryTransaction {
@@ -224,11 +224,8 @@ async function fetchUserDeposits(
         let userReceivedHUSD = 0
 
         // Get decimals multipliers
-        const HUSD_MULTIPLIER = Math.pow(
-            10,
-            parseInt(process.env.HUSD_DECIMALS ?? '3')
-        )
-        const USDC_MULTIPLIER = 1_000_000 // USDC has 6 decimals
+        const HUSD_MULTIPLIER = Math.pow(10, serverEnv.decimals.husd)
+        const USDC_MULTIPLIER = Math.pow(10, serverEnv.decimals.usdc)
 
         logger.info(
             `🔍 Processing tx ${tx.transaction_id} with ${tx.token_transfers.length} token transfers`

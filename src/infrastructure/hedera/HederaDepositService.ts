@@ -16,6 +16,7 @@ import { TYPES } from '@/core/di/types'
 import { HederaClientFactory } from './HederaClientFactory'
 import { HederaRateService } from './HederaRateService'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('hedera-deposit')
 
@@ -78,8 +79,8 @@ export class HederaDepositService {
         try {
             const depositWallet = this.clientFactory.getWalletCredentials('deposit')
             const emissionsWallet = this.clientFactory.getWalletCredentials('emissions')
-            const usdcTokenId = process.env.USDC_TOKEN_ID
-            const husdTokenId = process.env.HUSD_TOKEN_ID
+            const usdcTokenId = serverEnv.tokens.usdc.tokenId
+            const husdTokenId = serverEnv.tokens.husd.tokenId
 
             if (!usdcTokenId || !husdTokenId) {
                 throw new Error('Missing required token IDs')
@@ -182,7 +183,7 @@ export class HederaDepositService {
      */
     async createScheduledHUSDTransfer(user: string, amountHUSD: number): Promise<string> {
         const treasuryWallet = this.clientFactory.getWalletCredentials('treasury')
-        const husdTokenId = process.env.HUSD_TOKEN_ID
+        const husdTokenId = serverEnv.tokens.husd.tokenId
 
         if (!husdTokenId) {
             throw new Error('Missing required token ID')

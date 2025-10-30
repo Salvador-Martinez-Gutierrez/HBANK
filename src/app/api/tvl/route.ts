@@ -3,6 +3,7 @@ import { createScopedLogger } from '@/lib/logger'
 import { container } from '@/core/di/container'
 import { TYPES } from '@/core/di/types'
 import { HederaBalanceService } from '@/infrastructure/hedera'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:tvl')
 
@@ -22,7 +23,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
         // Get HederaBalanceService from DI container
         const balanceService = container.get<HederaBalanceService>(TYPES.HederaBalanceService)
-        const usdcTokenId = process.env.USDC_TOKEN_ID ?? ''
+        const usdcTokenId = serverEnv.tokens.usdc.tokenId
 
         // Get USDC balances from the 3 wallets that hold USDC
         const [
@@ -32,17 +33,17 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
         ] = await Promise.all([
             // Instant withdraw wallet
             balanceService.checkBalance(
-                process.env.INSTANT_WITHDRAW_WALLET_ID ?? '',
+                serverEnv.operators.instantWithdraw.accountId,
                 usdcTokenId
             ),
             // Standard withdraw wallet
             balanceService.checkBalance(
-                process.env.STANDARD_WITHDRAW_WALLET_ID ?? '',
+                serverEnv.operators.standardWithdraw?.accountId ?? '',
                 usdcTokenId
             ),
             // Deposits wallet
             balanceService.checkBalance(
-                process.env.DEPOSIT_WALLET_ID ?? '',
+                serverEnv.operators.deposit.accountId,
                 usdcTokenId
             ),
         ])

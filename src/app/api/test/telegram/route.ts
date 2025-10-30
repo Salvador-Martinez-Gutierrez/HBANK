@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TelegramService } from '@/services/telegramService'
 import { createScopedLogger } from '@/lib/logger'
+import { serverEnv } from '@/config/serverEnv'
 
 const logger = createScopedLogger('api:test:telegram')
 
@@ -17,9 +18,9 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                     success: false,
                     error: 'Telegram service is not configured. Please check TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID environment variables.',
                     debug: {
-                        botToken: !!process.env.TELEGRAM_BOT_TOKEN,
-                        chatId: !!process.env.TELEGRAM_CHAT_ID,
-                        chatIdValue: process.env.TELEGRAM_CHAT_ID
+                        botToken: !!serverEnv.telegram.botToken,
+                        chatId: !!serverEnv.telegram.chatId,
+                        chatIdValue: serverEnv.telegram.chatId
                             ? 'Set'
                             : 'Not set',
                     },
@@ -57,7 +58,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                     'Telegram bot test completed successfully! Check your Telegram channel for the test messages.',
                 debug: {
                     botInfo,
-                    chatId: process.env.TELEGRAM_CHAT_ID,
+                    chatId: serverEnv.telegram.chatId,
                 },
             })
         } else {
@@ -69,7 +70,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                     error: 'Failed to send test message to Telegram. Please check your bot configuration.',
                     debug: {
                         botInfo,
-                        chatId: process.env.TELEGRAM_CHAT_ID,
+                        chatId: serverEnv.telegram.chatId,
                         recentUpdates,
                         suggestions: [
                             'Make sure your Chat ID is correct',
@@ -92,8 +93,8 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
                 error:
                     error instanceof Error ? error.message : 'Unknown error',
                 debug: {
-                    botToken: !!process.env.TELEGRAM_BOT_TOKEN,
-                    chatId: process.env.TELEGRAM_CHAT_ID,
+                    botToken: !!serverEnv.telegram.botToken,
+                    chatId: serverEnv.telegram.chatId,
                     errorType:
                         error instanceof Error
                             ? error.constructor.name

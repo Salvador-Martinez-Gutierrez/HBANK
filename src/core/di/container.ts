@@ -10,6 +10,7 @@
 import 'reflect-metadata'
 import { Container } from 'inversify'
 import { TYPES } from './types'
+import { serverEnv } from '@/config/serverEnv'
 
 // Infrastructure
 import { IEventBus, InMemoryEventBus } from '@/core/events/EventBus'
@@ -67,7 +68,7 @@ export function createContainer(): Container {
 
     // Cache Service - Singleton for application-wide caching
     // Automatically selects Redis if REDIS_URL is set, otherwise uses in-memory cache
-    const CacheImplementation = process.env.REDIS_URL ? RedisCacheService : InMemoryCacheService
+    const CacheImplementation = serverEnv.redis?.url ? RedisCacheService : InMemoryCacheService
     container.bind<ICacheService>(TYPES.CacheService).to(CacheImplementation).inSingletonScope()
 
     // ========================================
