@@ -9,6 +9,34 @@
 
 import 'reflect-metadata'
 import { Container } from 'inversify'
+import { TYPES } from './types'
+
+// Infrastructure
+import { IEventBus, InMemoryEventBus } from '@/core/events/EventBus'
+import {
+    ICacheService,
+    InMemoryCacheService,
+    RedisCacheService,
+} from '@/infrastructure/cache'
+import {
+    HederaClientFactory,
+    HederaBalanceService,
+    HederaMirrorNodeService,
+    HederaRateService,
+    HederaDepositService,
+    HederaWithdrawalService,
+} from '@/infrastructure/hedera'
+
+// Repositories (commented out until dependencies are resolved)
+// import { IDepositRepository } from '@/core/repositories/IDepositRepository'
+// import { IWithdrawRepository } from '@/core/repositories/IWithdrawRepository'
+// import { IRateRepository } from '@/core/repositories/IRateRepository'
+// import { HederaDepositRepository } from '@/infrastructure/repositories/hedera/HederaDepositRepository'
+// import { HederaWithdrawRepository } from '@/infrastructure/repositories/hedera/HederaWithdrawRepository'
+// import { HederaRateRepository } from '@/infrastructure/repositories/hedera/HederaRateRepository'
+
+// Event Handlers
+import { initializeEventHandlers, RegisteredHandlers } from '@/core/events/handlers'
 
 /**
  * Create and configure the IoC container
@@ -16,12 +44,12 @@ import { Container } from 'inversify'
  * This function creates a new container instance and registers all
  * dependencies. It should be called once at application startup.
  *
- * @returns Configured InversifyJS container
+ * @returns Configured InversifyJS container with all bindings
  *
  * @example
  * ```typescript
  * const container = createContainer()
- * const depositService = container.get<IDepositService>(TYPES.DepositService)
+ * const depositRepo = container.get<IDepositRepository>(TYPES.DepositRepository)
  * ```
  */
 export function createContainer(): Container {
@@ -31,32 +59,103 @@ export function createContainer(): Container {
     // Infrastructure Bindings
     // ========================================
 
-    // Logger will be bound when implemented
-    // container.bind<ILogger>(TYPES.Logger).to(PinoLogger).inSingletonScope()
+    // Event Bus - Singleton for event publishing
+    container
+        .bind<IEventBus>(TYPES.EventBus)
+        .to(InMemoryEventBus)
+        .inSingletonScope()
+
+    // Cache Service - Singleton for application-wide caching
+    // Automatically selects Redis if REDIS_URL is set, otherwise uses in-memory cache
+    const CacheImplementation = process.env.REDIS_URL ? RedisCacheService : InMemoryCacheService
+    container.bind<ICacheService>(TYPES.CacheService).to(CacheImplementation).inSingletonScope()
+
+    // ========================================
+    // Hedera Infrastructure Bindings
+    // ========================================
+
+    // Hedera Client Factory - Singleton for creating Hedera clients
+    container
+        .bind<HederaClientFactory>(TYPES.HederaClientFactory)
+        .to(HederaClientFactory)
+        .inSingletonScope()
+
+    // Hedera Balance Service - Singleton for balance queries
+    container
+        .bind<HederaBalanceService>(TYPES.HederaBalanceService)
+        .to(HederaBalanceService)
+        .inSingletonScope()
+
+    // Hedera Mirror Node Service - Singleton for transaction verification
+    container
+        .bind<HederaMirrorNodeService>(TYPES.HederaMirrorNodeService)
+        .to(HederaMirrorNodeService)
+        .inSingletonScope()
+
+    // Hedera Rate Service - Singleton for rate publishing and queries
+    container
+        .bind<HederaRateService>(TYPES.HederaRateService)
+        .to(HederaRateService)
+        .inSingletonScope()
+
+    // Hedera Deposit Service - Singleton for deposit and scheduled transactions
+    container
+        .bind<HederaDepositService>(TYPES.HederaDepositService)
+        .to(HederaDepositService)
+        .inSingletonScope()
+
+    // Hedera Withdrawal Service - Singleton for withdrawal operations and HCS publishing
+    container
+        .bind<HederaWithdrawalService>(TYPES.HederaWithdrawalService)
+        .to(HederaWithdrawalService)
+        .inSingletonScope()
 
     // ========================================
     // Repository Bindings
     // ========================================
 
-    // Repositories will be bound when implemented
-    // container.bind<IDepositRepository>(TYPES.DepositRepository).to(HederaDepositRepository)
-    // container.bind<IWithdrawRepository>(TYPES.WithdrawRepository).to(HederaWithdrawRepository)
-    // container.bind<IRateRepository>(TYPES.RateRepository).to(HederaRateRepository)
+    // Hedera Repositories (DEFERRED - require HederaClient and Logger bindings)
+    // TODO: Bind these once HederaClient factory and Logger are implemented
+    // container
+    //     .bind<IDepositRepository>(TYPES.DepositRepository)
+    //     .to(HederaDepositRepository)
+    //     .inSingletonScope()
+    //
+    // container
+    //     .bind<IWithdrawRepository>(TYPES.WithdrawRepository)
+    //     .to(HederaWithdrawRepository)
+    //     .inSingletonScope()
+    //
+    // container
+    //     .bind<IRateRepository>(TYPES.RateRepository)
+    //     .to(HederaRateRepository)
+    //     .inSingletonScope()
 
     // ========================================
-    // Service Bindings
+    // Event Handlers Initialization
     // ========================================
 
-    // Services will be bound when implemented
+    // Initialize event handlers after EventBus is bound
+    const eventBus = container.get<IEventBus>(TYPES.EventBus)
+    const handlers = initializeEventHandlers(eventBus)
+
+    // Store handlers in container for access if needed
+    container.bind<RegisteredHandlers>(Symbol.for('EventHandlers')).toConstantValue(handlers)
+
+    // ========================================
+    // Service Bindings (To be implemented)
+    // ========================================
+
+    // Services will be bound when refactored with DI
     // container.bind<IDepositService>(TYPES.DepositService).to(DepositService)
     // container.bind<IWithdrawService>(TYPES.WithdrawService).to(WithdrawService)
     // container.bind<IRateService>(TYPES.RateService).to(RateService)
 
     // ========================================
-    // Validation Service Bindings
+    // Validation Service Bindings (To be implemented)
     // ========================================
 
-    // Validation services will be bound when implemented
+    // Validation services will be bound when refactored
     // container.bind<IDepositValidationService>(TYPES.DepositValidationService).to(DepositValidationService)
     // container.bind<IWithdrawValidationService>(TYPES.WithdrawValidationService).to(WithdrawValidationService)
     // container.bind<IRateValidationService>(TYPES.RateValidationService).to(RateValidationService)

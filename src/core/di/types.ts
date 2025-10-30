@@ -35,6 +35,9 @@ export const TYPES = {
     /** Cache service for storing temporary data */
     CacheService: Symbol.for('CacheService'),
 
+    /** Event bus for domain events */
+    EventBus: Symbol.for('EventBus'),
+
     // ========================================
     // Hedera Infrastructure
     // ========================================
@@ -48,6 +51,21 @@ export const TYPES = {
     /** Hedera client factory for creating configured clients */
     HederaClientFactory: Symbol.for('HederaClientFactory'),
 
+    /** Hedera balance query service */
+    HederaBalanceService: Symbol.for('HederaBalanceService'),
+
+    /** Hedera Mirror Node query service */
+    HederaMirrorNodeService: Symbol.for('HederaMirrorNodeService'),
+
+    /** Hedera rate publishing and query service */
+    HederaRateService: Symbol.for('HederaRateService'),
+
+    /** Hedera deposit and scheduled transaction service */
+    HederaDepositService: Symbol.for('HederaDepositService'),
+
+    /** Hedera withdrawal and HCS publishing service */
+    HederaWithdrawalService: Symbol.for('HederaWithdrawalService'),
+
     // ========================================
     // Repositories
     // ========================================
@@ -60,6 +78,15 @@ export const TYPES = {
 
     /** Repository for exchange rate operations */
     RateRepository: Symbol.for('RateRepository'),
+
+    /** Repository for user operations */
+    UserRepository: Symbol.for('UserRepository'),
+
+    /** Repository for wallet operations */
+    WalletRepository: Symbol.for('WalletRepository'),
+
+    /** Repository for token registry operations */
+    TokenRepository: Symbol.for('TokenRepository'),
 
     // ========================================
     // Domain Services

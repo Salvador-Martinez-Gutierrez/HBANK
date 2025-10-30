@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
     typescript: {
@@ -22,6 +23,20 @@ const nextConfig: NextConfig = {
         }
         return config
     },
+    // Note: instrumentation.ts is now enabled by default in Next.js 15
+    // No need for experimental.instrumentationHook
 }
 
-export default nextConfig
+// Sentry webpack plugin options
+const sentryWebpackPluginOptions = {
+    // Only upload source maps in production
+    silent: true,
+    // Suppress all logs except errors
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    // Auth token for uploading source maps
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+}
+
+// Wrap config with Sentry
+export default withSentryConfig(nextConfig, sentryWebpackPluginOptions)

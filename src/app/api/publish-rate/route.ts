@@ -1,16 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { HederaService } from '@/services/hederaService'
-import { createScopedLogger } from '@/lib/logger'
-
-const logger = createScopedLogger('api:publish-rate:route.ts')
-
-
 /**
  * POST /api/publish-rate
  *
  * Publishes exchange rate information to Hedera Consensus Service
  *
- * @param req - Request object containing rate, totalUsd, and husdSupply
+ * This endpoint has been migrated to use:
+ * - Dependency Injection (HederaRateService)
+ * - Automatic error tracking (Sentry)
+ * - Event sourcing (RatePublished event)
+ * - Cache invalidation
  *
  * @example
  * POST /api/publish-rate
@@ -22,124 +19,93 @@ const logger = createScopedLogger('api:publish-rate:route.ts')
  *
  * @returns
  * {
- *   "status": "published",
- *   "topicId": "0.0.67890",
- *   "rate": 1.005
+ *   "success": true,
+ *   "data": {
+ *     "status": "published",
+ *     "topicId": "0.0.67890",
+ *     "rate": 1.005,
+ *     "transactionId": "0.0.12345@1234567890.000",
+ *     "sequenceNumber": "123"
+ *   }
  * }
  */
-export async function POST(req: NextRequest): Promise<NextResponse> {
-    try {
-        const body = await req.json()
-        const { rate, totalUsd, husdSupply } = body
 
-        // Validate required fields
-        if (
-            rate === undefined ||
-            rate === null ||
-            totalUsd === undefined ||
-            totalUsd === null ||
-            husdSupply === undefined ||
-            husdSupply === null
-        ) {
-            return NextResponse.json(
-                {
-                    error: 'rate, totalUsd, and husdSupply are required',
-                },
-                { status: 400 }
-            )
+import { NextRequest } from 'next/server'
+import { withAPIWrapper, validateRequestBody } from '@/lib/api-wrapper'
+import { getHederaRateService, getEventBus, getCacheService } from '@/lib/di-helpers'
+import { RatePublished } from '@/domain/events/RateEvents'
+import { CacheKeyBuilder } from '@/infrastructure/cache'
+
+interface PublishRateRequest {
+    rate: number
+    totalUsd: number
+    husdSupply: number
+}
+
+export const POST = withAPIWrapper(
+    async (request: NextRequest) => {
+        // Validate request body
+        const validation = await validateRequestBody<PublishRateRequest>(request, [
+            'rate',
+            'totalUsd',
+            'husdSupply',
+        ])
+
+        if ('error' in validation) return validation.error
+
+        const { rate, totalUsd, husdSupply } = validation.body
+
+        // Additional validation
+        if (typeof rate !== 'number' || typeof totalUsd !== 'number' || typeof husdSupply !== 'number') {
+            throw new Error('rate, totalUsd, and husdSupply must be numbers')
         }
 
-        // Validate data types and values
-        if (
-            typeof rate !== 'number' ||
-            typeof totalUsd !== 'number' ||
-            typeof husdSupply !== 'number'
-        ) {
-            return NextResponse.json(
-                {
-                    error: 'rate, totalUsd, and husdSupply must be numbers',
-                },
-                { status: 400 }
-            )
-        }
-
-        // Validate rate is positive
         if (rate <= 0) {
-            return NextResponse.json(
-                {
-                    error: 'Rate must be positive',
-                },
-                { status: 400 }
-            )
+            throw new Error('Rate must be positive')
         }
 
-        // Validate totalUsd and husdSupply are positive
         if (totalUsd <= 0 || husdSupply <= 0) {
-            return NextResponse.json(
-                {
-                    error: 'totalUsd and husdSupply must be positive',
-                },
-                { status: 400 }
-            )
+            throw new Error('totalUsd and husdSupply must be positive')
         }
 
-        // // Validate rate calculation consistency (with 0.1% tolerance)
-        // const calculatedRate = totalUsd / husdSupply
-        // const tolerance = 0.001 // 0.1%
-        // if (Math.abs(calculatedRate - rate) / rate > tolerance) {
-        //     return NextResponse.json(
-        //         {
-        //             error: 'Rate calculation is inconsistent with provided values',
-        //         },
-        //         { status: 400 }
-        //     )
-        // }
-
-        // Initialize Hedera service
-        const hederaService = new HederaService()
+        // Get services from DI container
+        const rateService = getHederaRateService()
+        const eventBus = getEventBus()
+        const cacheService = getCacheService()
 
         // Publish rate to HCS
-        const result = await hederaService.publishRate(
-            rate,
-            totalUsd,
-            husdSupply
+        const result = await rateService.publishRate(rate, totalUsd, husdSupply)
+
+        // Invalidate rate cache
+        await cacheService.delete(CacheKeyBuilder.currentRate())
+
+        // Publish domain event for audit trail and notifications
+        await eventBus.publish(
+            new RatePublished(
+                result.transactionId, // rateId (use transaction ID as unique identifier)
+                result.rate,
+                result.sequenceNumber || '',
+                totalUsd,
+                husdSupply,
+                result.topicId,
+                new Date()
+            )
         )
 
-        // Return success response - MAKE SURE IT INCLUDES transactionId
-        return NextResponse.json({
-            status: 'published',
+        // Return result
+        return {
+            status: result.status,
             topicId: result.topicId,
             rate: result.rate,
-            transactionId: result.transactionId, // <- Verify this line is there
-        })
-    } catch (error) {
-        logger.error('Publish rate endpoint error:', error)
-
-        // Check if it's a validation error from the service
-        if (error instanceof Error) {
-            if (
-                error.message.includes('Rate must be positive') ||
-                error.message.includes('Rate change cannot exceed 10%') ||
-                error.message.includes('Rate calculation is inconsistent') ||
-                error.message.includes(
-                    'totalUsd and husdSupply must be positive'
-                )
-            ) {
-                return NextResponse.json(
-                    {
-                        error: error.message,
-                    },
-                    { status: 400 }
-                )
-            }
+            transactionId: result.transactionId,
+            sequenceNumber: result.sequenceNumber,
         }
-
-        // Return generic error message for security
-        return NextResponse.json(
-            {
-                error: 'Internal server error',
-            },
-            { status: 500 }
-        )
+    },
+    {
+        errorPrefix: 'Failed to publish rate',
+        sentryTags: {
+            operation: 'publish_rate',
+            service: 'HederaRateService',
+        },
     }
-}
+)
