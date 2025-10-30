@@ -173,12 +173,12 @@ export class HederaWithdrawalService {
 2. ✅ Extract HederaClientFactory (needed by all)
 3. ✅ Extract HederaBalanceService (simple, no dependencies)
 4. ✅ Extract HederaMirrorNodeService (needed by deposit/withdrawal)
-5. ⏸️ Extract HederaRateService (medium complexity)
-6. ⏸️ Extract HederaDepositService (depends on mirror node)
-7. ⏸️ Extract HederaWithdrawalService (most complex)
-8. ⏸️ Update DI container bindings
-9. ⏸️ Deprecate old HederaService
-10. ⏸️ Update all service consumers
+5. ✅ Extract HederaRateService (medium complexity)
+6. ✅ Extract HederaDepositService (depends on mirror node)
+7. ✅ Extract HederaWithdrawalService (most complex)
+8. ✅ Update DI container bindings
+9. ✅ Deprecate old HederaService
+10. ✅ Update all service consumers
 
 ## Migration Strategy
 
