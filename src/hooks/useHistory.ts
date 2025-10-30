@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { logger } from '@/lib/logger'
-
+import { queryKeys } from '@/lib/query-keys'
 
 interface HistoryTransaction {
     timestamp: string
@@ -40,75 +41,73 @@ interface UseHistoryReturn {
     refreshTimeRemaining: number
 }
 
+async function fetchHistory(
+    userAccountId: string,
+    limit: number,
+    cursor?: string
+): Promise<HistoryResponse> {
+    logger.info(`🔄 useHistory: Fetching history for user: ${userAccountId}`)
+
+    const params = new URLSearchParams({
+        user: userAccountId,
+        limit: limit.toString(),
+    })
+
+    if (cursor) {
+        params.append('cursor', cursor)
+    }
+
+    const response = await fetch(`/api/history?${params.toString()}`)
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data: HistoryResponse = await response.json()
+
+    if (!data.success) {
+        throw new Error(data.error ?? 'Failed to fetch history')
+    }
+
+    return data
+}
+
 export function useHistory({
     userAccountId,
     enabled = true,
     limit = 20,
 }: UseHistoryProps): UseHistoryReturn {
-    const [history, setHistory] = useState<HistoryTransaction[]>([])
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const [hasMore, setHasMore] = useState(false)
     const [nextCursor, setNextCursor] = useState<string | undefined>(undefined)
+    const [allHistory, setAllHistory] = useState<HistoryTransaction[]>([])
+    const [hasMore, setHasMore] = useState(false)
     const [isRefreshDisabled, setIsRefreshDisabled] = useState(false)
     const [refreshTimeRemaining, setRefreshTimeRemaining] = useState(0)
 
-    // Fetch history data
-    const fetchHistory = useCallback(
-        async (cursor?: string, append = false) => {
-            if (!userAccountId || !enabled) {
-                logger.info(`🚫 useHistory: Skipping fetch - userAccountId: ${userAccountId}, enabled: ${enabled}`)
-                return
-            }
-
-            logger.info(`🔄 useHistory: Fetching history for user: ${userAccountId}`)
-            setIsLoading(true)
-            setError(null)
-
-            try {
-                const params = new URLSearchParams({
-                    user: userAccountId,
-                    limit: limit.toString(),
-                })
-
-                if (cursor) {
-                    params.append('cursor', cursor)
-                }
-
-                const response = await fetch(`/api/history?${params.toString()}`)
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
-                }
-
-                const data: HistoryResponse = await response.json()
-
-                if (data.success && data.history) {
-                    if (append) {
-                        setHistory(prev => [...prev, ...(data.history ?? [])])
-                    } else {
-                        setHistory(data.history)
-                    }
-                    setHasMore(data.hasMore ?? false)
-                    setNextCursor(data.nextCursor)
-                } else {
-                    throw new Error(data.error ?? 'Failed to fetch history')
-                }
-            } catch (err) {
-                logger.error('Error fetching history:', err)
-                setError(err instanceof Error ? err.message : 'Unknown error')
-            } finally {
-                setIsLoading(false)
+    // Query for initial/refresh history fetch
+    const {
+        data,
+        isLoading,
+        error,
+        refetch,
+    } = useQuery({
+        queryKey: queryKeys.history(userAccountId),
+        queryFn: () => fetchHistory(userAccountId!, limit),
+        enabled: enabled && !!userAccountId,
+        staleTime: 30 * 1000, // Fresh for 30 seconds
+        onSuccess: (data) => {
+            if (data.success && data.history) {
+                setAllHistory(data.history)
+                setHasMore(data.hasMore ?? false)
+                setNextCursor(data.nextCursor)
             }
         },
-        [userAccountId, enabled, limit]
-    )
+    })
 
     // Refresh history (with cooldown)
     const refresh = useCallback(async () => {
         if (isRefreshDisabled) return
 
-        await fetchHistory()
+        await refetch()
 
         // Disable refresh for 30 seconds
         setIsRefreshDisabled(true)
@@ -126,25 +125,29 @@ export function useHistory({
         }, 1000)
 
         return () => clearInterval(timer)
-    }, [fetchHistory, isRefreshDisabled])
+    }, [refetch, isRefreshDisabled])
 
     // Load more history
     const loadMore = useCallback(async () => {
-        if (!hasMore || !nextCursor || isLoading) return
-        await fetchHistory(nextCursor, true)
-    }, [fetchHistory, hasMore, nextCursor, isLoading])
+        if (!hasMore || !nextCursor || isLoading || !userAccountId) return
 
-    // Initial fetch when component mounts or userAccountId changes
-    useEffect(() => {
-        if (enabled && userAccountId) {
-            void fetchHistory()
+        try {
+            const moreData = await fetchHistory(userAccountId, limit, nextCursor)
+
+            if (moreData.success && moreData.history) {
+                setAllHistory(prev => [...prev, ...moreData.history!])
+                setHasMore(moreData.hasMore ?? false)
+                setNextCursor(moreData.nextCursor)
+            }
+        } catch (err) {
+            logger.error('Error loading more history:', err)
         }
-    }, [fetchHistory, enabled, userAccountId])
+    }, [hasMore, nextCursor, isLoading, userAccountId, limit])
 
     return {
-        history,
+        history: allHistory.length > 0 ? allHistory : (data?.history ?? []),
         isLoading,
-        error,
+        error: error instanceof Error ? error.message : null,
         hasMore,
         refresh: () => void refresh(),
         loadMore: () => void loadMore(),

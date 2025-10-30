@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { WithdrawStatus } from '@/types/withdrawal'
 import { logger } from '@/lib/logger'
+import { queryKeys } from '@/lib/query-keys'
 import {
     WITHDRAW_TOPIC_ID,
     TESTNET_MIRROR_NODE_ENDPOINT,
@@ -28,107 +30,133 @@ interface UseWithdrawalsReturn {
     }>
 }
 
+interface WithdrawalsResponse {
+    success: boolean
+    withdrawals: WithdrawStatus[]
+    error?: string
+}
+
+interface SubmitWithdrawalParams {
+    userAccountId: string
+    amountHUSD: number
+    rate: number
+    rateSequenceNumber: string
+}
+
+interface SubmitWithdrawalResponse {
+    success: boolean
+    requestId?: string
+    transferTxId?: string
+    scheduleId?: string
+    error?: string
+}
+
+async function fetchWithdrawals(userAccountId: string): Promise<WithdrawalsResponse> {
+    logger.info(`🔄 useWithdrawals: Fetching withdrawals for user: ${userAccountId}`)
+
+    const response = await fetch(
+        `/api/user-withdrawals?user=${encodeURIComponent(userAccountId)}`
+    )
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data: WithdrawalsResponse = await response.json()
+
+    if (!data.success) {
+        throw new Error(data.error ?? 'Failed to fetch withdrawals')
+    }
+
+    return data
+}
+
+async function submitWithdrawalAPI(params: SubmitWithdrawalParams): Promise<SubmitWithdrawalResponse> {
+    const response = await fetch('/api/withdraw', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+    })
+
+    const data: SubmitWithdrawalResponse = await response.json()
+
+    if (!response.ok || !data.success) {
+        throw new Error(data.error ?? 'Failed to submit withdrawal')
+    }
+
+    return data
+}
+
 export function useWithdrawals({
     userAccountId,
     enabled = true,
 }: UseWithdrawalsProps): UseWithdrawalsReturn {
-    const [withdrawals, setWithdrawals] = useState<WithdrawStatus[]>([])
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const queryClient = useQueryClient()
 
-    // Fetch user withdrawals from API
-    const fetchWithdrawals = useCallback(async () => {
-        if (!userAccountId || !enabled) {
-            logger.info(`🚫 useWithdrawals: Skipping fetch - userAccountId: ${userAccountId}, enabled: ${enabled}`)
-            return
+    // Query for fetching withdrawals
+    const {
+        data,
+        isLoading,
+        error,
+        refetch,
+    } = useQuery({
+        queryKey: queryKeys.withdrawals(userAccountId),
+        queryFn: () => fetchWithdrawals(userAccountId!),
+        enabled: enabled && !!userAccountId,
+        staleTime: 30 * 1000, // Fresh for 30 seconds
+        refetchInterval: 30 * 1000, // Auto-refresh every 30 seconds
+    })
+
+    // Mutation for submitting withdrawal
+    const mutation = useMutation({
+        mutationFn: submitWithdrawalAPI,
+        onSuccess: () => {
+            // Invalidate and refetch withdrawals
+            void queryClient.invalidateQueries({ queryKey: queryKeys.withdrawals(userAccountId) })
+            // Invalidate history as there's a new transaction
+            void queryClient.invalidateQueries({ queryKey: queryKeys.history(userAccountId) })
+            // Invalidate TVL as it will change
+            void queryClient.invalidateQueries({ queryKey: queryKeys.tvl })
+        },
+    })
+
+    const submitWithdrawal = async (
+        amountHUSD: number,
+        rate: number,
+        rateSequenceNumber: string
+    ): Promise<{
+        success: boolean
+        requestId?: string
+        scheduleId?: string
+        error?: string
+    }> => {
+        if (!userAccountId) {
+            return { success: false, error: 'User account ID is required' }
         }
-
-        logger.info(`🔄 useWithdrawals: Fetching withdrawals for user: ${userAccountId}`)
-        setIsLoading(true)
-        setError(null)
 
         try {
-            const response = await fetch(
-                `/api/user-withdrawals?user=${encodeURIComponent(
-                    userAccountId
-                )}`
-            )
+            const result = await mutation.mutateAsync({
+                userAccountId,
+                amountHUSD,
+                rate,
+                rateSequenceNumber,
+            })
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const data = await response.json()
-
-            if (data.success) {
-                setWithdrawals(data.withdrawals)
-            } else {
-                throw new Error(data.error ?? 'Failed to fetch withdrawals')
+            return {
+                success: true,
+                requestId: result.requestId,
+                scheduleId: result.transferTxId ?? result.scheduleId,
             }
         } catch (err) {
-            logger.error('Error fetching withdrawals:', err)
-            setError(err instanceof Error ? err.message : 'Unknown error')
-        } finally {
-            setIsLoading(false)
+            logger.error('Error submitting withdrawal:', err)
+            return {
+                success: false,
+                error: err instanceof Error ? err.message : 'Unknown error',
+            }
         }
-    }, [userAccountId, enabled])
-
-    // Submit new withdrawal
-    const submitWithdrawal = useCallback(
-        async (
-            amountHUSD: number,
-            rate: number,
-            rateSequenceNumber: string
-        ): Promise<{
-            success: boolean
-            requestId?: string
-            scheduleId?: string
-            error?: string
-        }> => {
-            if (!userAccountId) {
-                return { success: false, error: 'User account ID is required' }
-            }
-
-            try {
-                const response = await fetch('/api/withdraw', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        userAccountId,
-                        amountHUSD,
-                        rate,
-                        rateSequenceNumber,
-                    }),
-                })
-
-                const data = await response.json()
-
-                if (response.ok && data.success) {
-                    // Refresh withdrawals to show the new one
-                    void fetchWithdrawals()
-                    return {
-                        success: true,
-                        requestId: data.requestId,
-                        scheduleId: data.transferTxId ?? data.scheduleId,
-                    }
-                } else {
-                    return {
-                        success: false,
-                        error: data.error ?? 'Failed to submit withdrawal',
-                    }
-                }
-            } catch (err) {
-                logger.error('Error submitting withdrawal:', err)
-                return {
-                    success: false,
-                    error: err instanceof Error ? err.message : 'Unknown error',
-                }
-            }
-        },
-        [userAccountId, fetchWithdrawals]
-    )
+    }
 
     // WebSocket connection for real-time updates
     useEffect(() => {
@@ -186,7 +214,9 @@ export function useWithdrawals({
                                 logger.info(
                                     '🔄 Received withdrawal update for our user, refreshing...'
                                 )
-                                void fetchWithdrawals()
+                                void queryClient.invalidateQueries({
+                                    queryKey: queryKeys.withdrawals(userAccountId)
+                                })
                             } else {
                                 logger.info(
                                     '⏭️ Message not for our user, ignoring...'
@@ -237,25 +267,13 @@ export function useWithdrawals({
                 ws.close()
             }
         }
-    }, [enabled, userAccountId, fetchWithdrawals])
-
-    // Initial fetch and periodic refresh
-    useEffect(() => {
-        if (enabled && userAccountId) {
-            void fetchWithdrawals()
-
-            // Set up periodic refresh every 30 seconds as fallback
-            const interval = setInterval(() => void fetchWithdrawals(), 30000)
-
-            return () => clearInterval(interval)
-        }
-    }, [fetchWithdrawals, enabled, userAccountId])
+    }, [enabled, userAccountId, queryClient])
 
     return {
-        withdrawals,
-        isLoading,
-        error,
-        refresh: () => void fetchWithdrawals(),
+        withdrawals: data?.withdrawals ?? [],
+        isLoading: isLoading || mutation.isPending,
+        error: error instanceof Error ? error.message : null,
+        refresh: () => void refetch(),
         submitWithdrawal,
     }
 }

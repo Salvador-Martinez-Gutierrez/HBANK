@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { queryKeys } from '@/lib/query-keys'
 
 interface WalletInfo {
     id: string
@@ -20,37 +21,31 @@ interface WalletBalancesResponse {
     lastUpdated: string
 }
 
-export function useWalletBalances() {
-    const [wallets, setWallets] = useState<WalletInfo[]>([])
-    const [lastUpdated, setLastUpdated] = useState<string>('')
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+async function fetchWalletBalances(): Promise<WalletBalancesResponse> {
+    const response = await fetch('/api/wallet-balances')
 
-    const fetchWalletBalances = async () => {
-        try {
-            setLoading(true)
-            const response = await fetch('/api/wallet-balances')
-            
-            if (!response.ok) {
-                throw new Error('Failed to fetch wallet balances')
-            }
-            
-            const data: WalletBalancesResponse = await response.json()
-            setWallets(data.wallets)
-            setLastUpdated(data.lastUpdated)
-            setError(null)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error occurred')
-        } finally {
-            setLoading(false)
-        }
+    if (!response.ok) {
+        throw new Error('Failed to fetch wallet balances')
     }
 
-    useEffect(() => {
-        void fetchWalletBalances()
-    }, [])
+    return response.json()
+}
 
-    const refreshWalletBalances = () => fetchWalletBalances()
+export function useWalletBalances() {
+    const {
+        data,
+        isLoading,
+        error,
+        refetch,
+    } = useQuery({
+        queryKey: queryKeys.walletBalances(),
+        queryFn: fetchWalletBalances,
+        staleTime: 30 * 1000, // Fresh for 30 seconds
+        refetchInterval: 60 * 1000, // Auto-refresh every 60 seconds
+    })
+
+    const wallets = data?.wallets ?? []
+    const lastUpdated = data?.lastUpdated ?? ''
 
     // Helper function to get specific wallets
     const getWalletByName = (name: string) => {
@@ -67,9 +62,9 @@ export function useWalletBalances() {
     return {
         wallets,
         lastUpdated,
-        loading,
-        error,
-        refreshWalletBalances,
+        loading: isLoading,
+        error: error instanceof Error ? error.message : null,
+        refreshWalletBalances: () => void refetch(),
         getWalletByName,
         getWithdrawalWallets
     }

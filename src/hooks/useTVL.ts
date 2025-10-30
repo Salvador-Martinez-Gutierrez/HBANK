@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { logger } from '@/lib/logger'
-
+import { queryKeys } from '@/lib/query-keys'
 
 interface TVLData {
     tvl: number
@@ -19,38 +20,29 @@ interface UseTVLReturn {
     lastUpdated: string | null
     loading: boolean
     error: string | null
-    refreshTVL: () => Promise<void>
+    refreshTVL: () => void
+}
+
+async function fetchTVL(): Promise<TVLData> {
+    logger.info('📊 Fetching TVL data...')
+    const response = await fetch('/api/tvl')
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data: TVLData = await response.json()
+    logger.info('✅ TVL data updated:', data.tvl)
+    return data
 }
 
 export function useTVL(): UseTVLReturn {
-    const [tvlData, setTVLData] = useState<TVLData | null>(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchTVL = useCallback(async () => {
-        setLoading(true)
-        setError(null)
-
-        try {
-            logger.info('📊 Fetching TVL data...')
-            const response = await fetch('/api/tvl')
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`)
-            }
-
-            const data: TVLData = await response.json()
-            setTVLData(data)
-            logger.info('✅ TVL data updated:', data.tvl)
-        } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : 'Failed to fetch TVL'
-            setError(errorMessage)
-            logger.error('❌ Error fetching TVL:', err)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+    const { data: tvlData, isLoading, error, refetch } = useQuery({
+        queryKey: queryKeys.tvl,
+        queryFn: fetchTVL,
+        staleTime: 30 * 1000, // Data is fresh for 30 seconds
+        refetchInterval: 60 * 1000, // Auto-refetch every 60 seconds
+    })
 
     // Memoized formatted TVL to avoid recalculations
     const formattedTVL = useMemo(() => {
@@ -71,18 +63,13 @@ export function useTVL(): UseTVLReturn {
         }
     }, [tvlData])
 
-    // Auto-fetch on mount
-    useEffect(() => {
-        void fetchTVL()
-    }, [fetchTVL])
-
     return {
         tvl: tvlData?.tvl ?? 0,
         formattedTVL,
         breakdown: tvlData?.breakdown ?? null,
         lastUpdated: tvlData?.lastUpdated ?? null,
-        loading,
-        error,
-        refreshTVL: fetchTVL,
+        loading: isLoading,
+        error: error instanceof Error ? error.message : null,
+        refreshTVL: () => void refetch(),
     }
 }

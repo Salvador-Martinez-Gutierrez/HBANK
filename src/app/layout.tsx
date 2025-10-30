@@ -4,6 +4,7 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import '../lib/polyfills'
 import { Analytics } from '@vercel/analytics/next'
+import { ReactQueryProvider } from '@/lib/react-query'
 
 const geistSans = Geist({
     variable: '--font-geist-sans',
@@ -78,9 +79,10 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-                {children}
-                <Analytics />
-                <Toaster
+                <ReactQueryProvider>
+                    {children}
+                    <Analytics />
+                    <Toaster
                     position='top-right'
                     toastOptions={{
                         duration: 4000,
@@ -106,6 +108,7 @@ export default function RootLayout({
                         },
                     }}
                 />
+                </ReactQueryProvider>
             </body>
         </html>
     )

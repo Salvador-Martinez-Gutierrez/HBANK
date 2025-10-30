@@ -41,6 +41,8 @@
     "@sentry/nextjs": "10",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.75.0",
+    "@tanstack/react-query": "^5.90.5",
+    "@tanstack/react-query-devtools": "^5.90.2",
     "@vercel/analytics": "^1.5.0",
     "@walletconnect/modal": "^2.7.0",
     "axios": "^1.13.1",
@@ -95,17 +97,6 @@
     "ts-jest": "^29.4.1",
     "tw-animate-css": "^1.3.7",
     "typescript": "^5"
-  },
-  "pnpm": {
-    "overrides": {
-      "crypto-js": ">=4.2.0",
-      "elliptic": ">=6.6.1",
-      "form-data": ">=2.5.4",
-      "tough-cookie": ">=5.0.0",
-      "request": "npm:@cypress/request@^3.0.0",
-      "@metamask/sdk": ">=0.33.1",
-      "@metamask/sdk-communication-layer": ">=0.33.1"
-    }
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

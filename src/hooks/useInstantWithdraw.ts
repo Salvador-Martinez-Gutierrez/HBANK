@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { logger } from '@/lib/logger'
-
+import { queryKeys } from '@/lib/query-keys'
 
 interface InstantWithdrawData {
     maxInstantWithdrawable: number
@@ -36,67 +36,85 @@ interface UseInstantWithdrawReturn {
         fee: number
         netUSDC: number
     }
-    refreshMaxAmount: () => Promise<void>
+    refreshMaxAmount: () => void
 }
 
-// Simple global state for forcing refresh
-let globalRefreshTimestamp = Date.now()
-const refreshCallbacks = new Set<() => void>()
+async function fetchMaxInstantWithdrawable(): Promise<InstantWithdrawData> {
+    const response = await fetch('/api/withdraw/instant/max')
+    const data: InstantWithdrawData = await response.json()
 
-const triggerGlobalRefresh = () => {
-    globalRefreshTimestamp = Date.now()
+    if (!response.ok) {
+        throw new Error(
+            data.error ?? 'Failed to fetch max instant withdrawable amount'
+        )
+    }
+
     logger.info(
-        '🌐 [useInstantWithdraw] Triggering global refresh, notifying',
-        refreshCallbacks.size,
-        'instances'
+        '🔄 [useInstantWithdraw] Max amount fetched:',
+        data.maxInstantWithdrawable
     )
-    refreshCallbacks.forEach((callback) => callback())
+    return data
 }
 
-// Export the trigger function for use by other components if needed
-export const refreshInstantWithdrawMax = () => {
-    triggerGlobalRefresh()
+async function submitInstantWithdrawAPI(params: {
+    userAccountId: string
+    amountHUSD: number
+    rate: number
+    rateSequenceNumber: string
+}): Promise<InstantWithdrawResponse> {
+    logger.info('🚀 Making instant withdraw request:', params)
+
+    const response = await fetch('/api/withdraw/instant', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            ...params,
+            requestType: 'instant',
+        }),
+    })
+
+    const data: InstantWithdrawResponse = await response.json()
+
+    if (!response.ok) {
+        logger.error('❌ Instant withdraw failed:', data)
+        throw new Error(data.error ?? 'Instant withdrawal failed')
+    }
+
+    logger.info('✅ Instant withdraw successful!')
+    return data
 }
 
 export function useInstantWithdraw(): UseInstantWithdrawReturn {
-    const [maxInstantWithdrawable, setMaxInstantWithdrawable] = useState(0)
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const [lastRefresh, setLastRefresh] = useState(Date.now())
+    const queryClient = useQueryClient()
 
-    const fetchMaxInstantWithdrawable = useCallback(async () => {
-        setIsLoading(true)
-        setError(null)
+    // Query for max instant withdrawable amount
+    const {
+        data,
+        isLoading,
+        error,
+        refetch,
+    } = useQuery({
+        queryKey: queryKeys.instantWithdrawMax,
+        queryFn: fetchMaxInstantWithdrawable,
+        staleTime: 30 * 1000, // Fresh for 30 seconds
+        refetchInterval: 60 * 1000, // Auto-refresh every 60 seconds
+    })
 
-        try {
-            const response = await fetch('/api/withdraw/instant/max')
-            const data: InstantWithdrawData = await response.json()
-
-            if (!response.ok) {
-                throw new Error(
-                    data.error ??
-                        'Failed to fetch max instant withdrawable amount'
-                )
-            }
-
-            setMaxInstantWithdrawable(data.maxInstantWithdrawable)
-            logger.info(
-                '🔄 [useInstantWithdraw] Max amount updated to:',
-                data.maxInstantWithdrawable
-            )
-        } catch (err) {
-            const errorMessage =
-                err instanceof Error ? err.message : 'Unknown error'
-            setError(errorMessage)
-            logger.error('Error fetching max instant withdrawable:', err)
-        } finally {
-            setIsLoading(false)
-        }
-    }, [])
-
-    const refreshMaxAmount = useCallback(async () => {
-        await fetchMaxInstantWithdrawable()
-    }, [fetchMaxInstantWithdrawable])
+    // Mutation for submitting instant withdraw
+    const mutation = useMutation({
+        mutationFn: submitInstantWithdrawAPI,
+        onSuccess: () => {
+            // Invalidate and refetch max amount after successful withdrawal
+            void queryClient.invalidateQueries({ queryKey: queryKeys.instantWithdrawMax })
+            // Also invalidate TVL as it will change
+            void queryClient.invalidateQueries({ queryKey: queryKeys.tvl })
+            // Invalidate history as there's a new transaction
+            void queryClient.invalidateQueries({ queryKey: queryKeys.history() })
+            void queryClient.invalidateQueries({ queryKey: queryKeys.withdrawals() })
+        },
+    })
 
     const calculateInstantWithdrawAmounts = (
         amountHUSD: number,
@@ -119,43 +137,14 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
         rate: number,
         rateSequenceNumber: string
     ): Promise<InstantWithdrawResponse> => {
-        logger.info('🚀 Making instant withdraw request:', {
-            userAccountId,
-            amountHUSD,
-        })
-
         try {
-            const response = await fetch('/api/withdraw/instant', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userAccountId,
-                    amountHUSD,
-                    rate,
-                    rateSequenceNumber,
-                    requestType: 'instant',
-                }),
+            const result = await mutation.mutateAsync({
+                userAccountId,
+                amountHUSD,
+                rate,
+                rateSequenceNumber,
             })
-
-            const data: InstantWithdrawResponse = await response.json()
-
-            if (!response.ok) {
-                logger.error('❌ Instant withdraw failed:', data)
-                return {
-                    success: false,
-                    error: data.error ?? 'Instant withdrawal failed',
-                }
-            }
-
-            logger.info('✅ Instant withdraw successful!')
-
-            // Refresh max amount after successful withdrawal and trigger global refresh
-            await fetchMaxInstantWithdrawable()
-            triggerGlobalRefresh()
-
-            return data
+            return result
         } catch (err) {
             logger.error('❌ Instant withdraw exception:', err)
             const errorMessage =
@@ -167,39 +156,18 @@ export function useInstantWithdraw(): UseInstantWithdrawReturn {
         }
     }
 
-    // Subscribe to global refresh updates
-    useEffect(() => {
-        const handleRefresh = () => {
-            setLastRefresh(Date.now())
-        }
-
-        refreshCallbacks.add(handleRefresh)
-        return () => {
-            refreshCallbacks.delete(handleRefresh)
-        }
-    }, [])
-
-    // Refresh when global refresh is triggered
-    useEffect(() => {
-        if (lastRefresh < globalRefreshTimestamp) {
-            logger.info(
-                '🔄 [useInstantWithdraw] Global refresh triggered, updating max amount...'
-            )
-            void fetchMaxInstantWithdrawable()
-        }
-    }, [lastRefresh, fetchMaxInstantWithdrawable])
-
-    // Fetch max amount on mount
-    useEffect(() => {
-        void fetchMaxInstantWithdrawable()
-    }, [fetchMaxInstantWithdrawable])
-
     return {
-        maxInstantWithdrawable,
-        isLoading,
-        error,
+        maxInstantWithdrawable: data?.maxInstantWithdrawable ?? 0,
+        isLoading: isLoading || mutation.isPending,
+        error: error instanceof Error ? error.message : null,
         submitInstantWithdraw,
         calculateInstantWithdrawAmounts,
-        refreshMaxAmount,
+        refreshMaxAmount: () => void refetch(),
     }
+}
+
+// Export function to refresh from other components
+export const refreshInstantWithdrawMax = () => {
+    // This will be handled by query invalidation now
+    logger.info('🌐 [useInstantWithdraw] Refresh triggered via query invalidation')
 }

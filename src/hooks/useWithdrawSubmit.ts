@@ -1,6 +1,6 @@
-import { useCallback } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { logger } from '@/lib/logger'
-
+import { queryKeys } from '@/lib/query-keys'
 
 interface UseWithdrawSubmitProps {
     userAccountId?: string
@@ -19,63 +19,92 @@ interface UseWithdrawSubmitReturn {
     }>
 }
 
+interface SubmitWithdrawalParams {
+    userAccountId: string
+    amountHUSD: number
+    rate: number
+    rateSequenceNumber: string
+}
+
+interface SubmitWithdrawalResponse {
+    success: boolean
+    requestId?: string
+    transferTxId?: string
+    scheduleId?: string
+    error?: string
+}
+
+async function submitWithdrawalAPI(params: SubmitWithdrawalParams): Promise<SubmitWithdrawalResponse> {
+    const response = await fetch('/api/withdraw', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(params),
+    })
+
+    const data: SubmitWithdrawalResponse = await response.json()
+
+    if (!response.ok || !data.success) {
+        throw new Error(data.error ?? 'Failed to submit withdrawal')
+    }
+
+    return data
+}
+
 export function useWithdrawSubmit({
     userAccountId,
 }: UseWithdrawSubmitProps): UseWithdrawSubmitReturn {
-    // Submit new withdrawal
-    const submitWithdrawal = useCallback(
-        async (
-            amountHUSD: number,
-            rate: number,
-            rateSequenceNumber: string
-        ): Promise<{
-            success: boolean
-            requestId?: string
-            scheduleId?: string
-            error?: string
-        }> => {
-            if (!userAccountId) {
-                return { success: false, error: 'User account ID is required' }
-            }
+    const queryClient = useQueryClient()
 
-            try {
-                const response = await fetch('/api/withdraw', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        userAccountId,
-                        amountHUSD,
-                        rate,
-                        rateSequenceNumber,
-                    }),
-                })
-
-                const data = await response.json()
-
-                if (response.ok && data.success) {
-                    return {
-                        success: true,
-                        requestId: data.requestId,
-                        scheduleId: data.transferTxId ?? data.scheduleId,
-                    }
-                } else {
-                    return {
-                        success: false,
-                        error: data.error ?? 'Failed to submit withdrawal',
-                    }
-                }
-            } catch (err) {
-                logger.error('Error submitting withdrawal:', err)
-                return {
-                    success: false,
-                    error: err instanceof Error ? err.message : 'Unknown error',
-                }
-            }
+    // Mutation for submitting withdrawal
+    const mutation = useMutation({
+        mutationFn: submitWithdrawalAPI,
+        onSuccess: () => {
+            // Invalidate and refetch withdrawals
+            void queryClient.invalidateQueries({ queryKey: queryKeys.withdrawals(userAccountId) })
+            // Invalidate history as there's a new transaction
+            void queryClient.invalidateQueries({ queryKey: queryKeys.history(userAccountId) })
+            // Invalidate TVL as it will change
+            void queryClient.invalidateQueries({ queryKey: queryKeys.tvl })
         },
-        [userAccountId]
-    )
+    })
+
+    const submitWithdrawal = async (
+        amountHUSD: number,
+        rate: number,
+        rateSequenceNumber: string
+    ): Promise<{
+        success: boolean
+        requestId?: string
+        scheduleId?: string
+        error?: string
+    }> => {
+        if (!userAccountId) {
+            return { success: false, error: 'User account ID is required' }
+        }
+
+        try {
+            const result = await mutation.mutateAsync({
+                userAccountId,
+                amountHUSD,
+                rate,
+                rateSequenceNumber,
+            })
+
+            return {
+                success: true,
+                requestId: result.requestId,
+                scheduleId: result.transferTxId ?? result.scheduleId,
+            }
+        } catch (err) {
+            logger.error('Error submitting withdrawal:', err)
+            return {
+                success: false,
+                error: err instanceof Error ? err.message : 'Unknown error',
+            }
+        }
+    }
 
     return {
         submitWithdrawal,
