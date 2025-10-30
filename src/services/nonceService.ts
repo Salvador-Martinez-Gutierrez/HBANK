@@ -47,7 +47,7 @@ export class NonceService {
         message: string
     } {
         const nonce = uuidv4()
-        const message = `Login to HBANK Protocol with Hedera Wallet: ${nonce}`
+        const message = `Login to HBANK with Hedera Wallet: ${nonce}`
 
         const now = Date.now()
         const storedNonce: StoredNonce = {

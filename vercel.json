@@ -1,8 +1,1 @@
-{
-    "crons": [
-        {
-            "path": "/api/portfolio/update-prices",
-            "schedule": "*/5 * * * *"
-        }
-    ]
-}
+{}

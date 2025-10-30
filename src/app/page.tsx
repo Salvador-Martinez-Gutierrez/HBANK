@@ -22,36 +22,12 @@ import {
     CreditCard,
     CircleCheck,
 } from 'lucide-react'
-import Head from 'next/head'
 import { useTVL } from '@/hooks/useTVL'
 
 export default function Home() {
     const { formattedTVL, loading: tvlLoading } = useTVL()
     return (
         <>
-            <Head>
-                <title>HBank - The Onchain Neobank on Hedera</title>
-                <meta
-                    name='description'
-                    content="Your complete onchain banking alternative on Hedera. Earn yield, track your portfolio, trade assets, and spend crypto—all self-custodial and fully transparent."
-                />
-                <meta
-                    name='keywords'
-                    content='Hedera, Neobank, DeFi, Yield, Portfolio Tracker, Crypto Swaps, Credit Card, Self-Custodial, Hedera Hashgraph, HBAR, Onchain Banking'
-                />
-                <meta
-                    property='og:title'
-                    content='HBank - The Onchain Neobank on Hedera'
-                />
-                <meta
-                    property='og:description'
-                    content='Earn, trade, spend and manage your onchain assets on Hedera. Fully self-custodial with total transparency.'
-                />
-                <meta property='og:type' content='website' />
-                <meta name='twitter:card' content='summary_large_image' />
-                <link rel='canonical' href='https://hbank.pro' />
-            </Head>
-
             <div className='min-h-screen'>
                 {/* Hero Section */}
                 <section className='relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-secondary/10 px-4 py-10 sm:px-6 lg:px-8'>
@@ -85,7 +61,9 @@ export default function Home() {
                                 To Grow Your Wealth
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                                The onchain banking alternative on Hedera Hashgraph. Earn, spend and manage your assets all in one place.
+                                The Onchain Banking alternative on Hedera
+                                Hashgraph. Earn, spend and manage your digital assets
+                                all in one place.
                             </p>
                             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
                                 <Button
@@ -170,9 +148,11 @@ export default function Home() {
                                     </span>
                                 </h2>
                                 <p className='mb-8 text-lg text-muted-foreground'>
-                                    Everything you need to manage your digital assets in one place. 
-                                    Earn yield, track your portfolio, trade, and spend — all while maintaining 
-                                    full self-custody and complete transparency.
+                                    Everything you need to manage your digital
+                                    assets in one place. Earn yield, track your
+                                    portfolio, trade, and spend — all while
+                                    maintaining full self-custody and complete
+                                    transparency.
                                 </p>
                             </div>
                             <div className='relative'>
@@ -197,7 +177,8 @@ export default function Home() {
                                                 Composable & Liquid
                                             </h3>
                                             <p className='text-sm text-muted-foreground'>
-                                                Seamlessly integrate with DeFi protocols
+                                                Seamlessly integrate with DeFi
+                                                protocols
                                             </p>
                                         </div>
                                     </div>
@@ -230,7 +211,8 @@ export default function Home() {
                                 Our Products
                             </h2>
                             <p className='mx-auto mb-12 max-w-2xl text-lg text-muted-foreground'>
-                                Complete financial solutions for your onchain journey
+                                Complete financial solutions for your onchain
+                                journey
                             </p>
                         </div>
 
@@ -256,8 +238,8 @@ export default function Home() {
                                         Earn passive yield on your assets
                                     </CardTitle>
                                     <CardDescription className='text-base'>
-                                        Generate yields automatically with optimized 
-                                        DeFi Strategies
+                                        Generate yields automatically with
+                                        optimized DeFi Strategies
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -311,8 +293,8 @@ export default function Home() {
                                         Manage all your holdings in one place
                                     </CardTitle>
                                     <CardDescription className='text-base'>
-                                        Track multiple wallets and DeFi positions 
-                                        from a unified dashboard
+                                        Track multiple wallets and DeFi
+                                        positions from a unified dashboard
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -360,7 +342,7 @@ export default function Home() {
                                         Trade assets with the best prices
                                     </CardTitle>
                                     <CardDescription className='text-base'>
-                                        Access optimal liquidity through ETAswap 
+                                        Access optimal liquidity through ETAswap
                                         aggregator integration
                                     </CardDescription>
                                 </CardHeader>
@@ -379,8 +361,8 @@ export default function Home() {
                                             <CircleCheck className='h-5 w-5 text-green-500' />
                                         </div>
                                     </div>
-                                    <Button 
-                                        className='w-full' 
+                                    <Button
+                                        className='w-full'
                                         size='lg'
                                         variant='secondary'
                                         disabled
@@ -411,8 +393,8 @@ export default function Home() {
                                         Spend your crypto anywhere
                                     </CardTitle>
                                     <CardDescription className='text-base'>
-                                        Self-custodial card for seamless everyday 
-                                        spending of your onchain assets
+                                        Self-custodial card for seamless
+                                        everyday spending of your onchain assets
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -430,8 +412,8 @@ export default function Home() {
                                             <CircleCheck className='h-5 w-5 text-green-500' />
                                         </div>
                                     </div>
-                                    <Button 
-                                        className='w-full' 
+                                    <Button
+                                        className='w-full'
                                         size='lg'
                                         variant='secondary'
                                         disabled
@@ -463,14 +445,17 @@ export default function Home() {
                                     <ChevronDown className='h-5 w-5 transition-transform group-open:rotate-180' />
                                 </summary>
                                 <p className='mt-4 text-muted-foreground'>
-                                    HBank is the fully onchain, self-custodial neobank 
-                                    built on Hedera Hashgraph. We provide a complete suite 
-                                    of financial services including liquid yield tokens for 
-                                    earning passive income, a multi-wallet portfolio tracker, 
-                                    crypto swaps through aggregated liquidity, and a credit 
-                                    card for seamless spending. Unlike traditional neobanks, 
-                                    you maintain full custody of your assets with complete 
-                                    transparency and verifiability on-chain.
+                                    HBank is the fully onchain, self-custodial
+                                    neobank built on Hedera Hashgraph. We
+                                    provide a complete suite of financial
+                                    services including liquid yield tokens for
+                                    earning passive income, a multi-wallet
+                                    portfolio tracker, crypto swaps through
+                                    aggregated liquidity, and a credit card for
+                                    seamless spending. Unlike traditional
+                                    neobanks, you maintain full custody of your
+                                    assets with complete transparency and
+                                    verifiability on-chain.
                                 </p>
                             </details>
 
@@ -558,12 +543,10 @@ export default function Home() {
                         <div className='grid gap-8 grid-cols-2 md:grid-cols-4 w-full'>
                             {/* Brand */}
                             <div className='space-y-4 col-span-2 md:col-span-1 ml-4 md:ml-0'>
-                                <h3 className='text-lg font-bold'>
-                                    HBank
-                                </h3>
+                                <h3 className='text-lg font-bold'>HBank</h3>
                                 <p className='text-sm text-muted-foreground'>
-                                    Your complete onchain banking alternative 
-                                    on Hedera Hashgraph.
+                                    Your complete onchain banking alternative on
+                                    Hedera Hashgraph.
                                 </p>
                                 <div className='flex gap-4'>
                                     <Link
@@ -595,12 +578,12 @@ export default function Home() {
                                             href='/earn'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
-                                            Vault
+                                            Earn
                                         </Link>
                                     </li>
                                     <li>
                                         <Link
-                                            href='/transparency'
+                                            href='/earn/transparency'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
                                             Transparency
@@ -628,7 +611,7 @@ export default function Home() {
                                             rel='noopener noreferrer'
                                             className='text-muted-foreground transition-colors hover:text-primary'
                                         >
-                                            Documentation
+                                            Docs
                                         </Link>
                                     </li>
                                     <li>

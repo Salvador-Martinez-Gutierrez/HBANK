@@ -40,9 +40,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     logger.info('🌐 Using App URL:', appUrl)
 
     const metadata = {
-        name: 'Hbank Protocol',
+        name: 'Hbank',
         description:
-            'Hbank Protocol streamlines the emission of Liquid Yield Tokens.',
+            'The Onchain Neobank to Grow Your Wealth.',
         icons: [`${appUrl}/hbabk-logo.png`],
         url: appUrl,
     }

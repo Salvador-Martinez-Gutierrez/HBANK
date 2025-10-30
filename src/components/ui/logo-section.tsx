@@ -17,7 +17,7 @@ export function LogoSection({
       <Link href="/">
         <Image
           src={logoSrc}
-          alt="Hbank Protocol"
+          alt="Hbank"
           width={164}
           height={60}
           className="object-contain cursor-pointer"
