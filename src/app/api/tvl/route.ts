@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { HederaService } from '@/services/hederaService'
 import { createScopedLogger } from '@/lib/logger'
+import { container } from '@/core/di/container'
+import { TYPES } from '@/core/di/types'
+import { HederaBalanceService } from '@/infrastructure/hedera'
 
 const logger = createScopedLogger('api:tvl')
 
@@ -18,7 +20,8 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     try {
         logger.info('Calculating TVL from wallet balances')
 
-        const hederaService = new HederaService()
+        // Get HederaBalanceService from DI container
+        const balanceService = container.get<HederaBalanceService>(TYPES.HederaBalanceService)
         const usdcTokenId = process.env.USDC_TOKEN_ID ?? ''
 
         // Get USDC balances from the 3 wallets that hold USDC
@@ -28,17 +31,17 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
             depositsBalance,
         ] = await Promise.all([
             // Instant withdraw wallet
-            hederaService.checkBalance(
+            balanceService.checkBalance(
                 process.env.INSTANT_WITHDRAW_WALLET_ID ?? '',
                 usdcTokenId
             ),
             // Standard withdraw wallet
-            hederaService.checkBalance(
+            balanceService.checkBalance(
                 process.env.STANDARD_WITHDRAW_WALLET_ID ?? '',
                 usdcTokenId
             ),
             // Deposits wallet
-            hederaService.checkBalance(
+            balanceService.checkBalance(
                 process.env.DEPOSIT_WALLET_ID ?? '',
                 usdcTokenId
             ),
