@@ -10,10 +10,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { HederaService } from '@/services/hederaService'
 import { WithdrawService } from '@/services/withdrawService'
 import { ACCOUNTS } from '@/app/backend-constants'
 import { createScopedLogger } from '@/lib/logger'
+import { container } from '@/core/di/container'
+import { TYPES } from '@/core/di/types'
+import {
+    HederaMirrorNodeService,
+    HederaWithdrawalService,
+} from '@/infrastructure/hedera'
 
 const logger = createScopedLogger('api:withdraw:route.ts')
 
@@ -61,7 +66,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         })
 
         const withdrawService = new WithdrawService()
-        const hederaService = new HederaService()
+
+        // Get Hedera services from DI container
+        const mirrorNodeService = container.get<HederaMirrorNodeService>(TYPES.HederaMirrorNodeService)
+        const withdrawalService = container.get<HederaWithdrawalService>(TYPES.HederaWithdrawalService)
 
         // Step 1: Validate rate against latest published rate
         const isRateValid = await withdrawService.validateRate(
@@ -97,7 +105,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             since: since,
         })
 
-        const husdTransferVerified = await hederaService.verifyHUSDTransfer(
+        const husdTransferVerified = await mirrorNodeService.verifyHUSDTransfer(
             userAccountId,
             emissionsWalletId,
             amountHUSD,
@@ -135,7 +143,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
                 .substr(2, 9)}`
 
             // Create withdrawal record for HCS
-            withdrawRequestTxId = await hederaService.publishWithdrawRequest(
+            withdrawRequestTxId = await withdrawalService.publishWithdrawRequest(
                 requestId,
                 userAccountId,
                 amountHUSD,
