@@ -58,7 +58,7 @@ export default function Home() {
                                     The Onchain Neobank
                                 </span>
                                 <br />
-                                To Grow Your Wealth
+                                That Grows Your Wealth
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
                                 The Onchain Banking alternative on Hedera
