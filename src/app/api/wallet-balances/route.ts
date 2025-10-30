@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { HederaService } from '@/services/hederaService'
 import { createScopedLogger } from '@/lib/logger'
+import { container } from '@/core/di/container'
+import { TYPES } from '@/core/di/types'
+import { HederaBalanceService } from '@/infrastructure/hedera'
 
 const logger = createScopedLogger('api:wallet-balances')
 
@@ -24,7 +26,8 @@ interface WalletBalancesResponse {
 
 export async function GET(_req: NextRequest): Promise<NextResponse> {
     try {
-        const hederaService = new HederaService()
+        // Get HederaBalanceService from DI container
+        const balanceService = container.get<HederaBalanceService>(TYPES.HederaBalanceService)
 
         // Define all wallets from .env
         const wallets = [
@@ -77,7 +80,7 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
                 const hbarBalance = await getHbarBalance(wallet.id)
 
                 // Get USDC balance
-                const usdcBalance = await hederaService.checkBalance(
+                const usdcBalance = await balanceService.checkBalance(
                     wallet.id,
                     usdcTokenId
                 )
