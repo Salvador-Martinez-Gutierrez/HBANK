@@ -39,12 +39,12 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
    └─ All deposits use Hedera Scheduled Transactions requiring multi-party signatures
    └─ User must sign their transaction, server provides counter-signature
 
-✅ Rate Publishing (HCS)
+✅ Rate Publishing (HCS Topic ID: 0.0.6908395)
    └─ Exchange rates published to Hedera Consensus Service (HCS) public topic
    └─ All rate changes are immutably recorded on-chain with timestamps
    └─ Anyone can verify historical rates and calculations
 
-✅ On-Chain Withdrawal Requests
+✅ On-Chain Withdrawal Requests (HCS Topic ID: 0.0.6908400)
    └─ Standard withdrawals are published to HCS withdrawal topic
    └─ 48-hour timelock enforced on-chain before processing
    └─ Complete audit trail of all withdrawal requests/results
@@ -59,7 +59,7 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 - **Rate Management**: `HederaRateService` fetches latest rates from HCS topic, validates sequence numbers for consistency
 - **Withdrawal Processing**: `WithdrawService` publishes requests to HCS, automated cron processes after timelock
 
-### 📊 **Portfolio Tracker (/portfolio) - Multi-Wallet Asset Tracking** (TESTNET AUTH + MAINNET WALLET TRACKING)
+### 📊 **Portfolio Tracker (/portfolio) - Multi-Wallet Asset Tracking** (TESTNET + MAINNET)
 
 **What it does:**
 - Add up to 5 mainnet Hedera wallet addresses (0.0.xxxxx format)
@@ -245,221 +245,16 @@ HBANK-PROTOCOL/
 
 ---
 
-## 🔐 **Decentralization & Transparency Features**
-
-### **1. Hedera Consensus Service (HCS) - Public Audit Trail**
-
-**Rate Publishing Topic:**
-```
-Topic ID: Configured in TOPIC_ID env variable
-Purpose: Publish exchange rates (USDC/hUSD) with metadata
-Frequency: On-demand when rates change
-Message Format:
-{
-  "rate": 1.0133,
-  "totalUsd": 50000.00,
-  "husdSupply": 49343.25,
-  "timestamp": "2025-01-15T10:30:00Z",
-  "operator": "0.0.xxxxx"
-}
-
-Verifiability:
-✅ Anyone can query Mirror Node API: /topics/{TOPIC_ID}/messages
-✅ Sequence numbers prevent rate manipulation
-✅ Timestamps prove historical rate accuracy
-```
-
-**Withdrawal Request Topic:**
-```
-Topic ID: WITHDRAW_TOPIC_ID
-Purpose: Immutable withdrawal queue with timelock
-Messages:
-1. withdraw_request (user initiates)
-   - requestId, user, amountHUSD, rate, scheduleId
-   - unlockAt: timestamp (48h from request)
-
-2. withdraw_result (system processes)
-   - requestId, status (completed/failed), txId
-   - processedAt: timestamp
-
-Security:
-✅ 48-hour timelock enforced on-chain
-✅ Cannot process early (verified by Mirror Node timestamps)
-✅ Complete audit trail of all withdrawals
-```
-
-### **2. Scheduled Transactions (HTS) - No Unilateral Fund Movement**
-
-**How Deposits Work:**
-```mermaid
-sequenceDiagram
-    User->>Frontend: Click "Deposit 100 USDC"
-    Frontend->>API: POST /api/deposit/init
-    API->>Hedera: Create ScheduleTransaction
-    Note over API,Hedera: Transfer 100 USDC user→treasury<br/>Transfer 98.7 hUSD emissions→user
-    Hedera-->>API: Returns scheduleId
-    API-->>Frontend: scheduleId + transaction bytes
-    Frontend->>User Wallet: Request signature
-    User Wallet-->>Frontend: Signed transaction
-    Frontend->>API: POST /api/deposit/user-signed
-    API->>Hedera: Sign with Treasury key
-    Hedera->>Hedera: Execute atomic swap
-    Note over Hedera: ✅ Both parties signed<br/>Transaction executes
-```
-
-**Decentralization Guarantee:**
-- Server **cannot** move user funds alone (requires user signature)
-- User **cannot** mint hUSD alone (requires treasury signature)
-- Atomic execution ensures no partial failures
-
-### **3. Signature-Based Authentication - Zero-Knowledge Portfolio Access**
-
-**Portfolio Authentication Flow:**
-```typescript
-// 1. User requests authentication
-const nonce = await generateNonce(accountId) // Random 32-byte hex
-
-// 2. User signs message with their Hedera wallet
-const message = `Hbank Portfolio Auth\nNonce: ${nonce}\nAccount: ${accountId}`
-const { signature, publicKey } = await wallet.signMessage(message)
-
-// 3. Server verifies signature (no private key needed)
-import { PublicKey } from '@hashgraph/sdk'
-const pubKey = PublicKey.fromString(publicKey)
-const isValid = pubKey.verify(
-  Buffer.from(message),
-  Buffer.from(signature, 'base64')
-)
-
-// 4. Issue JWT token (short-lived, 24h expiration)
-const token = await createJWT({ accountId, userId })
-```
-
-**Why This Is Decentralized:**
-- ✅ No passwords stored in database
-- ✅ Server never sees private keys
-- ✅ Users retain full custody of credentials
-- ✅ Signature proves ownership of Hedera account
-
-### **4. Multi-Wallet Treasury System - Segregated Duties**
-
-| Wallet Type | Purpose | Private Key Held By | Transparency |
-|------------|---------|---------------------|--------------|
-| **Deposit Wallet** | Receives user USDC deposits | Backend (secured) | Balance shown on /earn/transparency |
-| **Emissions Wallet** | Distributes hUSD to users | Backend (secured) | Balance shown on /earn/transparency |
-| **Instant Withdraw Wallet** | Pays instant withdrawals (0.5% fee) | Backend (secured) | Real-time capacity display |
-| **Standard Withdraw Wallet** | Pays standard withdrawals (after 48h) | Backend (secured) | Balance shown on /earn/transparency |
-| **Treasury Wallet** | Holds user hUSD during withdrawal lock | Backend (secured) | Balance shown on /earn/transparency |
-
-**Transparency Page (/earn/transparency):**
-- Displays real-time balances of all protocol wallets
-- Shows withdrawal capacity (instant withdraw limit)
-- Links to Hedera Explorer for on-chain verification
-
----
-
-## 🚀 **Getting Started**
+## 🚀 **Testing**
 
 ### **Prerequisites**
 
-```bash
-Node.js v20+
-pnpm (recommended) or npm
+```
 Hedera Testnet Account
 Hedera Wallet: HashPack, Kabila, or Blade
-Supabase Account (for portfolio tracking)
-Validation Cloud API Key (for mainnet data)
+Testnet Hbar
+Testnet USDC
 ```
-
-### **Installation**
-
-```bash
-# Clone repository
-git clone https://github.com/Salvador-Martinez-Gutierrez/VALORA-PROTOCOL.git
-cd HBANK-PROTOCOL
-
-# Install dependencies
-pnpm install
-
-# Configure environment variables
-cp .env.example .env.local
-```
-
-### **Environment Configuration**
-
-```bash
-# ===== Hedera Network Configuration =====
-USE_REAL_TESTNET=true
-TESTNET_MIRROR_NODE_ENDPOINT=https://testnet.mirrornode.hedera.com
-
-# Hedera Operator (rate publisher, admin operations)
-OPERATOR_ID=0.0.your-operator-account
-OPERATOR_KEY=302e020100300506032b657004220420...
-
-# HCS Topics
-TOPIC_ID=0.0.rate-topic-id
-WITHDRAW_TOPIC_ID=0.0.withdraw-topic-id
-
-# ===== Token IDs =====
-USDC_TOKEN_ID=0.0.usdc-token
-HUSD_TOKEN_ID=0.0.husd-token
-
-# ===== Protocol Wallets =====
-DEPOSIT_WALLET_ID=0.0.deposit-wallet
-DEPOSIT_WALLET_KEY=302e020100300506032b657004220420...
-
-EMISSIONS_ID=0.0.emissions-wallet
-EMISSIONS_KEY=302e020100300506032b657004220420...
-
-INSTANT_WITHDRAW_WALLET_ID=0.0.instant-withdraw
-INSTANT_WITHDRAW_WALLET_KEY=302e020100300506032b657004220420...
-
-STANDARD_WITHDRAW_WALLET_ID=0.0.standard-withdraw
-STANDARD_WITHDRAW_WALLET_KEY=302e020100300506032b657004220420...
-
-TREASURY_ID=0.0.treasury-wallet
-TREASURY_KEY=302e020100300506032b657004220420...
-
-# ===== Portfolio Tracking =====
-# Validation Cloud (Hedera Mirror Node API)
-VALIDATION_CLOUD_API_KEY=your-validation-cloud-key
-VALIDATION_CLOUD_BASE_URL=https://mainnet.hedera.validationcloud.io/v1
-
-# Supabase (User data & wallet tracking)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-
-# ===== Authentication =====
-JWT_SECRET=your-secret-key-min-32-chars
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-# ===== WalletConnect =====
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-walletconnect-id
-```
-
-### **Run Development Server**
-
-```bash
-pnpm dev
-# Open http://localhost:3000
-```
-
-### **Run Tests**
-
-```bash
-# Full test suite
-pnpm test
-
-# Watch mode for TDD
-pnpm test:watch
-
-# Test Hedera integration
-pnpm test:hedera
-```
-
----
-
 ## 📖 **How It Works**
 
 ### **🏦 hUSD Vault - Deposit Flow**
@@ -562,97 +357,11 @@ pnpm test:hedera
 
 ---
 
-## 🔍 **Transparency & Verification**
-
-### **Verify Exchange Rates On-Chain**
-
-```bash
-# Query Hedera Mirror Node for rate history
-curl "https://testnet.mirrornode.hedera.com/api/v1/topics/{TOPIC_ID}/messages"
-
-# Response includes all published rates:
-[
-  {
-    "sequence_number": 42,
-    "message": "eyJyYXRlIjoxLjAxMzMsInRvdGFsVXNkIjo1MDAwMH0=",  # base64
-    "consensus_timestamp": "1705320600.123456789"
-  }
-]
-
-# Decode base64 message:
-echo "eyJyYXRlIjoxLjAxMzMsInRvdGFsVXNkIjo1MDAwMH0=" | base64 -d
-# Output: {"rate":1.0133,"totalUsd":50000,"husdSupply":49343.25}
-```
-
-### **Verify Withdrawal Requests**
-
-```bash
-# Query withdrawal topic
-curl "https://testnet.mirrornode.hedera.com/api/v1/topics/{WITHDRAW_TOPIC_ID}/messages?order=desc&limit=10"
-
-# Find your withdrawal by requestId
-# Check unlockAt timestamp (must be 48h after requestedAt)
-# Verify processedAt matches actual transaction time
-```
-
-### **Verify Treasury Balances**
-
-Visit `/earn/transparency` page to see:
-- Real-time wallet balances
-- Instant withdrawal capacity
-- Links to Hedera Explorer for each wallet
-- Last sync timestamp
-
-Or query directly:
-```bash
-curl "https://testnet.mirrornode.hedera.com/api/v1/accounts/{DEPOSIT_WALLET_ID}"
-```
-
----
-
-## 🧪 **Testing**
-
-### **Test Coverage**
-
-- **95%+ code coverage** across critical paths
-- Unit tests for all services
-- Integration tests for deposit/withdrawal flows
-- Hedera SDK mocking for deterministic tests
-
-```bash
-# Run all tests
-pnpm test
-
-# Coverage report
-pnpm test --coverage
-
-# Test specific service
-pnpm test -- hederaService.test.ts
-```
-
-### **Key Test Files**
-
-```
-__tests__/
-├── api/
-│   ├── deposit.test.ts               # Scheduled transaction flow
-│   ├── withdraw.test.ts              # HCS publishing
-│   └── withdraw/instant/index.test.ts # Fee calculation
-├── services/
-│   ├── hederaService.test.ts         # SDK wrapper methods
-│   ├── instantWithdrawService.test.ts # Capacity checks
-│   └── withdrawService.test.ts       # HCS parsing
-└── lib/
-    └── hedera-auth.test.ts           # Signature verification
-```
-
----
-
 ## 🛣️ **Roadmap**
 
 ### ✅ **Completed (Current Version)**
 
-- [x] hUSD Vault with scheduled transactions
+- [x] hUSD Vault prove of concept with scheduled transactions
 - [x] HCS rate publishing & verification
 - [x] Instant & standard withdrawals
 - [x] Multi-wallet portfolio tracking
@@ -664,55 +373,10 @@ __tests__/
 
 ### 🚀 **Coming Soon**
 
-- [ ] Mainnet deployment
-- [ ] Additional DeFi integrations (Pangolin, HeliSwap)
-- [ ] Governance token (protocol fees distribution)
-- [ ] Mobile app (React Native)
-- [ ] Advanced analytics (historical performance)
-- [ ] Multi-chain support (EVM compatibility layer)
-
----
-
-## 📊 **Current Stats** (Testnet)
-
-| Metric | Value | Status |
-|--------|-------|--------|
-| **APY** | 13.33% | 🟢 Active |
-| **TVL** | Dynamic | 📊 Real-time |
-| **Avg Deposit Time** | ~5 seconds | ⚡ Fast |
-| **Avg Withdrawal (Instant)** | ~3 seconds | ⚡ Fast |
-| **Supported Wallets** | 3 (HashPack, Kabila, Blade) | 🔗 Multi-wallet |
-| **Test Coverage** | 95%+ | ✅ High |
-
----
-
-## ⚠️ **Disclaimers**
-
-- 🧪 **Currently on Hedera Testnet** - Mainnet launch planned Q2 2025
-- ⚖️ **Investment Risks** - DeFi protocols carry inherent smart contract risks
-- 🏛️ **Regulatory Compliance** - Users must ensure compliance with local laws
-- 📚 **Not Financial Advice** - Educational purposes only
-
----
-
-## 📜 **License**
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## 📞 **Support & Community**
-
-<div align="center">
-
-|    Platform    |                                      Link                                       |       Purpose       |
-| :------------: | :-----------------------------------------------------------------------------: | :-----------------: |
-|  📖 **Docs**   |                 [GitBook](https://hbank.gitbook.io/hbank-docs/)                 | Complete guides & API |
-| 🐦 **Twitter** |               [@HbankProtocol](https://twitter.com/hbankprotocol)               | Updates & announcements |
-| 🐛 **Issues**  | [GitHub](https://github.com/Salvador-Martinez-Gutierrez/VALORA-PROTOCOL/issues) | Bug reports & features |
-
-
-</div>
+- [ ] Portfolio Tracker Mainnet deployment
+- [ ] Portfolio Tracker Integrations (Saucerswap V2, NFT prices,...)
+- [ ] Portfolio Tracker UI update
+- [ ] Trade Module
 
 ---
 
@@ -722,11 +386,11 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ⭐ **Star us on GitHub** to support decentralized finance!
 
-[🌐 Website](https://hbank.pro) | [🚀 App](https://hbank.pro/earn) | [📖 Docs](https://hbank.gitbook.io/hbank-docs/) | [🐛 Issues](https://github.com/Salvador-Martinez-Gutierrez/VALORA-PROTOCOL/issues)
+[🌐 App](https://hbank.cash) | [🚀 App](https://hbank.cas/earn) | [📖 Docs](https://hbank.gitbook.io/hbank-docs/) |
 
 ---
 
-**© 2025 Hbank Protocol. All rights reserved.**
-*Powered by Hedera Hashgraph SDK*
+**© 2025 Hbank Cash. All rights reserved.**
+*Powered by Hedera Hashgraph*
 
 </div>
