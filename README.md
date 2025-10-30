@@ -26,7 +26,7 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 
 ## ⚡ **Core Products**
 
-### 🏦 **hUSD Vault (/earn) - Liquid Yield Tokens**
+### 🏦 **hUSD Vault (/earn) - Liquid Yield Tokens** (TESTNET)
 
 **What it does:**
 - Deposit USDC and receive **hUSD** (yield-bearing asset) at current exchange rate
@@ -59,7 +59,7 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 - **Rate Management**: `HederaRateService` fetches latest rates from HCS topic, validates sequence numbers for consistency
 - **Withdrawal Processing**: `WithdrawService` publishes requests to HCS, automated cron processes after timelock
 
-### 📊 **Portfolio Tracker (/portfolio) - Multi-Wallet Asset Tracking**
+### 📊 **Portfolio Tracker (/portfolio) - Multi-Wallet Asset Tracking** (TESTNET AUTH + MAINNET WALLET TRACKING)
 
 **What it does:**
 - Add up to 5 mainnet Hedera wallet addresses (0.0.xxxxx format)
@@ -122,31 +122,6 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 |    `TopicMessageSubmitTransaction` <br/> **HCS**    | Publish rates & withdrawals to public topics |
 |         `AccountBalanceQuery` <br/> **Queries**         | Check token balances before transactions |
 |  `@buidlerlabs/hashgraph-react-wallets`   | HashPack, Kabila, Blade wallet integration |
-
-**Key Hedera SDK Services Used:**
-```typescript
-// 1. Scheduled Transactions (HTS) - Decentralized Deposits
-const transferTx = new TransferTransaction()
-  .addTokenTransfer(usdcTokenId, userAccount, -amount)
-  .addTokenTransfer(usdcTokenId, treasuryAccount, amount)
-
-const scheduleTx = new ScheduleCreateTransaction()
-  .setScheduledTransaction(transferTx)
-  .setAdminKey(treasuryKey)
-
-// 2. HCS Topic Publishing - Transparent Rate Oracle
-const message = JSON.stringify({ rate, totalUsd, husdSupply, timestamp })
-await new TopicMessageSubmitTransaction()
-  .setTopicId(RATE_TOPIC_ID)
-  .setMessage(message)
-  .execute(client)
-
-// 3. Account Signature Verification - Portfolio Auth
-const message = `Hbank Portfolio Auth\nNonce: ${nonce}\nAccount: ${accountId}`
-const signature = await signer.signMessage(message)
-const publicKey = PublicKey.fromString(accountPublicKey)
-const isValid = publicKey.verify(messageBytes, signatureBytes)
-```
 
 ### **Backend & Database**
 
