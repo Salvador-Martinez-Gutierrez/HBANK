@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
+    metadataBase: new URL(
+        process.env.NEXT_PUBLIC_APP_URL ?? 'https://hbank.cash'
+    ),
     title: 'HBank - The Onchain Neobank on Hedera',
     description:
         'Your complete onchain banking alternative on Hedera. Earn yield, track your portfolio, trade assets, and spend crypto—all self-custodial and fully transparent.',
