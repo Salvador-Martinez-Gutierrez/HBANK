@@ -10,11 +10,11 @@
 export async function register() {
     // Only initialize Sentry in Node.js runtime (server-side)
     if (process.env.NEXT_RUNTIME === 'nodejs') {
-        await import('./sentry.server.config')
+        await import('../sentry.server.config')
     }
 
     // Only initialize Sentry in Edge runtime (middleware, edge functions)
     if (process.env.NEXT_RUNTIME === 'edge') {
-        await import('./sentry.edge.config')
+        await import('../sentry.edge.config')
     }
 }
