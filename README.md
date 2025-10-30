@@ -29,7 +29,7 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 ### 🏦 **hUSD Vault (/earn) - Liquid Yield Tokens**
 
 **What it does:**
-- Deposit USDC and receive **hUSD** (yield-bearing token) at current exchange rate
+- Deposit USDC and receive **hUSD** (yield-bearing asset) at current exchange rate
 - Earn **13.33% APY** from DeFi strategy allocations (current mocked APY)
 - Withdraw anytime via **Instant (0.5% fee)** or **Standard (48h, free)** methods
 
@@ -38,9 +38,8 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 ✅ Scheduled Transactions (HTS)
    └─ All deposits use Hedera Scheduled Transactions requiring multi-party signatures
    └─ User must sign their transaction, server provides counter-signature
-   └─ No central authority can move funds unilaterally
 
-✅ HCS Rate Publishing (Transparency)
+✅ Rate Publishing (HCS)
    └─ Exchange rates published to Hedera Consensus Service (HCS) public topic
    └─ All rate changes are immutably recorded on-chain with timestamps
    └─ Anyone can verify historical rates and calculations
@@ -52,7 +51,6 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 
 ✅ Multi-Wallet Treasury System
    └─ Separate wallets for deposits, emissions, instant/standard withdrawals
-   └─ Each wallet has specific permissions (principle of least privilege)
    └─ Transparent wallet balances viewable on /earn/transparency page
 ```
 
@@ -83,7 +81,7 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
    └─ Real-time sync with mainnet state
 
 ✅ Open APIs for DeFi Data
-   └─ SaucerSwap public GraphQL API for DEX positions
+   └─ SaucerSwap public API for DEX positions
    └─ Bonzo Finance API for lending positions
    └─ Transparent third-party data sources, verifiable by anyone
 
