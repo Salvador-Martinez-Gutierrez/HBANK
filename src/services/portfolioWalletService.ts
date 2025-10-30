@@ -542,6 +542,21 @@ export async function syncWalletTokens(
             const tokenSymbol = metadata.symbol
             const decimals = metadata.decimals
 
+            // Skip HBAR token if it appears in the tokens list (HBAR is handled separately)
+            // HBAR native token should never appear here, but check just in case
+            // Also skip any token that claims to be HBAR/Hedera to avoid duplicates
+            if (
+                tokenAddress === 'HBAR' ||
+                tokenAddress === '0.0.0' ||
+                tokenSymbol === 'HBAR' ||
+                tokenName === 'Hedera'
+            ) {
+                logger.info(
+                    `⏭️ Skipping ${tokenName} (${tokenSymbol}) - HBAR is handled separately`
+                )
+                continue
+            }
+
             logger.info(
                 `📋 Token ${tokenAddress}: type="${tokenType}", name="${tokenName}", symbol="${tokenSymbol}"`
             )
@@ -1124,31 +1139,73 @@ export async function syncWalletTokens(
         logger.info(`✅ DeFi sync completed: ${defiCount} positions synced\n`)
 
         // ========================================
-        // 4. SAVE HBAR BALANCE TO WALLET
+        // 4. SAVE HBAR BALANCE TO tokens_registry and wallet_tokens
         // ========================================
-        logger.info(`💎 Updating HBAR Balance: ${hbarBalanceActual}`)
+        logger.info(
+            `💎 Updating HBAR Balance: ${hbarBalanceActual} HBAR (raw: ${hbarBalance} tinybars)`
+        )
 
         // Get HBAR price from SaucerSwap
         const hbarPriceResult = await getHbarPrice()
         const hbarPriceUsd = hbarPriceResult.priceUsd ?? 0
         logger.info(`💰 HBAR Price: $${hbarPriceUsd}`)
 
-        const { error: hbarUpdateError } = await (
-            supabaseAdmin.from('wallets').update as UpdateFunction<WalletRow>
-        )({
-            hbar_balance: hbarBalanceActual,
-            hbar_price_usd: hbarPriceUsd.toString(),
-        }).eq('id', walletId)
+        // Get or create HBAR token registry entry
+        const { data: hbarRegistry, error: hbarRegistryError } = await (
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            supabaseAdmin.from('tokens_registry').upsert as any
+        )(
+            {
+                token_address: 'HBAR',
+                token_name: 'Hedera',
+                token_symbol: 'HBAR',
+                token_icon: '/hbar.webp',
+                decimals: 8,
+                token_type: 'FUNGIBLE',
+                price_usd: hbarPriceUsd.toString(),
+                last_price_update: new Date().toISOString(),
+            },
+            {
+                onConflict: 'token_address',
+                ignoreDuplicates: false,
+            }
+        )
+            .select('id')
+            .single()
 
-        if (hbarUpdateError) {
-            logger.error('Error updating HBAR balance:', hbarUpdateError)
+        if (hbarRegistryError) {
+            logger.error('Error upserting HBAR registry:', hbarRegistryError)
         } else {
-            const hbarValueUsd = hbarBalanceActual * hbarPriceUsd
-            logger.info(
-                `✅ HBAR balance saved: ${hbarBalanceActual} HBAR (~$${hbarValueUsd.toFixed(
-                    2
-                )})`
+            // Save HBAR balance in wallet_tokens (store raw balance in tinybars, not normalized)
+            const { error: hbarWalletTokenError } = await (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                supabaseAdmin.from('wallet_tokens').upsert as any
+            )(
+                {
+                    wallet_id: walletId,
+                    token_id: hbarRegistry.id,
+                    balance: hbarBalance.toString(), // Store tinybars, not HBAR
+                    last_synced_at: new Date().toISOString(),
+                },
+                {
+                    onConflict: 'wallet_id,token_id',
+                    ignoreDuplicates: false,
+                }
             )
+
+            if (hbarWalletTokenError) {
+                logger.error(
+                    'Error updating HBAR in wallet_tokens:',
+                    hbarWalletTokenError
+                )
+            } else {
+                const hbarValueUsd = hbarBalanceActual * hbarPriceUsd
+                logger.info(
+                    `✅ HBAR balance saved: ${hbarBalanceActual} HBAR (${hbarBalance} tinybars) (~$${hbarValueUsd.toFixed(
+                        2
+                    )})`
+                )
+            }
         }
 
         logger.info(`

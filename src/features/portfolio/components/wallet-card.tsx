@@ -60,13 +60,7 @@ export function WalletCard({
     const calculateTotalValue = () => {
         let total = 0
 
-        // Add HBAR value
-        const hbarBalance = parseFloat(String(wallet.hbar_balance ?? '0'))
-        const priceUsd = wallet.hbar_price_usd
-        const hbarPrice = parseFloat(typeof priceUsd === 'number' ? priceUsd.toString() : String(priceUsd ?? '0'))
-        total += hbarBalance * hbarPrice
-
-        // Add fungible tokens value
+        // Add fungible tokens value (including HBAR which is now in wallet_tokens)
         for (const walletToken of wallet.wallet_tokens ?? []) {
             const balance = parseFloat(walletToken.balance ?? '0')
             const priceUsd = walletToken.tokens_registry?.price_usd
@@ -90,41 +84,55 @@ export function WalletCard({
     }
 
     const totalValue = calculateTotalValue()
-    const hbarBalance = parseFloat(String(wallet.hbar_balance ?? '0'))
-    const hbarPriceValue = wallet.hbar_price_usd
-    const hbarPriceUsd = parseFloat(typeof hbarPriceValue === 'number' ? hbarPriceValue.toString() : String(hbarPriceValue ?? '0'))
     const fungibleCount = wallet.wallet_tokens?.length || 0
     const defiCount = wallet.wallet_defi?.length || 0
     const nftCount = wallet.wallet_nfts?.length || 0
 
-    // Count HBAR as a token if it has balance
-    const hbarTokenCount = hbarBalance > 0 ? 1 : 0
-    const totalTokenCount = fungibleCount + hbarTokenCount
+    // Get HBAR token from wallet_tokens
+    const hbarToken = wallet.wallet_tokens?.find(
+        (wt) => wt.tokens_registry?.token_address === 'HBAR'
+    )
+    const hbarBalance = hbarToken
+        ? parseFloat(hbarToken.balance ?? '0') /
+          Math.pow(10, hbarToken.tokens_registry?.decimals ?? 8)
+        : 0
+    const hbarPriceUsd = hbarToken
+        ? parseFloat(
+              typeof hbarToken.tokens_registry?.price_usd === 'number'
+                  ? hbarToken.tokens_registry.price_usd.toString()
+                  : hbarToken.tokens_registry?.price_usd ?? '0'
+          )
+        : 0
+
+    const totalTokenCount = fungibleCount
 
     // Prepare data for AssetSections component
     const fungibleTokens = useMemo(() => {
-        const tokens = (wallet.wallet_tokens ?? []).map((wt) => {
-            const balance = wt.balance
-            const decimals = wt.tokens_registry?.decimals ?? 0
-            const price_usd = wt.tokens_registry?.price_usd ?? '0'
+        const tokens = (wallet.wallet_tokens ?? [])
+            // Filter out HBAR as it's displayed separately
+            .filter((wt) => wt.tokens_registry?.token_address !== 'HBAR')
+            .map((wt) => {
+                const balance = wt.balance
+                const decimals = wt.tokens_registry?.decimals ?? 0
+                const price_usd = wt.tokens_registry?.price_usd ?? '0'
 
-            // Calculate value in USD for sorting
-            const normalizedBalance =
-                parseFloat(balance) / Math.pow(10, decimals)
-            const valueUsd = normalizedBalance * parseFloat(price_usd)
+                // Calculate value in USD for sorting
+                const normalizedBalance =
+                    parseFloat(balance) / Math.pow(10, decimals)
+                const valueUsd = normalizedBalance * parseFloat(String(price_usd))
 
-            return {
-                id: wt.id,
-                balance: balance,
-                token_name: wt.tokens_registry?.token_name,
-                token_symbol: wt.tokens_registry?.token_symbol,
-                token_address: wt.tokens_registry?.token_address,
-                token_icon: wt.tokens_registry?.token_icon,
-                decimals: decimals,
-                price_usd: price_usd,
-                valueUsd: valueUsd,
-            }
-        })
+                return {
+                    id: wt.id,
+                    balance: balance,
+                    token_name: wt.tokens_registry?.token_name,
+                    token_symbol: wt.tokens_registry?.token_symbol,
+                    token_address: wt.tokens_registry?.token_address,
+                    token_icon: wt.tokens_registry?.token_icon,
+                    decimals: decimals,
+                    price_usd: price_usd,
+                    valueUsd: valueUsd,
+                }
+            })
 
         // Sort by USD value (descending)
         return tokens.sort((a, b) => b.valueUsd - a.valueUsd)

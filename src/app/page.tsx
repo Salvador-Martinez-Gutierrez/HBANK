@@ -82,10 +82,10 @@ export default function Home() {
                                     The Onchain Neobank
                                 </span>
                                 <br />
-                                On Hedera Hashgraph
+                                To Grow Your Wealth
                             </h1>
                             <p className='mx-auto mb-10 max-w-2xl text-lg text-muted-foreground sm:text-xl'>
-                                The all-in-one onchain banking alternative on Hedera Hashgraph. Earn, spend and manage your assets all in one place.
+                                The onchain banking alternative on Hedera Hashgraph. Earn, spend and manage your assets all in one place.
                             </p>
                             <div className='flex flex-col items-center justify-center gap-4 sm:flex-row'>
                                 <Button
@@ -257,7 +257,7 @@ export default function Home() {
                                     </CardTitle>
                                     <CardDescription className='text-base'>
                                         Generate yields automatically with optimized 
-                                        DeFistrategies
+                                        DeFi Strategies
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
