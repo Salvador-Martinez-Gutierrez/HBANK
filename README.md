@@ -380,6 +380,13 @@ Testnet USDC
 
 ---
 
+## 👥 **Team Hashgraph Certifications**
+
+- **Salva**: [Hedera Developer Certificate](https://certs.hashgraphdev.com/2cbba283-23d3-47fa-abbd-a6021c076168.pdf)
+- **Sergio**: [Hedera Developer Certificate](https://certs.hashgraphdev.com/9b560c43-72ee-4b15-ba21-769b2a9f59f6.pdf)
+
+---
+
 <div align="center">
 
 ### **🏦 Built with Transparency on Hedera Hashgraph**
