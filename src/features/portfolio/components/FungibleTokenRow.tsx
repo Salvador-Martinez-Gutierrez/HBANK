@@ -4,6 +4,7 @@
  * Displays a single fungible token with icon, balance, and USD value.
  */
 
+import Image from 'next/image'
 import type { TokenDisplay } from '@/features/portfolio/types/portfolio-display'
 
 interface FungibleTokenRowProps {
@@ -22,12 +23,14 @@ export function FungibleTokenRow({
     const valueUsd = parseFloat(balance) * priceUsd
 
     return (
-        <div className='flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors'>
+        <div className='flex items-center justify-between p-3 rounded-lg bg-muted/50 transition-colors'>
             <div className='flex items-center gap-3'>
                 {token.token_icon ? (
-                    <img
+                    <Image
                         src={token.token_icon}
                         alt={token.token_symbol ?? 'Token'}
+                        width={32}
+                        height={32}
                         className='w-8 h-8 rounded-full'
                         onError={(e) => {
                             e.currentTarget.style.display = 'none'

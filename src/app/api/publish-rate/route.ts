@@ -32,7 +32,11 @@
 
 import { NextRequest } from 'next/server'
 import { withAPIWrapper, validateRequestBody } from '@/lib/api-wrapper'
-import { getHederaRateService, getEventBus, getCacheService } from '@/lib/di-helpers'
+import {
+    getHederaRateService,
+    getEventBus,
+    getCacheService,
+} from '@/lib/di-helpers'
 import { RatePublished } from '@/domain/events/RateEvents'
 import { CacheKeyBuilder } from '@/infrastructure/cache'
 
@@ -45,18 +49,21 @@ interface PublishRateRequest {
 export const POST = withAPIWrapper(
     async (request: NextRequest) => {
         // Validate request body
-        const validation = await validateRequestBody<PublishRateRequest>(request, [
-            'rate',
-            'totalUsd',
-            'husdSupply',
-        ])
+        const validation = await validateRequestBody<PublishRateRequest>(
+            request,
+            ['rate', 'totalUsd', 'husdSupply']
+        )
 
         if ('error' in validation) return validation.error
 
         const { rate, totalUsd, husdSupply } = validation.body
 
         // Additional validation
-        if (typeof rate !== 'number' || typeof totalUsd !== 'number' || typeof husdSupply !== 'number') {
+        if (
+            typeof rate !== 'number' ||
+            typeof totalUsd !== 'number' ||
+            typeof husdSupply !== 'number'
+        ) {
             throw new Error('rate, totalUsd, and husdSupply must be numbers')
         }
 
@@ -84,7 +91,7 @@ export const POST = withAPIWrapper(
             new RatePublished(
                 result.transactionId, // rateId (use transaction ID as unique identifier)
                 result.rate,
-                result.sequenceNumber || '',
+                result.sequenceNumber ?? '',
                 totalUsd,
                 husdSupply,
                 result.topicId,

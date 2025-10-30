@@ -39,18 +39,20 @@ export class RedisCacheService extends BaseCacheService {
     constructor(config: RedisCacheConfig = {}) {
         super()
 
-        this.keyPrefix = config.keyPrefix || 'hbank:'
+        this.keyPrefix = config.keyPrefix ?? 'hbank:'
 
         const redisOptions: RedisOptions = {
-            host: config.host || process.env.REDIS_HOST || 'localhost',
-            port: config.port || parseInt(process.env.REDIS_PORT || '6379'),
-            password: config.password || process.env.REDIS_PASSWORD,
-            db: config.db || parseInt(process.env.REDIS_DB || '0'),
-            maxRetriesPerRequest: config.maxRetries || 3,
+            host: config.host ?? process.env.REDIS_HOST ?? 'localhost',
+            port: config.port ?? parseInt(process.env.REDIS_PORT ?? '6379'),
+            password: config.password ?? process.env.REDIS_PASSWORD,
+            db: config.db ?? parseInt(process.env.REDIS_DB ?? '0'),
+            maxRetriesPerRequest: config.maxRetries ?? 3,
             enableOfflineQueue: config.enableOfflineQueue ?? true,
             retryStrategy: (times: number) => {
                 const delay = Math.min(times * 50, 2000)
-                logger.warn(`Retrying Redis connection attempt ${times}`, { delay })
+                logger.warn(`Retrying Redis connection attempt ${times}`, {
+                    delay,
+                })
                 return delay
             },
         }
@@ -168,7 +170,10 @@ export class RedisCacheService extends BaseCacheService {
             if (keys.length > 0) {
                 await this.redis.del(...keys)
                 this.recordDelete()
-                logger.debug('Cache pattern delete', { pattern, count: keys.length })
+                logger.debug('Cache pattern delete', {
+                    pattern,
+                    count: keys.length,
+                })
             }
         } catch (error) {
             this.recordError()

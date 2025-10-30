@@ -11,7 +11,6 @@ import type {
     WalletDefiWithMetadata,
 } from '@/types/portfolio'
 import { Coins, Loader2 } from 'lucide-react'
-import { logger } from '@/lib/logger'
 
 interface TokenDisplay {
     id: string
@@ -146,14 +145,6 @@ export function AggregatedPortfolioView({
                 })
             }
         }
-
-        logger.info('🔍 Aggregated Assets Debug:', {
-            totalHbar,
-            fungibleCount: fungibleMap.size,
-            defiCount: defiList.length,
-            nftCount: nftList.length,
-            totalValue,
-        })
 
         // Convert maps to arrays and sort by USD value
         const fungibleTokens = Array.from(fungibleMap.values()).map((token) => {

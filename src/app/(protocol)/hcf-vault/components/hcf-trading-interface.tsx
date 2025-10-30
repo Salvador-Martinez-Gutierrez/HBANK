@@ -26,7 +26,6 @@ import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { formatCurrency } from '@/lib/formatters'
 import { logger } from '@/lib/logger'
 
-
 export function HCFTradingInterface() {
     // State management
     const [activeTab, setActiveTab] = useState<'mint' | 'redeem' | 'history'>(
@@ -48,11 +47,11 @@ export function HCFTradingInterface() {
 
     // Fixed 1:1 rate for HCF Vault
     const FIXED_RATE = 1.0
-    const rateData = { 
-        rate: FIXED_RATE, 
+    const rateData = {
+        rate: FIXED_RATE,
         timestamp: new Date().toISOString(),
         sequenceNumber: '0',
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
     }
 
     // Instant withdrawal hook for checking limits
@@ -68,7 +67,7 @@ export function HCFTradingInterface() {
             refreshBalances(),
             refreshMaxAmount(),
             // Also trigger global refresh for other components
-            (() => refreshInstantWithdrawMax())(),
+            (async () => refreshInstantWithdrawMax())(),
         ])
     }
 
@@ -156,7 +155,9 @@ export function HCFTradingInterface() {
                         tokenSymbol={fromToken}
                         tokenIcon={fromIcon}
                         usdValue={getUsdValue(fromAmount)}
-                        balance={balances[fromToken as keyof typeof balances] || '0'}
+                        balance={
+                            balances[fromToken as keyof typeof balances] || '0'
+                        }
                         showBalance={isConnected}
                         isLoadingBalance={balancesLoading}
                     />
@@ -176,7 +177,9 @@ export function HCFTradingInterface() {
                         tokenSymbol={toToken}
                         tokenIcon={toIcon}
                         usdValue={getUsdValue(toAmount)}
-                        balance={balances[toToken as keyof typeof balances] || '0'}
+                        balance={
+                            balances[toToken as keyof typeof balances] || '0'
+                        }
                         showBalance={isConnected}
                         isLoadingBalance={balancesLoading}
                     />
@@ -228,7 +231,7 @@ export function HCFTradingInterface() {
             )}
 
             {/* Transaction Details */}
-            <TransactionDetails exchangeRate={FIXED_RATE} tokenSymbol="fUSD" />
+            <TransactionDetails exchangeRate={FIXED_RATE} tokenSymbol='fUSD' />
         </div>
     )
 

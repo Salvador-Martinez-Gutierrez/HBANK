@@ -57,7 +57,7 @@ export const GET = withAPIWrapper(
         }
 
         // Store in cache for 5 minutes (300 seconds)
-        const ttl = parseInt(process.env.CACHE_TTL_RATE || '300', 10)
+        const ttl = parseInt(process.env.CACHE_TTL_RATE ?? '300', 10)
         await cacheService.set(cacheKey, response, ttl)
 
         return response

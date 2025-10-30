@@ -60,7 +60,6 @@ export function DefiPositionsTab({
                     logo='/saucer_swap.webp'
                     positions={pools}
                     formatUsd={formatUsd}
-                    color='blue'
                 />
             )}
 
@@ -71,7 +70,6 @@ export function DefiPositionsTab({
                     logo='/saucer_swap.webp'
                     positions={farms}
                     formatUsd={formatUsd}
-                    color='green'
                 />
             )}
 
@@ -91,33 +89,9 @@ interface DefiProtocolSectionProps {
     logo: string
     positions: WalletDefiWithMetadata[]
     formatUsd: (value: number) => string
-    color: 'blue' | 'green'
 }
 
-type ColorClasses = {
-    text: string
-    bg: string
-    border: string
-    hover: string
-}
-
-function getColorClasses(color: 'blue' | 'green'): ColorClasses {
-    const colorClasses = {
-        blue: {
-            text: 'text-blue-500',
-            bg: 'bg-blue-500/5',
-            border: 'border-blue-500/20',
-            hover: 'hover:bg-blue-500/5',
-        },
-        green: {
-            text: 'text-green-500',
-            bg: 'bg-green-500/5',
-            border: 'border-green-500/20',
-            hover: 'hover:bg-green-500/5',
-        },
-    }
-    return colorClasses[color]
-}
+// Removed color classes - using standard styles to match main branch
 
 function BonzoLendingSection({
     positions,
@@ -203,11 +177,9 @@ function BonzoLendingSection({
 
 function PoolPositionRow({
     position,
-    colors,
     formatUsd,
 }: {
     position: WalletDefiWithMetadata
-    colors: ColorClasses
     formatUsd: (value: number) => string
 }) {
     const valueUsd = parseFloat(position.value_usd ?? '0')
@@ -221,7 +193,7 @@ function PoolPositionRow({
     const token1Amount = metadata?.token1Amount as string | undefined
 
     return (
-        <TableRow key={position.id} className={colors.hover}>
+        <TableRow key={position.id}>
             <TableCell className='font-medium'>
                 {poolName ?? `${token0Symbol ?? '?'}/${token1Symbol ?? '?'}`}
             </TableCell>
@@ -251,10 +223,7 @@ function DefiProtocolSection({
     logo,
     positions,
     formatUsd,
-    color,
 }: DefiProtocolSectionProps) {
-    const colors = getColorClasses(color)
-
     return (
         <div>
             <div className='flex items-center gap-3 mb-4'>
@@ -265,24 +234,18 @@ function DefiProtocolSection({
                     height={24}
                     className='rounded'
                 />
-                <h3 className={`font-bold text-lg ${colors.text}`}>{title}</h3>
+                <h3 className='font-bold text-lg'>{title}</h3>
                 <Badge variant='secondary' className='ml-auto'>
                     {positions.length}
                 </Badge>
             </div>
-            <div
-                className={`rounded-lg border ${colors.border} overflow-hidden`}
-            >
+            <div className='rounded-lg border border-border overflow-hidden'>
                 <Table>
                     <TableHeader>
-                        <TableRow className={`${colors.bg} ${colors.hover}`}>
-                            <TableHead className={colors.text}>Pool</TableHead>
-                            <TableHead className={colors.text}>
-                                Supplied
-                            </TableHead>
-                            <TableHead className={`${colors.text} text-right`}>
-                                Value
-                            </TableHead>
+                        <TableRow className='bg-muted/50'>
+                            <TableHead>Pool</TableHead>
+                            <TableHead>Supplied</TableHead>
+                            <TableHead className='text-right'>Value</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -290,7 +253,6 @@ function DefiProtocolSection({
                             <PoolPositionRow
                                 key={position.id}
                                 position={position}
-                                colors={colors}
                                 formatUsd={formatUsd}
                             />
                         ))}

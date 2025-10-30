@@ -4,6 +4,7 @@
  * Displays NFTs in a responsive grid layout with images and metadata.
  */
 
+import Image from 'next/image'
 import { ImageIcon } from 'lucide-react'
 import type { NFTDisplay } from '@/features/portfolio/types/portfolio-display'
 
@@ -39,9 +40,7 @@ interface NftCardProps {
 function NftCard({ nft }: NftCardProps) {
     const nftMeta = (nft.metadata ?? {}) as Record<string, unknown>
     const nftImage =
-        nft.token_icon ??
-        (nftMeta.image ? String(nftMeta.image) : null) ??
-        null
+        nft.token_icon ?? (nftMeta.image ? String(nftMeta.image) : null) ?? null
     const nftName =
         nft.token_name ??
         (nftMeta.name ? String(nftMeta.name) : null) ??
@@ -51,19 +50,20 @@ function NftCard({ nft }: NftCardProps) {
         <div className='group relative rounded-lg overflow-hidden bg-muted/50 hover:bg-muted transition-all border border-border/50 hover:border-border'>
             {nftImage ? (
                 <div className='aspect-square relative'>
-                    <img
+                    <Image
                         src={nftImage}
                         alt={nftName}
-                        className='w-full h-full object-cover'
+                        fill
+                        className='object-cover'
                         onError={(e) => {
                             e.currentTarget.src = ''
                             e.currentTarget.className =
-                                'w-full h-full bg-gradient-to-br from-purple-500/20 to-pink-500/20'
+                                'w-full h-full bg-gradient-to-br from-blue-500/20 to-zinc-500/20'
                         }}
                     />
                 </div>
             ) : (
-                <div className='aspect-square bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center'>
+                <div className='aspect-square bg-gradient-to-br from-blue-500/20 to-zinc-500/20 flex items-center justify-center'>
                     <ImageIcon className='w-12 h-12 text-muted-foreground/50' />
                 </div>
             )}

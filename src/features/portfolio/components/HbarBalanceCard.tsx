@@ -21,7 +21,7 @@ export function HbarBalanceCard({
     const valueUsd = balance * priceUsd
 
     return (
-        <div className='flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 hover:from-purple-500/15 hover:to-blue-500/15 transition-colors'>
+        <div className='flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-blue-500/20 to-zinc-500/20 transition-colors'>
             <div className='flex items-center gap-3'>
                 <div className='w-8 h-8 rounded-full flex items-center justify-center'>
                     <Image

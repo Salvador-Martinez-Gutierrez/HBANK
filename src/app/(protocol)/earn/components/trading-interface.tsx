@@ -27,7 +27,6 @@ import { INSTANT_WITHDRAW_FEE } from '@/app/constants'
 import { formatCurrency } from '@/lib/formatters'
 import { logger } from '@/lib/logger'
 
-
 export function TradingInterface() {
     // State management
     const [activeTab, setActiveTab] = useState<'mint' | 'redeem' | 'history'>(
@@ -63,7 +62,7 @@ export function TradingInterface() {
             refreshBalances(),
             refreshMaxAmount(),
             // Also trigger global refresh for other components
-            (() => refreshInstantWithdrawMax())(),
+            (async () => refreshInstantWithdrawMax())(),
         ])
     }
 
