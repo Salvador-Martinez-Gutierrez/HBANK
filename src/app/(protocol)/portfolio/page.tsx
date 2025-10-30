@@ -43,7 +43,6 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { logger } from '@/lib/logger'
 
-
 export default function PortfolioPage() {
     const { isConnected } = useWallet()
     const accountId = useAccountId()
@@ -539,8 +538,12 @@ export default function PortfolioPage() {
                                     cooldownRemainingTime={formatRemainingTime(
                                         getWalletRemainingTime(wallet.id)
                                     )}
-                                    onSync={(id, address) => void handleSyncWallet(id, address)}
-                                    onDelete={(id) => void handleDeleteWallet(id)}
+                                    onSync={(id, address) =>
+                                        void handleSyncWallet(id, address)
+                                    }
+                                    onDelete={(id) =>
+                                        void handleDeleteWallet(id)
+                                    }
                                     onToggleCollapse={() =>
                                         toggleWalletCollapsed(wallet.id)
                                     }

@@ -13,13 +13,10 @@ import { createScopedLogger } from '@/lib/logger'
 
 const logger = createScopedLogger('service:portfolioWalletService')
 
-
 /**
  * Supabase operation types
  */
-type InsertFunction<T> = (
-    values: T
-) => {
+type InsertFunction<T> = (values: T) => {
     select: () => {
         single: () => Promise<{
             data: T | null
@@ -44,10 +41,11 @@ type UpsertFunction<T> = (
     }
 }
 
-type UpdateFunction<T> = (
-    values: Partial<T>
-) => {
-    eq: (column: string, value: string | number) => Promise<{
+type UpdateFunction<T> = (values: Partial<T>) => {
+    eq: (
+        column: string,
+        value: string | number
+    ) => Promise<{
         error: { message: string } | null
     }>
 }
@@ -271,7 +269,9 @@ export async function addWallet(
  */
 export async function updateWalletLabel(walletId: string, label: string) {
     try {
-        const { error } = await (supabaseAdmin.from('wallets').update as UpdateFunction<WalletRow>)({
+        const { error } = await (
+            supabaseAdmin.from('wallets').update as UpdateFunction<WalletRow>
+        )({
             label,
         }).eq('id', walletId)
 
@@ -615,7 +615,8 @@ export async function syncWalletTokens(
                 // Upsert NFT token in registry
                 // Force update to ensure we always have the latest image
                 const { data: registryToken, error: registryError } = await (
-                    supabaseAdmin.from('tokens_registry').upsert as UpsertFunction<TokenRegistryRow>
+                    supabaseAdmin.from('tokens_registry')
+                        .upsert as UpsertFunction<TokenRegistryRow>
                 )(
                     {
                         token_address: tokenAddress,
@@ -682,7 +683,8 @@ export async function syncWalletTokens(
 
                 // Upsert token in registry
                 const { data: registryToken, error: registryError } = await (
-                    supabaseAdmin.from('tokens_registry').upsert as UpsertFunction<TokenRegistryRow>
+                    supabaseAdmin.from('tokens_registry')
+                        .upsert as UpsertFunction<TokenRegistryRow>
                 )(
                     {
                         token_address: tokenAddress,
@@ -785,10 +787,12 @@ export async function syncWalletTokens(
 
         // 5a. SaucerSwap V1 Pools (from LP tokens already processed)
         logger.info(`\n🔵 Syncing SaucerSwap V1 Pools...`)
-        const lpTokens = activeTokens.filter((token: Record<string, unknown>) => {
-            const metadata = tokenMetadataMap.get(token.token_id as string)
-            return metadata && isLpToken(metadata.name)
-        })
+        const lpTokens = activeTokens.filter(
+            (token: Record<string, unknown>) => {
+                const metadata = tokenMetadataMap.get(token.token_id as string)
+                return metadata && isLpToken(metadata.name)
+            }
+        )
 
         for (const lpToken of lpTokens) {
             const tokenAddress = lpToken.token_id
@@ -810,7 +814,8 @@ export async function syncWalletTokens(
                     // Get or create token registry entry for this LP token
                     const { data: registryToken, error: registryError } =
                         await (
-                            supabaseAdmin.from('tokens_registry').upsert as UpsertFunction<TokenRegistryRow>
+                            supabaseAdmin.from('tokens_registry')
+                                .upsert as UpsertFunction<TokenRegistryRow>
                         )(
                             {
                                 token_address: tokenAddress,
@@ -879,14 +884,16 @@ export async function syncWalletTokens(
                                         symbol: lpData.tokenA.symbol,
                                         priceUsd: lpData.tokenA.priceUsd,
                                         decimals: tokenADecimals,
-                                        userAmount: userTokenADisplay.toString(),
+                                        userAmount:
+                                            userTokenADisplay.toString(),
                                     },
                                     tokenB: {
                                         id: lpData.tokenB.id,
                                         symbol: lpData.tokenB.symbol,
                                         priceUsd: lpData.tokenB.priceUsd,
                                         decimals: tokenBDecimals,
-                                        userAmount: userTokenBDisplay.toString(),
+                                        userAmount:
+                                            userTokenBDisplay.toString(),
                                     },
                                 },
                                 last_synced_at: new Date().toISOString(),
@@ -939,7 +946,8 @@ export async function syncWalletTokens(
                     // Get or create token registry entry
                     const { data: registryToken, error: registryError } =
                         await (
-                            supabaseAdmin.from('tokens_registry').upsert as UpsertFunction<TokenRegistryRow>
+                            supabaseAdmin.from('tokens_registry')
+                                .upsert as UpsertFunction<TokenRegistryRow>
                         )(
                             {
                                 token_address: lpData.lpToken.id,
@@ -1010,14 +1018,16 @@ export async function syncWalletTokens(
                                         symbol: lpData.tokenA.symbol,
                                         priceUsd: lpData.tokenA.priceUsd,
                                         decimals: tokenADecimals,
-                                        userAmount: userTokenADisplay.toString(),
+                                        userAmount:
+                                            userTokenADisplay.toString(),
                                     },
                                     tokenB: {
                                         id: lpData.tokenB.id,
                                         symbol: lpData.tokenB.symbol,
                                         priceUsd: lpData.tokenB.priceUsd,
                                         decimals: tokenBDecimals,
-                                        userAmount: userTokenBDisplay.toString(),
+                                        userAmount:
+                                            userTokenBDisplay.toString(),
                                     },
                                 },
                                 last_synced_at: new Date().toISOString(),
@@ -1107,7 +1117,8 @@ export async function syncWalletTokens(
                                     last_synced_at: new Date().toISOString(),
                                 },
                                 {
-                                    onConflict: 'wallet_id,position_type,token_id',
+                                    onConflict:
+                                        'wallet_id,position_type,token_id',
                                 }
                             )
 
@@ -1151,47 +1162,45 @@ export async function syncWalletTokens(
         logger.info(`💰 HBAR Price: $${hbarPriceUsd}`)
 
         // Get or create HBAR token registry entry
-        const { data: hbarRegistry, error: hbarRegistryError } = await (
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            supabaseAdmin.from('tokens_registry').upsert as any
-        )(
-            {
-                token_address: 'HBAR',
-                token_name: 'Hedera',
-                token_symbol: 'HBAR',
-                token_icon: '/hbar.webp',
-                decimals: 8,
-                token_type: 'FUNGIBLE',
-                price_usd: hbarPriceUsd.toString(),
-                last_price_update: new Date().toISOString(),
-            },
-            {
-                onConflict: 'token_address',
-                ignoreDuplicates: false,
-            }
-        )
-            .select('id')
-            .single()
+        const { data: hbarRegistry, error: hbarRegistryError } =
+            await // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (supabaseAdmin.from('tokens_registry').upsert as any)(
+                {
+                    token_address: 'HBAR',
+                    token_name: 'Hedera',
+                    token_symbol: 'HBAR',
+                    token_icon: '/hbar.webp',
+                    decimals: 8,
+                    token_type: 'FUNGIBLE',
+                    price_usd: hbarPriceUsd.toString(),
+                    last_price_update: new Date().toISOString(),
+                },
+                {
+                    onConflict: 'token_address',
+                    ignoreDuplicates: false,
+                }
+            )
+                .select('id')
+                .single()
 
         if (hbarRegistryError) {
             logger.error('Error upserting HBAR registry:', hbarRegistryError)
         } else {
             // Save HBAR balance in wallet_tokens (store raw balance in tinybars, not normalized)
-            const { error: hbarWalletTokenError } = await (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                supabaseAdmin.from('wallet_tokens').upsert as any
-            )(
-                {
-                    wallet_id: walletId,
-                    token_id: hbarRegistry.id,
-                    balance: hbarBalance.toString(), // Store tinybars, not HBAR
-                    last_synced_at: new Date().toISOString(),
-                },
-                {
-                    onConflict: 'wallet_id,token_id',
-                    ignoreDuplicates: false,
-                }
-            )
+            const { error: hbarWalletTokenError } =
+                await // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (supabaseAdmin.from('wallet_tokens').upsert as any)(
+                    {
+                        wallet_id: walletId,
+                        token_id: hbarRegistry.id,
+                        balance: hbarBalance.toString(), // Store tinybars, not HBAR
+                        last_synced_at: new Date().toISOString(),
+                    },
+                    {
+                        onConflict: 'wallet_id,token_id',
+                        ignoreDuplicates: false,
+                    }
+                )
 
             if (hbarWalletTokenError) {
                 logger.error(
@@ -1365,7 +1374,9 @@ export async function updateTokenMetadata(
             decimals?: number
         }
 
-        const { error } = await (supabaseAdmin.from('tokens').update as UpdateFunction<TokenRow>)({
+        const { error } = await (
+            supabaseAdmin.from('tokens').update as UpdateFunction<TokenRow>
+        )({
             token_name: metadataResult.metadata.name,
             token_symbol: metadataResult.metadata.symbol,
             decimals: metadataResult.metadata.decimals,

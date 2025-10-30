@@ -92,7 +92,14 @@ export const withAuthRoute = <TPayload>(
             if (req.method !== 'GET' && req.method !== 'DELETE') {
                 try {
                     const contentType = req.headers.get('content-type')
-                    if (contentType?.includes('application/json')) {
+                    const contentLength = req.headers.get('content-length')
+
+                    // Only attempt to parse JSON if there's actually content
+                    if (
+                        contentType?.includes('application/json') &&
+                        contentLength &&
+                        parseInt(contentLength) > 0
+                    ) {
                         body = (await req.json()) as TPayload
                     }
                 } catch (error) {

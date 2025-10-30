@@ -1,8 +1,10 @@
 /**
  * DeFi Positions Tab Component
  *
- * Displays all DeFi positions (LP pools, farms, staking) across protocols.
- * Currently supports SaucerSwap V1 pools and farms.
+ * Displays all DeFi positions (LP pools, farms, lending) across protocols.
+ * Currently supports:
+ * - SaucerSwap V1 pools and farms
+ * - Bonzo Finance lending positions
  */
 
 import Image from 'next/image'
@@ -45,6 +47,9 @@ export function DefiPositionsTab({
     const farms = defiPositions.filter(
         (p) => p.position_type === 'SAUCERSWAP_V1_FARM'
     )
+    const bonzoLending = defiPositions.filter(
+        (p) => p.position_type === 'BONZO_LENDING'
+    )
 
     return (
         <div className='space-y-6'>
@@ -69,6 +74,14 @@ export function DefiPositionsTab({
                     color='green'
                 />
             )}
+
+            {/* Bonzo Finance Lending */}
+            {bonzoLending.length > 0 && (
+                <BonzoLendingSection
+                    positions={bonzoLending}
+                    formatUsd={formatUsd}
+                />
+            )}
         </div>
     )
 }
@@ -78,16 +91,17 @@ interface DefiProtocolSectionProps {
     logo: string
     positions: WalletDefiWithMetadata[]
     formatUsd: (value: number) => string
-    color: 'blue' | 'green' | 'purple'
+    color: 'blue' | 'green'
 }
 
-function DefiProtocolSection({
-    title,
-    logo,
-    positions,
-    formatUsd,
-    color,
-}: DefiProtocolSectionProps) {
+type ColorClasses = {
+    text: string
+    bg: string
+    border: string
+    hover: string
+}
+
+function getColorClasses(color: 'blue' | 'green'): ColorClasses {
     const colorClasses = {
         blue: {
             text: 'text-blue-500',
@@ -101,15 +115,145 @@ function DefiProtocolSection({
             border: 'border-green-500/20',
             hover: 'hover:bg-green-500/5',
         },
-        purple: {
-            text: 'text-purple-500',
-            bg: 'bg-purple-500/5',
-            border: 'border-purple-500/20',
-            hover: 'hover:bg-purple-500/5',
-        },
     }
+    return colorClasses[color]
+}
 
-    const colors = colorClasses[color]
+function BonzoLendingSection({
+    positions,
+    formatUsd,
+}: {
+    positions: WalletDefiWithMetadata[]
+    formatUsd: (value: number) => string
+}) {
+    return (
+        <div>
+            <div className='flex items-center gap-3 mb-4'>
+                <Image
+                    src='/bonzo.jpg'
+                    alt='Bonzo Finance'
+                    width={24}
+                    height={24}
+                    className='rounded'
+                />
+                <h3 className='font-bold text-lg'>Bonzo Finance</h3>
+                <Badge variant='secondary' className='ml-auto'>
+                    {positions.length}
+                </Badge>
+            </div>
+            <div className='rounded-lg border border-border overflow-hidden'>
+                <Table>
+                    <TableHeader>
+                        <TableRow className='bg-muted/50'>
+                            <TableHead>Asset</TableHead>
+                            <TableHead>Supplied</TableHead>
+                            <TableHead>APY</TableHead>
+                            <TableHead className='text-right'>Value</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {positions.map((position) => {
+                            const valueUsd = parseFloat(
+                                position.value_usd ?? '0'
+                            )
+                            const metadata = position.defi_metadata as
+                                | Record<string, unknown>
+                                | undefined
+                            const asset = metadata?.asset as string | undefined
+                            const apy = metadata?.apy as number | undefined
+
+                            return (
+                                <TableRow key={position.id}>
+                                    <TableCell className='font-medium'>
+                                        {asset ??
+                                            position.tokens_registry
+                                                ?.token_symbol ??
+                                            'Unknown Asset'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className='text-sm'>
+                                            {parseFloat(
+                                                position.balance ?? '0'
+                                            ).toFixed(4)}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell>
+                                        {apy ? (
+                                            <span className='text-sm'>
+                                                {apy.toFixed(2)}%
+                                            </span>
+                                        ) : (
+                                            <span className='text-sm text-muted-foreground'>
+                                                -
+                                            </span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className='text-right font-medium'>
+                                        {formatUsd(valueUsd)}
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
+            </div>
+        </div>
+    )
+}
+
+function PoolPositionRow({
+    position,
+    colors,
+    formatUsd,
+}: {
+    position: WalletDefiWithMetadata
+    colors: ColorClasses
+    formatUsd: (value: number) => string
+}) {
+    const valueUsd = parseFloat(position.value_usd ?? '0')
+    const metadata = position.defi_metadata as
+        | Record<string, unknown>
+        | undefined
+    const poolName = metadata?.poolName as string | undefined
+    const token0Symbol = metadata?.token0Symbol as string | undefined
+    const token1Symbol = metadata?.token1Symbol as string | undefined
+    const token0Amount = metadata?.token0Amount as string | undefined
+    const token1Amount = metadata?.token1Amount as string | undefined
+
+    return (
+        <TableRow key={position.id} className={colors.hover}>
+            <TableCell className='font-medium'>
+                {poolName ?? `${token0Symbol ?? '?'}/${token1Symbol ?? '?'}`}
+            </TableCell>
+            <TableCell>
+                {token0Amount && token1Amount ? (
+                    <div className='text-sm'>
+                        <div>
+                            {parseFloat(token0Amount).toFixed(2)} {token0Symbol}
+                        </div>
+                        <div className='text-muted-foreground'>
+                            {parseFloat(token1Amount).toFixed(2)} {token1Symbol}
+                        </div>
+                    </div>
+                ) : (
+                    <span className='text-muted-foreground'>-</span>
+                )}
+            </TableCell>
+            <TableCell className='text-right font-medium'>
+                {formatUsd(valueUsd)}
+            </TableCell>
+        </TableRow>
+    )
+}
+
+function DefiProtocolSection({
+    title,
+    logo,
+    positions,
+    formatUsd,
+    color,
+}: DefiProtocolSectionProps) {
+    const colors = getColorClasses(color)
 
     return (
         <div>
@@ -126,7 +270,9 @@ function DefiProtocolSection({
                     {positions.length}
                 </Badge>
             </div>
-            <div className={`rounded-lg border ${colors.border} overflow-hidden`}>
+            <div
+                className={`rounded-lg border ${colors.border} overflow-hidden`}
+            >
                 <Table>
                     <TableHeader>
                         <TableRow className={`${colors.bg} ${colors.hover}`}>
@@ -140,66 +286,14 @@ function DefiProtocolSection({
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {positions.map((position) => {
-                            const valueUsd = parseFloat(
-                                position.value_usd ?? '0'
-                            )
-                            const metadata = position.defi_metadata as
-                                | Record<string, unknown>
-                                | undefined
-                            const poolName = metadata?.poolName as
-                                | string
-                                | undefined
-                            const token0Symbol = metadata?.token0Symbol as
-                                | string
-                                | undefined
-                            const token1Symbol = metadata?.token1Symbol as
-                                | string
-                                | undefined
-                            const token0Amount = metadata?.token0Amount as
-                                | string
-                                | undefined
-                            const token1Amount = metadata?.token1Amount as
-                                | string
-                                | undefined
-
-                            return (
-                                <TableRow
-                                    key={position.id}
-                                    className={colors.hover}
-                                >
-                                    <TableCell className='font-medium'>
-                                        {poolName ??
-                                            `${token0Symbol ?? '?'}/${token1Symbol ?? '?'}`}
-                                    </TableCell>
-                                    <TableCell>
-                                        {token0Amount && token1Amount ? (
-                                            <div className='text-sm'>
-                                                <div>
-                                                    {parseFloat(
-                                                        token0Amount
-                                                    ).toFixed(2)}{' '}
-                                                    {token0Symbol}
-                                                </div>
-                                                <div className='text-muted-foreground'>
-                                                    {parseFloat(
-                                                        token1Amount
-                                                    ).toFixed(2)}{' '}
-                                                    {token1Symbol}
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <span className='text-muted-foreground'>
-                                                -
-                                            </span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className='text-right font-medium'>
-                                        {formatUsd(valueUsd)}
-                                    </TableCell>
-                                </TableRow>
-                            )
-                        })}
+                        {positions.map((position) => (
+                            <PoolPositionRow
+                                key={position.id}
+                                position={position}
+                                colors={colors}
+                                formatUsd={formatUsd}
+                            />
+                        ))}
                     </TableBody>
                 </Table>
             </div>

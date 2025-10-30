@@ -119,7 +119,8 @@ export function WalletCard({
                 // Calculate value in USD for sorting
                 const normalizedBalance =
                     parseFloat(balance) / Math.pow(10, decimals)
-                const valueUsd = normalizedBalance * parseFloat(String(price_usd))
+                const valueUsd =
+                    normalizedBalance * parseFloat(String(price_usd))
 
                 return {
                     id: wt.id,

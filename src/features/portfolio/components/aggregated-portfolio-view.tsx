@@ -13,7 +13,6 @@ import type {
 import { Coins, Loader2 } from 'lucide-react'
 import { logger } from '@/lib/logger'
 
-
 interface TokenDisplay {
     id: string
     balance: string
@@ -136,14 +135,14 @@ export function AggregatedPortfolioView({
                 nftList.push({
                     id:
                         nft.id ??
-                        `${wallet.id}-${nft.token_id ?? ''}-${nft.serial_number ?? 0}`,
+                        `${wallet.id}-${nft.token_id ?? ''}-${
+                            nft.serial_number ?? 0
+                        }`,
                     token_id: nft.token_id ?? '',
                     serial_number: nft.serial_number ?? 0,
                     metadata: nft.metadata ?? {},
-                    token_name:
-                        nft.tokens_registry?.token_name ?? undefined,
-                    token_icon:
-                        nft.tokens_registry?.token_icon ?? undefined,
+                    token_name: nft.tokens_registry?.token_name ?? undefined,
+                    token_icon: nft.tokens_registry?.token_icon ?? undefined,
                 })
             }
         }
