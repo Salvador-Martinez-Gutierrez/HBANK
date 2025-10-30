@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏦 Hbank
+# 🏦 HBANK
 
 ### **The Onchain Neobank on Hedera Hashgraph**
 
@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Database-3ECF8E?logo=supabase)](https://supabase.com/)
 
-<img src="public/hbank_logo-no-bg.png" alt="Hbank Protocol" width="120" />
+<img src="public/hb_logo-no-bg.png" alt="Hbank Protocol" width="120" />
 
 [🚀 Launch App](https://hbank.cash)• [🔈 Pitch](https://drive.google.com/file/d/1Ho4N9kTXHvQ7RiAvBBnApqd_rFIz1Myp/view?usp=sharing)  • [📖 Docs](https://hbank.gitbook.io/hbank-docs/) • [🐦 Twitter](https://twitter.com/hbankcash)
 
@@ -22,27 +22,15 @@
 
 HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We provide a complete suite of financial services including liquid yield tokens for earning passive income, a multi-wallet portfolio tracker, crypto swaps through aggregated liquidity, and a credit card for seamless spending. Unlike traditional neobanks, you maintain full custody of your assets with complete transparency and verifiability on-chain.
 
-### **Core Products**
-
-<div align="center">
-
-|        **hUSD Vault** (/earn)        |    **Portfolio Tracker** (/portfolio)    |
-| :----------------------------------: | :--------------------------------------: |
-| Deposit USDC, earn yield-bearing hUSD | Track multi-wallet assets & DeFi positions |
-|      **13.33% APY** on deposits      |      **Real-time** mainnet tracking       |
-|   Instant or Standard withdrawals    |   NFTs, Tokens, LP Positions & Lending   |
-
-</div>
-
 ---
 
-## ⚡ **Key Features & Decentralization**
+## ⚡ **Core Products**
 
-### 🏦 **hUSD Vault (/earn) - Yield-Bearing Stablecoin**
+### 🏦 **hUSD Vault (/earn) - Liquid Yield Tokens**
 
 **What it does:**
 - Deposit USDC and receive **hUSD** (yield-bearing token) at current exchange rate
-- Earn **13.33% APY** from DeFi strategy allocations
+- Earn **13.33% APY** from DeFi strategy allocations (current mocked APY)
 - Withdraw anytime via **Instant (0.5% fee)** or **Standard (48h, free)** methods
 
 **Decentralization Mechanisms:**
