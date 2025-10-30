@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
             },
         ],
     },
-    webpack: (config, { isServer }) => {
+    webpack: (config, { isServer, webpack }) => {
         // Add polyfills for Node.js APIs in the browser
         if (!isServer) {
             /* eslint-disable @typescript-eslint/no-require-imports */
@@ -30,9 +30,21 @@ const nextConfig: NextConfig = {
                 fs: false,
                 net: false,
                 tls: false,
+                // Suppress MetaMask SDK React Native dependency warnings
+                '@react-native-async-storage/async-storage': false,
             }
             /* eslint-enable @typescript-eslint/no-require-imports */
+
+            // Ignore optional React Native dependencies from MetaMask SDK
+            config.plugins.push(
+                new webpack.IgnorePlugin({
+                    resourceRegExp:
+                        /@react-native-async-storage\/async-storage/,
+                    contextRegExp: /@metamask\/sdk/,
+                })
+            )
         }
+
         return config
     },
     // Note: instrumentation.ts is now enabled by default in Next.js 15

@@ -6,9 +6,48 @@
  */
 
 import pino from 'pino'
-import { serverEnv } from '@/config/serverEnv'
 
 type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal'
+
+// Detect if we're on the server or client
+const isServer = typeof window === 'undefined'
+
+// Get environment configuration safely
+const getEnvConfig = (): {
+    logLevel: LogLevel
+    nodeEnv: 'production' | 'development' | 'test'
+} => {
+    if (!isServer) {
+        // Client-side: use defaults and suppress logs
+        return {
+            logLevel: 'warn' as LogLevel, // Only show warnings and errors in browser
+            nodeEnv: 'development' as const,
+        }
+    }
+
+    // Server-side: import and use serverEnv
+    // Dynamic import to avoid executing serverEnv on client
+    try {
+        // This will only work on server-side
+        const serverEnvModule = eval('require("@/config/serverEnv")')
+        const serverEnv = serverEnvModule.serverEnv
+        return {
+            logLevel: (serverEnv.logging?.level ?? 'info') as LogLevel,
+            nodeEnv: serverEnv.nodeEnv as 'production' | 'development' | 'test',
+        }
+    } catch {
+        // Fallback if serverEnv fails to load
+        const nodeEnv = process.env.NODE_ENV ?? 'development'
+        return {
+            logLevel: 'info' as LogLevel,
+            nodeEnv: (nodeEnv === 'production' || nodeEnv === 'test'
+                ? nodeEnv
+                : 'development') as 'production' | 'development' | 'test',
+        }
+    }
+}
+
+const envConfig = getEnvConfig()
 
 const SENSITIVE_KEYS = [
     'key',
@@ -76,9 +115,11 @@ const sanitize = (
  * with Next.js hot-reload. Instead, we use basic formatting.
  */
 const pinoConfig: pino.LoggerOptions = {
-    level: serverEnv.logLevel ?? (serverEnv.nodeEnv === 'production' ? 'info' : 'debug'),
+    level:
+        envConfig.logLevel ??
+        (envConfig.nodeEnv === 'production' ? 'info' : 'debug'),
     // Development: Basic formatting without worker threads
-    ...(serverEnv.nodeEnv !== 'production' && {
+    ...(envConfig.nodeEnv !== 'production' && {
         formatters: {
             level: (label) => {
                 return { level: label }
@@ -86,13 +127,17 @@ const pinoConfig: pino.LoggerOptions = {
         },
     }),
     // Production: structured JSON logs
-    ...(serverEnv.nodeEnv === 'production' && {
+    ...(envConfig.nodeEnv === 'production' && {
         formatters: {
             level: (label) => {
                 return { level: label }
             },
         },
     }),
+    // Client-side: suppress browser console spam
+    browser: {
+        asObject: false,
+    },
 }
 
 /**
@@ -165,7 +210,7 @@ export const logger = createScopedLogger('app')
  * @returns Child logger with merged context
  */
 export function createLogger(context: Record<string, unknown>): ScopedLogger {
-    return createScopedLogger(context.scope as string || 'app', context)
+    return createScopedLogger((context.scope as string) || 'app', context)
 }
 
 /**

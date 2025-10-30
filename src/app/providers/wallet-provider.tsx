@@ -10,7 +10,6 @@ import {
 import { HederaTestnet } from '@buidlerlabs/hashgraph-react-wallets/chains'
 import { logger } from '@/lib/logger'
 
-
 export function WalletProvider({ children }: { children: React.ReactNode }) {
     // Get projectId from environment variables
     const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
@@ -23,10 +22,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         )
     }
 
-    logger.info(
-        '🔍 Using WalletConnect Project ID:',
-        projectId.substring(0, 8) + '...'
-    )
+    // Debug logs commented out to reduce console noise during development
+    // logger.info(
+    //     '🔍 Using WalletConnect Project ID:',
+    //     projectId.substring(0, 8) + '...'
+    // )
 
     const getAppUrl = () => {
         if (typeof window !== 'undefined') {
@@ -37,12 +37,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
 
     const appUrl = getAppUrl()
-    logger.info('🌐 Using App URL:', appUrl)
+    // logger.info('🌐 Using App URL:', appUrl)
 
     const metadata = {
         name: 'Hbank',
-        description:
-            'The Onchain Neobank to Grow Your Wealth.',
+        description: 'The Onchain Neobank to Grow Your Wealth.',
         icons: [`${appUrl}/hbabk-logo.png`],
         url: appUrl,
     }
