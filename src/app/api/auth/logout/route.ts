@@ -8,8 +8,9 @@
 
 import { NextResponse } from 'next/server'
 import { withRouteHandler } from '@/lib/app-router-handler'
+import { withRateLimit } from '@/lib/rate-limit'
 
-export const POST = withRouteHandler(
+export const POST = withRateLimit('PUBLIC')(withRouteHandler(
     async ({ logger }): Promise<NextResponse> => {
         logger.info('User logged out successfully')
 
@@ -30,4 +31,4 @@ export const POST = withRouteHandler(
         return response
     },
     { scope: 'api:auth:logout' }
-)
+))

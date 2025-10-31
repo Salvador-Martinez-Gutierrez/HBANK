@@ -11,8 +11,9 @@ import { NonceService } from '@/services/nonceService'
 import { isValidHederaAccountId } from '@/lib/hedera-auth'
 import type { NonceResponse } from '@/types/auth'
 import { withRouteHandler } from '@/lib/app-router-handler'
+import { withRateLimit } from '@/lib/rate-limit'
 
-export const GET = withRouteHandler(
+export const GET = withRateLimit('AUTH')(withRouteHandler(
     async ({ req, logger }): Promise<NextResponse> => {
         const { searchParams } = req.nextUrl
         const accountId = searchParams.get('accountId')
@@ -47,4 +48,4 @@ export const GET = withRouteHandler(
         return NextResponse.json(response)
     },
     { scope: 'api:auth:nonce' }
-)
+))

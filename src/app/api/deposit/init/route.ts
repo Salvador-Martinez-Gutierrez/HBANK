@@ -9,10 +9,11 @@
 
 import { NextResponse } from 'next/server'
 import { withRouteHandler } from '@/lib/app-router-handler'
+import { withRateLimit } from '@/lib/rate-limit'
 import { depositService } from '@/services/depositService'
 import { depositInitSchema } from '@/utils/validation/deposit'
 
-export const POST = withRouteHandler(
+export const POST = withRateLimit('FINANCIAL')(withRouteHandler(
     async ({ body, logger }): Promise<NextResponse> => {
         const payload = depositInitSchema.parse(body)
 
@@ -31,4 +32,4 @@ export const POST = withRouteHandler(
     {
         scope: 'api:deposit:init',
     }
-)
+))

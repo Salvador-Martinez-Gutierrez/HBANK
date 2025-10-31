@@ -16,8 +16,9 @@ import {
 import { createJWT } from '@/lib/jwt'
 import type { VerifyRequest, AuthResponse } from '@/types/auth'
 import { withRouteHandler } from '@/lib/app-router-handler'
+import { withRateLimit } from '@/lib/rate-limit'
 
-export const POST = withRouteHandler(
+export const POST = withRateLimit('AUTH')(withRouteHandler(
     async ({ body, logger }): Promise<NextResponse> => {
         const { accountId, nonce, signature, publicKey } =
             body as VerifyRequest
@@ -122,4 +123,4 @@ export const POST = withRouteHandler(
         return nextResponse
     },
     { scope: 'api:auth:verify' }
-)
+))

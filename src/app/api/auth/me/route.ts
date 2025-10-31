@@ -9,8 +9,9 @@
 import { NextResponse } from 'next/server'
 import { verifyJWT } from '@/lib/jwt'
 import { withRouteHandler } from '@/lib/app-router-handler'
+import { withRateLimit } from '@/lib/rate-limit'
 
-export const GET = withRouteHandler(
+export const GET = withRateLimit('PUBLIC')(withRouteHandler(
     async ({ req, logger }): Promise<NextResponse> => {
         // Extract token from cookie
         const token = req.cookies.get('hbank-auth-token')?.value
@@ -37,4 +38,4 @@ export const GET = withRouteHandler(
         return NextResponse.json({ accountId: payload.sub })
     },
     { scope: 'api:auth:me' }
-)
+))

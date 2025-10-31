@@ -160,6 +160,10 @@ const envSchema = z
         REDIS_PASSWORD: z.string().optional(),
         REDIS_DB: z.string().optional(),
 
+        // Upstash Redis (for rate limiting and caching)
+        UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+        UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+
         // ==========================================
         // FEATURE FLAGS
         // ==========================================
@@ -448,6 +452,17 @@ export const serverEnv = {
               }
             : undefined,
     },
+
+    // Upstash Redis (for rate limiting)
+    upstash: env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN
+        ? {
+              url: env.UPSTASH_REDIS_REST_URL,
+              token: env.UPSTASH_REDIS_REST_TOKEN,
+              enabled: true,
+          }
+        : {
+              enabled: false,
+          },
 
     // Feature Flags
     features: {

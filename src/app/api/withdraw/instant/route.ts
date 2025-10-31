@@ -8,13 +8,14 @@
 
 import { NextResponse } from 'next/server'
 import { withRouteHandler } from '@/lib/app-router-handler'
+import { withRateLimit } from '@/lib/rate-limit'
 import { instantWithdrawService } from '@/services/instantWithdrawService'
 import { TelegramService } from '@/services/telegramService'
 import { instantWithdrawSchema } from '@/utils/validation/withdraw'
 
 const telegramService = new TelegramService()
 
-export const POST = withRouteHandler(
+export const POST = withRateLimit('FINANCIAL')(withRouteHandler(
     async ({ body, logger }): Promise<NextResponse> => {
         const payload = instantWithdrawSchema.parse(body)
 
@@ -62,4 +63,4 @@ export const POST = withRouteHandler(
     {
         scope: 'api:withdraw:instant',
     }
-)
+))
