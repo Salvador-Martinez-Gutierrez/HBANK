@@ -4,6 +4,8 @@
 
 ### **The Onchain Neobank on Hedera Hashgraph**
 
+Onchain Finance & Real-World Assets (RWA)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-15.5-black?logo=next.js)](https://nextjs.org/)
 [![Hedera SDK](https://img.shields.io/badge/Hedera%20SDK-2.64-7a3ff2?logo=hedera)](https://hedera.com/)
