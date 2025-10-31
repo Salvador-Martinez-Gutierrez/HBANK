@@ -91,6 +91,8 @@ jobs:
                   NODE_ENV: production
                   
                   # Public env vars
+                  NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: 'dummy-walletconnect-project-id-for-ci'
+                  NEXT_PUBLIC_APP_URL: https://test.example.com
                   NEXT_PUBLIC_HEDERA_NETWORK: testnet
                   NEXT_PUBLIC_HEDERA_MIRROR_NODE_URL: https://testnet.mirrornode.hedera.com
                   NEXT_PUBLIC_SUPABASE_URL: https://dummy.supabase.co
