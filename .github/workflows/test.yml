@@ -87,6 +87,17 @@ jobs:
             - name: Build project
               run: pnpm build
               env:
-                  # Provide dummy env vars for build
+                  # Public env vars
                   NEXT_PUBLIC_HEDERA_NETWORK: testnet
                   NEXT_PUBLIC_HEDERA_MIRROR_NODE_URL: https://testnet.mirrornode.hedera.com
+                  
+                  # Server env vars (dummy values for build)
+                  DEPOSIT_WALLET_ID: '0.0.12345'
+                  DEPOSIT_WALLET_KEY: '302e020100300506032b65700422042000000000000000000000000000000000000000000000000000000000000000'
+                  INSTANT_WITHDRAW_WALLET_ID: '0.0.12346'
+                  INSTANT_WITHDRAW_WALLET_KEY: '302e020100300506032b65700422042000000000000000000000000000000000000000000000000000000000000000'
+                  EMISSIONS_ID: '0.0.12347'
+                  EMISSIONS_KEY: '302e020100300506032b65700422042000000000000000000000000000000000000000000000000000000000000000'
+                  USDC_TOKEN_ID: '0.0.12348'
+                  HUSD_TOKEN_ID: '0.0.12349'
+                  JWT_SECRET: 'dummy-jwt-secret-for-ci-build-only-not-for-production-use'
