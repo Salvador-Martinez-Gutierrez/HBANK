@@ -500,12 +500,15 @@ pnpm dev
 - [x] Real-time price updates
 - [x] Transparency dashboard
 
-### 🚀 **Coming Soon**
+### 🚀 **Next Steps**
 
-- [ ] Portfolio Tracker Mainnet deployment
 - [ ] Portfolio Tracker Integrations (Saucerswap V2, NFT prices,...)
 - [ ] Portfolio Tracker UI update
-- [ ] Trade Module
+- [ ] Portfolio Tracker Mainnet deployment
+- [ ] Production ready Trade Module
+- [ ] Production ready Earn Module with HSCS
+- [ ] Mobile Wallet with DeRec
+- [ ] Hbank Card
 
 ---
 
