@@ -31,7 +31,7 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 ### 🏦 **hUSD Vault (/earn) - Liquid Yield Tokens** (TESTNET)
 
 **What it does:**
-- Deposit USDC and receive **hUSD** (yield-bearing asset) at current exchange rate
+- Deposit USDC and receive **hUSD** (token id: 0.0.6889338) at current exchange rate
 - Earn **13.33% APY** from DeFi strategy allocations (current mocked APY)
 - Withdraw anytime via **Instant (0.5% fee)** or **Standard (48h, free)** methods
 
