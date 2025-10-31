@@ -100,6 +100,34 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 
 ---
 
+**Key Hedera SDK Services Used:**
+```typescript
+// 1. Scheduled Transactions (HTS) - Decentralized Deposits
+const transferTx = new TransferTransaction()
+  .addTokenTransfer(usdcTokenId, userAccount, -amount)
+  .addTokenTransfer(usdcTokenId, treasuryAccount, amount)
+
+const scheduleTx = new ScheduleCreateTransaction()
+  .setScheduledTransaction(transferTx)
+  .setAdminKey(treasuryKey)
+
+// 2. HCS Topic Publishing - Transparent Rate Oracle
+const message = JSON.stringify({ rate, totalUsd, husdSupply, timestamp })
+await new TopicMessageSubmitTransaction()
+  .setTopicId(RATE_TOPIC_ID)
+  .setMessage(message)
+  .execute(client)
+
+// 3. Account Signature Verification - Portfolio Auth
+const message = `Hbank Portfolio Auth\nNonce: ${nonce}\nAccount: ${accountId}`
+const signature = await signer.signMessage(message)
+const publicKey = PublicKey.fromString(accountPublicKey)
+const isValid = publicKey.verify(messageBytes, signatureBytes)
+```
+
+---
+
+
 ## 🛠️ **Technology Stack**
 
 <div align="center">
