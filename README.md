@@ -295,17 +295,6 @@ HBANK-PROTOCOL/
 ```
 
 ---
-
-## 🚀 **Testing**
-
-### **Prerequisites**
-
-```
-Hedera Testnet Account
-Hedera Wallet: HashPack, Kabila, or Blade
-Testnet Hbar
-Testnet USDC
-```
 ## 📖 **How It Works**
 
 ### **🏦 hUSD Vault - Deposit Flow**
@@ -404,6 +393,95 @@ Testnet USDC
    ├── Total portfolio value (USD)
    ├── Breakdown by asset type
    └── Real-time price updates (WebSocket)
+```
+
+---
+
+## 🚀 **Getting Started**
+
+### **Prerequisites**
+
+```bash
+Node.js v20+
+pnpm (recommended) or npm
+Hedera Testnet Account
+Hedera Wallet: HashPack, Kabila, or Blade
+Supabase Account (for portfolio tracking)
+Validation Cloud API Key (for mainnet data)
+```
+
+### **Installation**
+
+```bash
+# Clone repository
+git clone https://github.com/Salvador-Martinez-Gutierrez/HBANK.git
+cd HBANK-PROTOCOL
+
+# Install dependencies
+pnpm install
+
+# Configure environment variables
+cp .env.example .env.local
+```
+
+### **Environment Configuration**
+
+```bash
+# ===== Hedera Network Configuration =====
+USE_REAL_TESTNET=true
+TESTNET_MIRROR_NODE_ENDPOINT=https://testnet.mirrornode.hedera.com
+
+# Hedera Operator (rate publisher, admin operations)
+OPERATOR_ID=0.0.your-operator-account
+OPERATOR_KEY=302e020100300506032b657004220420...
+
+# HCS Topics
+TOPIC_ID=0.0.rate-topic-id
+WITHDRAW_TOPIC_ID=0.0.withdraw-topic-id
+
+# ===== Token IDs =====
+USDC_TOKEN_ID=0.0.usdc-token
+HUSD_TOKEN_ID=0.0.husd-token
+
+# ===== Protocol Wallets =====
+DEPOSIT_WALLET_ID=0.0.deposit-wallet
+DEPOSIT_WALLET_KEY=302e020100300506032b657004220420...
+
+EMISSIONS_ID=0.0.emissions-wallet
+EMISSIONS_KEY=302e020100300506032b657004220420...
+
+INSTANT_WITHDRAW_WALLET_ID=0.0.instant-withdraw
+INSTANT_WITHDRAW_WALLET_KEY=302e020100300506032b657004220420...
+
+STANDARD_WITHDRAW_WALLET_ID=0.0.standard-withdraw
+STANDARD_WITHDRAW_WALLET_KEY=302e020100300506032b657004220420...
+
+TREASURY_ID=0.0.treasury-wallet
+TREASURY_KEY=302e020100300506032b657004220420...
+
+# ===== Portfolio Tracking =====
+# Validation Cloud (Hedera Mirror Node API)
+VALIDATION_CLOUD_API_KEY=your-validation-cloud-key
+VALIDATION_CLOUD_BASE_URL=https://mainnet.hedera.validationcloud.io/v1
+
+# Supabase (User data & wallet tracking)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# ===== Authentication =====
+JWT_SECRET=your-secret-key-min-32-chars
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# ===== WalletConnect =====
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-walletconnect-id
+```
+
+### **Run Development Server**
+
+```bash
+pnpm dev
+# Open http://localhost:3000
 ```
 
 ---
