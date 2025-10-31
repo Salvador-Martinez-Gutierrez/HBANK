@@ -63,12 +63,10 @@ export function HCFTradingInterface() {
 
     // Enhanced refresh function that also updates instant withdraw max
     const enhancedRefreshBalances = async () => {
-        await Promise.all([
-            refreshBalances(),
-            refreshMaxAmount(),
-            // Also trigger global refresh for other components
-            (async () => refreshInstantWithdrawMax())(),
-        ])
+        await refreshBalances()
+        // Trigger refresh for max amounts (non-blocking)
+        refreshMaxAmount()
+        refreshInstantWithdrawMax()
     }
 
     // Debug effect to track maxInstantWithdrawable changes

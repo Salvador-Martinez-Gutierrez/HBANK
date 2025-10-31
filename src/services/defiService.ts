@@ -5,7 +5,16 @@ const logger = createScopedLogger('service:defiService')
 
 /**
  * DeFi Service
- * Integrates with SaucerSwap and Bonzo Finance APIs to fetch DeFi positions
+ *
+ * Now uses the Data Aggregation API (Proxy Layer) for pools and farms data.
+ * This reduces SaucerSwap API calls from ~22 per sync to ~4-6 per sync.
+ *
+ * Architecture:
+ * - VPS cron job calls POST /api/defi/sync-snapshot every 5 minutes
+ * - Snapshot endpoint fetches pools, farms, tokens from SaucerSwap
+ * - Data stored in Supabase snapshot tables + Redis cache
+ * - This service calls GET /api/defi/snapshot instead of direct SaucerSwap API
+ * - User-specific calls (farm totals, bonzo positions) still go directly to APIs
  */
 
 // External API URLs from serverEnv
@@ -118,21 +127,23 @@ export interface LendingData {
 // ========================================
 
 /**
- * Get LP token data from SaucerSwap
- * Returns pool information including token pairs and reserves
+ * Get all pools from DeFi snapshot endpoint (Data Aggregation API)
+ * This endpoint is updated by a cron job every 5 minutes and serves cached data
+ * from Redis/Memory or Supabase snapshot tables.
+ *
+ * This replaces direct calls to SaucerSwap API, reducing API calls by ~73%.
  */
-export async function getLpTokenData(
-    tokenId: string
-): Promise<LpTokenData | undefined> {
-    const url = `${SAUCERSWAP_API}/pools/known`
-
+export async function getAllPools(): Promise<LpTokenData[]> {
     try {
+        logger.info('📡 Fetching pools from DeFi snapshot endpoint...')
+
+        // Call our internal snapshot endpoint
+        const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+        const url = `${baseUrl}/api/defi/snapshot`
+
         const response = await fetch(url, {
             method: 'GET',
-            headers: {
-                'x-api-key': SAUCERSWAP_API_KEY,
-                'Content-Type': 'application/json',
-            },
             cache: 'no-store',
         })
 
@@ -140,7 +151,30 @@ export async function getLpTokenData(
             throw new Error(`HTTP error! status: ${response.status}`)
         }
 
-        const pools = (await response.json()) as LpTokenData[]
+        const data = await response.json()
+        const pools = data.pools as LpTokenData[]
+
+        logger.info(
+            `✅ Loaded ${pools.length} pools from snapshot (source: ${data.metadata.source})`
+        )
+
+        return pools
+    } catch (error) {
+        logger.error('Error fetching pools from snapshot:', { error })
+        // Return empty array on error, don't crash
+        return []
+    }
+}
+
+/**
+ * Get LP token data from SaucerSwap (uses cache)
+ * Returns pool information including token pairs and reserves
+ */
+export async function getLpTokenData(
+    tokenId: string
+): Promise<LpTokenData | undefined> {
+    try {
+        const pools = await getAllPools() // Use cached data
         const matchingPool = pools.find((pool) => pool.lpToken.id === tokenId)
 
         if (matchingPool) {
@@ -150,7 +184,7 @@ export async function getLpTokenData(
 
         return undefined
     } catch (error) {
-        logger.error('Error fetching LP token data:', error)
+        logger.error('Error fetching LP token data:', { error })
         return undefined
     }
 }
@@ -184,7 +218,7 @@ export async function getLpTokenDataByPoolId(
         logger.info(`✅ Fetched LP data for pool ${poolId}`)
         return data
     } catch (error) {
-        logger.error('Error in getLpTokenDataByPoolId:', error)
+        logger.error('Error in getLpTokenDataByPoolId:', { error })
         return null
     }
 }
@@ -223,31 +257,57 @@ export async function fetchFarmTotals(accountId: string): Promise<FarmTotal[]> {
         )
         return activeFarms
     } catch (error) {
-        logger.error('Error in fetchFarmTotals:', error)
+        logger.error('Error in fetchFarmTotals:', { error })
         return []
     }
 }
 
 /**
- * Fetch pool ID for a specific farm
+ * Get all farms from DeFi snapshot endpoint (Data Aggregation API)
+ * This endpoint is updated by a cron job every 5 minutes and serves cached data
+ * from Redis/Memory or Supabase snapshot tables.
+ *
+ * This replaces direct calls to SaucerSwap API, reducing API calls by ~73%.
  */
-export async function fetchPoolId(id: number): Promise<number | null> {
-    const url = `${SAUCERSWAP_API}/farms`
-
+export async function getAllFarms(): Promise<Farm[]> {
     try {
+        logger.info('📡 Fetching farms from DeFi snapshot endpoint...')
+
+        // Call our internal snapshot endpoint
+        const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+        const url = `${baseUrl}/api/defi/snapshot`
+
         const response = await fetch(url, {
             method: 'GET',
-            headers: {
-                'x-api-key': SAUCERSWAP_API_KEY,
-                'Content-Type': 'application/json',
-            },
+            cache: 'no-store',
         })
 
         if (!response.ok) {
-            throw new Error(`Error fetching farms: ${response.statusText}`)
+            throw new Error(`HTTP error! status: ${response.status}`)
         }
 
-        const farms: Farm[] = await response.json()
+        const data = await response.json()
+        const farms = data.farms as Farm[]
+
+        logger.info(
+            `✅ Loaded ${farms.length} farms from snapshot (source: ${data.metadata.source})`
+        )
+
+        return farms
+    } catch (error) {
+        logger.error('Error fetching farms from snapshot:', { error })
+        // Return empty array on error, don't crash
+        return []
+    }
+}
+
+/**
+ * Fetch pool ID for a specific farm (uses cache)
+ */
+export async function fetchPoolId(id: number): Promise<number | null> {
+    try {
+        const farms = await getAllFarms() // Use cached data
         const farm = farms.find((f) => f.id === id)
 
         if (farm) {
@@ -258,7 +318,7 @@ export async function fetchPoolId(id: number): Promise<number | null> {
         logger.info(`⚠️ No farm found with id: ${id}`)
         return null
     } catch (error) {
-        logger.error('Error in fetchPoolId:', error)
+        logger.error('Error in fetchPoolId:', { error })
         return null
     }
 }
@@ -327,7 +387,7 @@ export async function getBonzoLendingData(
             positions,
         }
     } catch (error) {
-        logger.error('Error fetching Bonzo lending data:', error)
+        logger.error('Error fetching Bonzo lending data:', { error })
         return undefined
     }
 }

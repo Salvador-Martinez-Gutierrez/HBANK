@@ -6,7 +6,10 @@
 
 import { NextResponse } from 'next/server'
 import { withAuthRoute } from '@/lib/app-router-auth-middleware'
-import { syncWalletTokens, getUserWallets } from '@/services/portfolioWalletService'
+import {
+    syncWalletTokens,
+    getUserWallets,
+} from '@/services/portfolioWalletService'
 import { getAllSaucerSwapTokens } from '@/services/saucerSwapService'
 
 export const POST = withAuthRoute(
@@ -39,7 +42,9 @@ export const POST = withAuthRoute(
             const saucerSwapResult = await getAllSaucerSwapTokens()
 
             if (!saucerSwapResult.success) {
-                _logger.warn('Failed to pre-load SaucerSwap data, continuing anyway')
+                _logger.warn(
+                    'Failed to pre-load SaucerSwap data, continuing anyway'
+                )
             } else {
                 _logger.info('SaucerSwap data loaded', {
                     tokenCount: saucerSwapResult.tokens?.length ?? 0,
@@ -78,10 +83,12 @@ export const POST = withAuthRoute(
                     error: syncResult.error,
                 })
 
-                // Small delay to avoid overwhelming Hedera API
-                // (SaucerSwap is already cached, so this is just for Hedera)
+                // Delay between wallets to avoid overwhelming APIs
+                // SaucerSwap pools/farms are now cached, but we still need delay for:
+                // - Hedera Mirror Node API
+                // - SaucerSwap /farms/totals/{account} and /pools/{poolId}
                 if (wallet !== wallets[wallets.length - 1]) {
-                    await new Promise((resolve) => setTimeout(resolve, 300))
+                    await new Promise((resolve) => setTimeout(resolve, 1000)) // Increased from 300ms to 1s
                 }
             }
 

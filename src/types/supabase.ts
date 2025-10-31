@@ -9,6 +9,69 @@
 export type Database = {
     public: {
         Tables: {
+            defi_farms_snapshot: {
+                Row: {
+                    created_at: string
+                    farm_data: Json
+                    id: string
+                    last_updated: string
+                }
+                Insert: {
+                    created_at?: string
+                    farm_data: Json
+                    id?: string
+                    last_updated?: string
+                }
+                Update: {
+                    created_at?: string
+                    farm_data?: Json
+                    id?: string
+                    last_updated?: string
+                }
+                Relationships: []
+            }
+            defi_pools_snapshot: {
+                Row: {
+                    created_at: string
+                    id: string
+                    last_updated: string
+                    pool_data: Json
+                }
+                Insert: {
+                    created_at?: string
+                    id?: string
+                    last_updated?: string
+                    pool_data: Json
+                }
+                Update: {
+                    created_at?: string
+                    id?: string
+                    last_updated?: string
+                    pool_data?: Json
+                }
+                Relationships: []
+            }
+            defi_tokens_snapshot: {
+                Row: {
+                    created_at: string
+                    id: string
+                    last_updated: string
+                    token_data: Json
+                }
+                Insert: {
+                    created_at?: string
+                    id?: string
+                    last_updated?: string
+                    token_data: Json
+                }
+                Update: {
+                    created_at?: string
+                    id?: string
+                    last_updated?: string
+                    token_data?: Json
+                }
+                Relationships: []
+            }
             liquidity_pool_tokens: {
                 Row: {
                     balance: string
