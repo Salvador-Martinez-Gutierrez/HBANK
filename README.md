@@ -35,23 +35,6 @@ HBank is the fully onchain, self-custodial neobank built on Hedera Hashgraph. We
 - Earn **13.33% APY** from DeFi strategy allocations (current mocked APY)
 - Withdraw anytime via **Instant (0.5% fee)** or **Standard (48h, free)** methods
 
-**How Deposits Work:**
-```mermaid
-sequenceDiagram
-    User->>Frontend: Click "Deposit 100 USDC"
-    Frontend->>API: POST /api/deposit/init
-    API->>Hedera: Create ScheduleTransaction
-    Note over API,Hedera: Transfer 100 USDC user→treasury<br/>Transfer 98.7 hUSD emissions→user
-    Hedera-->>API: Returns scheduleId
-    API-->>Frontend: scheduleId + transaction bytes
-    Frontend->>User Wallet: Request signature
-    User Wallet-->>Frontend: Signed transaction
-    Frontend->>API: POST /api/deposit/user-signed
-    API->>Hedera: Sign with Treasury key
-    Hedera->>Hedera: Execute atomic swap
-    Note over Hedera: ✅ Both parties signed<br/>Transaction executes
-```
-
 **Decentralization Mechanisms:**
 ```
 ✅ Scheduled Transactions (HTS)
@@ -77,6 +60,23 @@ sequenceDiagram
 - **Deposit Flow**: `initializeDeposit()` → Creates HTS scheduled transaction → User signs → `completeTreasurySignature()` → Atomic swap (USDC ↔ hUSD)
 - **Rate Management**: `HederaRateService` fetches latest rates from HCS topic, validates sequence numbers for consistency
 - **Withdrawal Processing**: `WithdrawService` publishes requests to HCS, automated cron processes after timelock
+
+**How Deposits Work:**
+```mermaid
+sequenceDiagram
+    User->>Frontend: Click "Deposit 100 USDC"
+    Frontend->>API: POST /api/deposit/init
+    API->>Hedera: Create ScheduleTransaction
+    Note over API,Hedera: Transfer 100 USDC user→treasury<br/>Transfer 98.7 hUSD emissions→user
+    Hedera-->>API: Returns scheduleId
+    API-->>Frontend: scheduleId + transaction bytes
+    Frontend->>User Wallet: Request signature
+    User Wallet-->>Frontend: Signed transaction
+    Frontend->>API: POST /api/deposit/user-signed
+    API->>Hedera: Sign with Treasury key
+    Hedera->>Hedera: Execute atomic swap
+    Note over Hedera: ✅ Both parties signed<br/>Transaction executes
+```
 
 ### 📊 **Portfolio Tracker (/portfolio) - Multi-Wallet Asset Tracking** (TESTNET + MAINNET)
 
